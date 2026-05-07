@@ -1,0 +1,62 @@
+name: 기능 요청
+description: 새로운 기능이나 개선 아이디어를 제안합니다.
+title: "[FEAT] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경
+      description: 왜 이 기능이 필요한지 적어주세요.
+      placeholder: 예) 사용자가 회원가입 후 바로 온보딩을 시작할 수 있어야 합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 현재 문제
+      description: 지금 어떤 불편이나 한계가 있는지 적어주세요.
+      placeholder: 예) 회원가입 이후 다음 행동이 불명확합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안 내용
+      description: 어떤 기능을 추가하거나 바꾸고 싶은지 적어주세요.
+      placeholder: 예) 회원가입 완료 후 온보딩 시작 버튼이 있는 완료 화면을 추가합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 완료 조건
+      description: 완료되었다고 판단할 기준을 적어주세요.
+      placeholder: |
+        - 회원가입 완료 화면이 보인다
+        - 온보딩 시작 버튼이 있다
+        - 버튼 클릭 시 온보딩 첫 화면으로 이동한다
+    validations:
+      required: true
+
+  - type: input
+    id: jira
+    attributes:
+      label: 관련 Jira 이슈
+      description: 이미 Jira 티켓이 있다면 이슈 키를 적어주세요.
+      placeholder: 예) SPT-123
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고 자료
+      description: 관련 화면, 문서, 링크가 있다면 적어주세요.
+      placeholder: 디자인 링크, 레퍼런스, 기획 문서 등을 적어주세요.
+    validations:
+      required: false
