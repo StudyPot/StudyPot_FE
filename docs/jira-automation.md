@@ -69,6 +69,13 @@ GitHub 저장소에서 아래 변수를 설정하면 Jira 링크가 자동으로
 4. `Variables`
 5. `New repository variable`
 
+인증 정보는 아래 둘 중 하나로 설정할 수 있습니다.
+
+- `Repository secrets`에 `JIRA_EMAIL`, `JIRA_API_TOKEN` 추가
+- 또는 `Environment secrets`에 추가하고, 워크플로에서 해당 environment를 지정
+
+현재 이 프로젝트의 Jira 티켓 생성 워크플로는 `studypot` environment secret을 읽도록 설정되어 있습니다.
+
 ## GitHub Actions 파일
 
 다음 워크플로가 Jira PR 자동화를 담당합니다.
