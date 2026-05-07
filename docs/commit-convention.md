@@ -14,6 +14,7 @@
 - `[BUILD] prettier 설정`
 - `[FIX] html 언어 ko 설정`
 - `[CHORE] prettier format 설정`
+- `SPT-123 [FEAT] 회원가입 페이지 추가`
 
 ## 기본 규칙
 
@@ -31,12 +32,19 @@
 [TYPE] 작업 설명
 ```
 
+Jira 브랜치에서 Git hook이 적용된 경우 실제 커밋 메시지는 아래 형식으로 저장됩니다.
+
+```txt
+SPT-123 [TYPE] 작업 설명
+```
+
 작성 예:
 
 ```txt
 [BUILD] tailwind css 적용
 [FIX] 로그인 버튼 비활성화 오류 수정
 [CHORE] prettier ignore 파일 추가
+SPT-123 [FEAT] 회원가입 페이지 추가
 ```
 
 ## 타입 기준
@@ -162,6 +170,13 @@
 - 포맷, ignore, 관리성 개선: `[CHORE]`
 - 사용자 기능 추가: `[FEAT]`
 - 문서 추가/수정: `[DOCS]`
+
+## Jira 브랜치 사용 시
+
+- 브랜치 이름에 Jira 이슈 키가 있으면 커밋 메시지 앞에 같은 키가 자동으로 붙습니다.
+- 예: `SPT-123/signup-page`
+- 예: `SPT-123 [FIX] 로그인 버튼 비활성화 오류 수정`
+- 팀원이 같은 동작을 쓰려면 한 번 `npm install` 또는 `npm run setup:hooks`를 실행해야 합니다.
 
 ## 커밋 작성 원칙
 

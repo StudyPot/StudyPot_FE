@@ -17,6 +17,7 @@
 - Jira 이슈 키가 있으면 PR 댓글에 연동 정보 표시
 - `JIRA_BASE_URL` 설정 시 Jira 링크 자동 생성
 - GitHub Actions 수동 실행으로 Jira 티켓 생성
+- Git hook으로 커밋 메시지 앞에 Jira 이슈 키 자동 추가
 
 현재 자동화에 포함되지 않는 항목:
 
@@ -124,6 +125,40 @@ git switch --track origin/STUDY-123/signup-page
 ```
 
 `branch_suffix`를 비우면 제목을 기반으로 브랜치 이름을 만들고, 영문 slug를 만들 수 없으면 기본값으로 `work-item`을 사용합니다.
+
+## 커밋 메시지 자동화
+
+이 프로젝트는 브랜치 이름에 Jira 이슈 키가 있으면 커밋 메시지 앞에 같은 키를 자동으로 붙이도록 설정할 수 있습니다.
+
+예:
+
+- 현재 브랜치: `SPT-123/signup-page`
+- 입력한 커밋 메시지: `[FEAT] 회원가입 페이지 추가`
+- 실제 저장되는 커밋 메시지: `SPT-123 [FEAT] 회원가입 페이지 추가`
+
+설정 방식:
+
+- `.githooks/prepare-commit-msg`
+  커밋 메시지 앞에 Jira 키를 자동으로 붙입니다.
+- `.githooks/commit-msg`
+  현재 브랜치의 Jira 키가 커밋 메시지에 없으면 커밋을 막습니다.
+
+초기 설정:
+
+1. `npm install`
+2. 또는 수동으로 `npm run setup:hooks`
+
+설정이 끝나면 로컬 Git 설정의 `core.hooksPath`가 `.githooks`를 바라보게 됩니다.
+
+동작 조건:
+
+- 브랜치 이름에 Jira 이슈 키가 있어야 합니다.
+- 예: `SPT-123/signup-page`
+- `main`, `develop`처럼 Jira 키가 없는 브랜치에서는 동작하지 않습니다.
+
+예외:
+
+- `Merge`, `Revert`, `fixup!`, `squash!` 커밋 메시지는 자동 접두사와 검증에서 제외합니다.
 
 ## 처음부터 자동으로 안 하고 수동 실행부터 시작하는 이유
 

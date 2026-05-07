@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -eu
+
+MESSAGE_FILE="$1"
+COMMIT_SOURCE="${2:-}"
+HOOK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+. "$HOOK_DIR/_jira-hook-utils.sh"
+
+BRANCH_NAME=$(jira_hook_branch_name)
+ISSUE_KEY=$(jira_hook_issue_key "$BRANCH_NAME")
+
+if [ -z "$ISSUE_KEY" ]; then
+  exit 0
+fi
+
+case "$COMMIT_SOURCE" in
+  merge|squash)
+    exit 0
+    ;;
+esac
+
+FIRST_LINE=$(sed -n '1p' "$MESSAGE_FILE")
+
+case "$FIRST_LINE" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *)
+    exit 0
+    ;;
+esac
+
+if grep -q "$ISSUE_KEY" "$MESSAGE_FILE"; then
+  exit 0
+fi
+
+TEMP_FILE=$(mktemp)
+
+if [ ! -s "$MESSAGE_FILE" ]; then
+  printf '%s ' "$ISSUE_KEY" > "$TEMP_FILE"
+elif [ -z "$FIRST_LINE" ] || printf '%s' "$FIRST_LINE" | grep -q '^#'; then
+  {
+    printf '%s \n' "$ISSUE_KEY"
+    cat "$MESSAGE_FILE"
+  } > "$TEMP_FILE"
+else
+  {
+    printf '%s %s\n' "$ISSUE_KEY" "$FIRST_LINE"
+    sed '1d' "$MESSAGE_FILE"
+  } > "$TEMP_FILE"
+fi
+
+mv "$TEMP_FILE" "$MESSAGE_FILE"

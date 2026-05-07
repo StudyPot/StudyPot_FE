@@ -14,7 +14,9 @@
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "setup:hooks": "node scripts/setup-git-hooks.mjs",
+    "prepare": "npm run setup:hooks"
   },
   "dependencies": {
     "pinia": "^3.0.4",

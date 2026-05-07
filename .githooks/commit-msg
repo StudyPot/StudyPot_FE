@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -eu
+
+MESSAGE_FILE="$1"
+HOOK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+. "$HOOK_DIR/_jira-hook-utils.sh"
+
+BRANCH_NAME=$(jira_hook_branch_name)
+ISSUE_KEY=$(jira_hook_issue_key "$BRANCH_NAME")
+
+if [ -z "$ISSUE_KEY" ]; then
+  exit 0
+fi
+
+FIRST_LINE=$(sed -n '1p' "$MESSAGE_FILE")
+
+case "$FIRST_LINE" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *)
+    exit 0
+    ;;
+esac
+
+if ! printf '%s' "$FIRST_LINE" | grep -q "$ISSUE_KEY"; then
+  echo "Error: commit message must include Jira issue key $ISSUE_KEY from the current branch." >&2
+  echo "Example: $ISSUE_KEY [FEAT] 회원가입 페이지 추가" >&2
+  exit 1
+fi
