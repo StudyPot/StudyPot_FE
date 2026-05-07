@@ -11,9 +11,13 @@ on:
         description: Jira 티켓 설명 (선택)
         required: false
         type: string
+      branch_suffix:
+        description: 브랜치 이름 suffix (선택, 영문/숫자/하이픈 권장)
+        required: false
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   create-jira-issue:
@@ -27,6 +31,8 @@ jobs:
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
       SUMMARY: ${{ github.event.inputs.summary }}
       DESCRIPTION: ${{ github.event.inputs.description }}
+      BRANCH_SUFFIX: ${{ github.event.inputs.branch_suffix }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
 
     steps:
       - name: Validate Jira settings
@@ -113,15 +119,77 @@ jobs:
           echo "issue_id=$issue_id" >> "$GITHUB_OUTPUT"
           echo "issue_url=${JIRA_BASE_URL%/}/browse/$issue_key" >> "$GITHUB_OUTPUT"
 
-      - name: Show created issue
+      - name: Build branch name
+        id: branch
+        env:
+          ISSUE_KEY: ${{ steps.create.outputs.issue_key }}
+        run: |
+          branch_source="$BRANCH_SUFFIX"
+
+          if [[ -z "$branch_source" ]]; then
+            branch_source="$SUMMARY"
+          fi
+
+          branch_slug=$(echo "$branch_source" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+
+          if [[ -z "$branch_slug" ]]; then
+            branch_slug="work-item"
+          fi
+
+          branch_name="$ISSUE_KEY/$branch_slug"
+
+          echo "branch_name=$branch_name" >> "$GITHUB_OUTPUT"
+          echo "branch_slug=$branch_slug" >> "$GITHUB_OUTPUT"
+
+      - name: Create remote branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_KEY: ${{ steps.create.outputs.issue_key }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+        run: |
+          base_branch_response=$(curl --silent --show-error --fail-with-body \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GITHUB_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/git/ref/heads/$DEFAULT_BRANCH")
+
+          base_sha=$(echo "$base_branch_response" | jq -r '.object.sha')
+
+          if [[ -z "$base_sha" || "$base_sha" == "null" ]]; then
+            echo "::error title=Base branch SHA missing::Could not resolve the default branch SHA."
+            exit 1
+          fi
+
+          create_branch_payload=$(jq -n \
+            --arg ref "refs/heads/$BRANCH_NAME" \
+            --arg sha "$base_sha" \
+            '{ ref: $ref, sha: $sha }')
+
+          curl --silent --show-error --fail-with-body \
+            --request POST \
+            --url "https://api.github.com/repos/$GITHUB_REPOSITORY/git/refs" \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GITHUB_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data "$create_branch_payload"
+
+      - name: Show created issue and branch
         env:
           ISSUE_KEY: ${{ steps.create.outputs.issue_key }}
           ISSUE_URL: ${{ steps.create.outputs.issue_url }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
         run: |
           {
             echo "## Jira issue created"
             echo
             echo "- Jira key: \`$ISSUE_KEY\`"
             echo "- Jira link: $ISSUE_URL"
-            echo "- Recommended branch name: \`$ISSUE_KEY/short-description\`"
+            echo "- Remote branch created: \`$BRANCH_NAME\`"
+            echo
+            echo "## Next step"
+            echo
+            echo '```bash'
+            echo "git fetch origin"
+            echo "git switch --track origin/$BRANCH_NAME"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
