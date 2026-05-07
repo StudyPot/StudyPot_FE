@@ -1,0 +1,111 @@
+name: Jira PR Automation
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  jira-key-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract Jira issue key
+        id: jira
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+        run: |
+          pattern='[A-Z][A-Z0-9]+-[0-9]+'
+
+          if [[ "$PR_TITLE" =~ $pattern ]]; then
+            issue_key="${BASH_REMATCH[0]}"
+          elif [[ "$BRANCH_NAME" =~ $pattern ]]; then
+            issue_key="${BASH_REMATCH[0]}"
+          else
+            echo "PR title: $PR_TITLE"
+            echo "Branch name: $BRANCH_NAME"
+            echo "::error title=Jira issue key required::Add a Jira issue key like STUDY-123 to the PR title or branch name."
+            exit 1
+          fi
+
+          echo "issue_key=$issue_key" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$JIRA_BASE_URL" ]]; then
+            jira_url="${JIRA_BASE_URL%/}/$issue_key"
+            echo "jira_url=$jira_url" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add workflow summary
+        env:
+          ISSUE_KEY: ${{ steps.jira.outputs.issue_key }}
+          JIRA_URL: ${{ steps.jira.outputs.jira_url }}
+        run: |
+          {
+            echo "## Jira automation"
+            echo
+            echo "- Jira issue key: \`$ISSUE_KEY\`"
+            if [[ -n "$JIRA_URL" ]]; then
+              echo "- Jira link: $JIRA_URL"
+            else
+              echo "- Jira link: set the repository variable \`JIRA_BASE_URL\` to enable direct links"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upsert PR comment
+        uses: actions/github-script@v7
+        env:
+          ISSUE_KEY: ${{ steps.jira.outputs.issue_key }}
+          JIRA_URL: ${{ steps.jira.outputs.jira_url }}
+        with:
+          script: |
+            const marker = '<!-- jira-pr-automation -->'
+            const issueKey = process.env.ISSUE_KEY
+            const jiraUrl = process.env.JIRA_URL
+
+            const bodyLines = [
+              marker,
+              '## Jira 연동 정보',
+              `- 이슈 키: \`${issueKey}\``,
+            ]
+
+            if (jiraUrl) {
+              bodyLines.push(`- Jira 링크: ${jiraUrl}`)
+            } else {
+              bodyLines.push('- Jira 링크: repository variable `JIRA_BASE_URL`를 설정하면 자동으로 표시됩니다.')
+            }
+
+            bodyLines.push('- 안내: Jira 개발 정보 연결을 위해 PR 제목이나 브랜치 이름에 이슈 키를 유지해주세요.')
+
+            const body = bodyLines.join('\n')
+            const { owner, repo } = context.repo
+            const issue_number = context.payload.pull_request.number
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            })
+
+            const existing = comments.find((comment) => comment.body.includes(marker))
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              })
+              return
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body,
+            })
