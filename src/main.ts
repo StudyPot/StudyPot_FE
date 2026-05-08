@@ -4,10 +4,17 @@ import { createPinia } from 'pinia'
 import App from './app/App.vue'
 import router from './app/router'
 import './app/styles/index.css'
+import { enableMocking } from './shared/api/msw/enableMocking'
 
-const app = createApp(App)
+async function bootstrap(): Promise<void> {
+  await enableMocking()
 
-app.use(createPinia())
-app.use(router)
+  const app = createApp(App)
 
-app.mount('#app')
+  app.use(createPinia())
+  app.use(router)
+
+  app.mount('#app')
+}
+
+void bootstrap()
