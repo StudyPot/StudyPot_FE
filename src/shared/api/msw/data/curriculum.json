@@ -1,0 +1,145 @@
+{
+  "curriculum": {
+    "id": "018f7a4e-3000-7000-9000-000000000001",
+    "groupId": "018f7a4e-0000-7000-9000-000000000011",
+    "title": "Spring Boot 실전 - 살아있는 학습 계획",
+    "status": "ACTIVE",
+    "onboardingSummary": {
+      "submittedMemberCount": 3,
+      "pendingMemberCount": 2,
+      "detailKeywordSignals": [
+        {
+          "keyword": "JPA",
+          "averageSkillLevel": 3.3
+        },
+        {
+          "keyword": "Spring Security",
+          "averageSkillLevel": 2.4
+        },
+        {
+          "keyword": "테스트 코드",
+          "averageSkillLevel": 3.0
+        }
+      ],
+      "taskPreferenceSignals": [
+        {
+          "taskType": "PRACTICE",
+          "averageScore": 4.7
+        },
+        {
+          "taskType": "ASSIGNMENT",
+          "averageScore": 4.0
+        },
+        {
+          "taskType": "READING",
+          "averageScore": 3.0
+        }
+      ],
+      "notes": [
+        "실습 선호도가 높아 Practice와 Assignment 비중을 확대합니다.",
+        "보안 파트 이해도가 상대적으로 낮아 Security 주차를 현재 주차로 배치합니다."
+      ]
+    },
+    "weeks": [
+      {
+        "id": "018f7a4e-4000-7000-9000-000000000001",
+        "weekNumber": 1,
+        "title": "JPA 엔티티 매핑",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "018f7a4e-4000-7000-9000-000000000002",
+        "weekNumber": 2,
+        "title": "Security 기본기 다지기",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "018f7a4e-4000-7000-9000-000000000003",
+        "weekNumber": 3,
+        "title": "Spring Security 구조 이해",
+        "status": "IN_PROGRESS"
+      },
+      {
+        "id": "018f7a4e-4000-7000-9000-000000000004",
+        "weekNumber": 4,
+        "title": "인증/인가 실전",
+        "status": "PENDING"
+      }
+    ]
+  },
+  "currentWeek": {
+    "id": "018f7a4e-4000-7000-9000-000000000003",
+    "groupId": "018f7a4e-0000-7000-9000-000000000011",
+    "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
+    "weekNumber": 3,
+    "title": "Spring Security 구조 이해",
+    "status": "IN_PROGRESS",
+    "startsAt": "2026-05-18",
+    "endsAt": "2026-05-24",
+    "focus": "필터 체인과 인증 흐름 이해",
+    "progress": {
+      "status": "IN_PROGRESS",
+      "completedTaskCount": 1,
+      "totalTaskCount": 3,
+      "incompleteTaskCount": 0
+    }
+  },
+  "tasks": [
+    {
+      "id": "018f7a4e-5000-7000-9000-000000000001",
+      "weekId": "018f7a4e-4000-7000-9000-000000000003",
+      "displayOrder": 1,
+      "title": "Spring Security Architecture 문서 정독",
+      "description": "공식 문서의 Architecture 챕터를 읽고 핵심 개념 5가지를 메모해 주세요.",
+      "taskType": "READING",
+      "dueAt": "2026-05-23T20:00:00+09:00",
+      "completion": {
+        "status": "DONE",
+        "completedAt": "2026-05-21T19:30:00+09:00",
+        "completionNote": "필터 체인과 AuthenticationEntryPoint 흐름 정리 완료"
+      }
+    },
+    {
+      "id": "018f7a4e-5000-7000-9000-000000000002",
+      "weekId": "018f7a4e-4000-7000-9000-000000000003",
+      "displayOrder": 2,
+      "title": "Filter Chain 직접 구성하기",
+      "description": "강의 자료 4-2를 따라 인증/인가 필터를 구성하고, 동작을 캡처해 공유해 주세요.",
+      "taskType": "PRACTICE",
+      "dueAt": "2026-05-23T21:00:00+09:00",
+      "completion": {
+        "status": "TODO",
+        "completedAt": null,
+        "completionNote": null
+      }
+    },
+    {
+      "id": "018f7a4e-5000-7000-9000-000000000003",
+      "weekId": "018f7a4e-4000-7000-9000-000000000003",
+      "displayOrder": 3,
+      "title": "JWT 인증 흐름 다이어그램 그리기",
+      "description": "요청부터 응답까지 흐름을 본인 언어로 그려 공유해 주세요.",
+      "taskType": "ASSIGNMENT",
+      "dueAt": "2026-05-24T21:00:00+09:00",
+      "completion": {
+        "status": "TODO",
+        "completedAt": null,
+        "completionNote": null
+      }
+    }
+  ],
+  "updateWeekProgressRequest": {
+    "status": "IN_PROGRESS"
+  },
+  "completeTaskRequest": {
+    "status": "DONE",
+    "completionNote": "필터 흐름 테스트까지 완료했습니다."
+  },
+  "incompleteTaskRequest": {
+    "status": "INCOMPLETE",
+    "incompleteReason": "예상보다 실습 시간이 길어져 마감 전까지 완료하지 못했습니다."
+  },
+  "skipTaskRequest": {
+    "status": "SKIPPED"
+  }
+}

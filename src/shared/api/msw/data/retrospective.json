@@ -1,0 +1,44 @@
+{
+  "requestRetrospectiveRequest": {
+    "triggerType": "WEEK_ENDED"
+  },
+  "retrospective": {
+    "id": "018f7a4e-6000-7000-9000-000000000001",
+    "weekId": "018f7a4e-4000-7000-9000-000000000002",
+    "status": "COMPLETED",
+    "triggerType": "WEEK_ENDED",
+    "inputSummary": {
+      "completedTaskCount": 2,
+      "incompleteTaskCount": 1,
+      "incompleteReasons": [
+        "인가 정책 정리에서 권한 표현 방식을 비교하는 데 예상보다 시간이 오래 걸렸습니다."
+      ]
+    },
+    "feedback": {
+      "summary": "이번 주는 기본 개념 정리보다 실습 과제에서 더 높은 몰입을 보였습니다.",
+      "strengths": [
+        "필터 체인 흐름을 직접 그려보며 개념을 구조화했습니다.",
+        "테스트 코드 도입 시점에 대한 질문이 구체적이었습니다."
+      ],
+      "risks": [
+        "인가 정책 작성에서 용어 정리가 덜 되어 권한 모델 비교가 길어졌습니다.",
+        "주말 학습 시간이 평일 대비 30% 낮았습니다."
+      ],
+      "suggestedActions": [
+        "다음 주에는 Practice 비중을 55%까지 높입니다.",
+        "권한 표현은 enum 기반 설계 예시 4개를 먼저 비교해보세요."
+      ]
+    },
+    "nextWeekAdjustment": {
+      "difficulty": "중상",
+      "practiceRatio": 55,
+      "assignmentCount": 2,
+      "additionalResources": [
+        "Spring Security 공식 문서 - FilterChainProxy",
+        "표현식 기반 권한 제어 예시 4선"
+      ]
+    },
+    "createdAt": "2026-05-17T22:10:00+09:00",
+    "completedAt": "2026-05-17T22:10:04+09:00"
+  }
+}

@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw'
 
-import { mockAuthTokenResponse } from '@/shared/api/msw/fixtures'
+import { mockMswData } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
 
 type RefreshSessionRequest = {
@@ -25,10 +25,6 @@ export const refreshSessionHandlers = [
       )
     }
 
-    return HttpResponse.json({
-      ...mockAuthTokenResponse,
-      accessToken: 'mock-access-token-refreshed',
-      refreshToken: 'mock-refresh-token-rotated',
-    })
+    return HttpResponse.json(mockMswData.auth.refreshResponse)
   }),
 ]

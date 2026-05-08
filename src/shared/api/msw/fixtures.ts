@@ -1,13 +1,22 @@
-export const mockUser = {
-  id: '018f7a4e-0000-7000-9000-000000000001',
-  email: 'user@example.com',
-  nickname: 'user1',
-}
+import aiTeamLeaderData from './data/ai-team-leader.json'
+import authData from './data/auth.json'
+import curriculumData from './data/curriculum.json'
+import groupsData from './data/groups.json'
+import notificationsData from './data/notifications.json'
+import onboardingData from './data/onboarding.json'
+import retrospectiveData from './data/retrospective.json'
+import userData from './data/user.json'
 
-export const mockAuthTokenResponse = {
-  accessToken: 'mock-access-token',
-  refreshToken: 'mock-refresh-token',
-  tokenType: 'Bearer',
-  expiresIn: 3600,
-  user: mockUser,
+export const mockUser = userData.currentUser
+export const mockAuthTokenResponse = authData.googleLoginResponse
+
+export const mockMswData = {
+  aiTeamLeader: aiTeamLeaderData,
+  auth: authData,
+  curriculum: curriculumData,
+  groups: groupsData,
+  notifications: notificationsData,
+  onboarding: onboardingData,
+  retrospective: retrospectiveData,
+  user: userData,
 }

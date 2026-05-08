@@ -1,0 +1,127 @@
+{
+  "notifications": [
+    {
+      "id": "018f7a4e-9000-7000-9000-000000000001",
+      "type": "INCOMPLETE_REASON_REQUESTED",
+      "channel": "IN_APP",
+      "status": "DELIVERED",
+      "title": "미완료 사유가 필요합니다",
+      "body": "도훈 - 2주차 인가 정책 정리의 미완료 사유를 남겨주세요.",
+      "payload": {
+        "action": "WRITE_INCOMPLETE_REASON",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002",
+        "taskId": "018f7a4e-5000-7000-9000-000000000099"
+      },
+      "relatedResourceIds": {
+        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002",
+        "taskId": "018f7a4e-5000-7000-9000-000000000099"
+      },
+      "deliveredAt": "2026-05-18T09:00:00+09:00",
+      "readAt": null,
+      "createdAt": "2026-05-18T09:00:00+09:00"
+    },
+    {
+      "id": "018f7a4e-9000-7000-9000-000000000002",
+      "type": "RETROSPECTIVE_READY",
+      "channel": "IN_APP",
+      "status": "READ",
+      "title": "2주차 회고가 준비되었어요",
+      "body": "AI 팀장이 다음 주 조정안을 함께 제안했어요.",
+      "payload": {
+        "action": "OPEN_RETROSPECTIVE",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002"
+      },
+      "relatedResourceIds": {
+        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002"
+      },
+      "deliveredAt": "2026-05-18T10:00:00+09:00",
+      "readAt": "2026-05-18T10:05:00+09:00",
+      "createdAt": "2026-05-18T10:00:00+09:00"
+    },
+    {
+      "id": "018f7a4e-9000-7000-9000-000000000003",
+      "type": "WEEK_STARTED",
+      "channel": "IN_APP",
+      "status": "DELIVERED",
+      "title": "이번 주 할 일이 게시되었어요",
+      "body": "Spring Security 구조 이해 - 3개 할 일이 준비됐습니다.",
+      "payload": {
+        "action": "OPEN_CURRENT_WEEK",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003"
+      },
+      "relatedResourceIds": {
+        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003"
+      },
+      "deliveredAt": "2026-05-18T09:14:00+09:00",
+      "readAt": null,
+      "createdAt": "2026-05-18T09:14:00+09:00"
+    }
+  ],
+  "groupNotificationLogs": [
+    {
+      "id": "018f7a4e-9000-7000-9000-000000000001",
+      "recipientUserId": "018f7a4e-0000-7000-9000-000000000003",
+      "type": "INCOMPLETE_REASON_REQUESTED",
+      "channel": "IN_APP",
+      "status": "DELIVERED",
+      "title": "미완료 사유가 필요합니다",
+      "body": "도훈 - 2주차 인가 정책 정리의 미완료 사유를 남겨주세요.",
+      "payload": {
+        "action": "WRITE_INCOMPLETE_REASON",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002",
+        "taskId": "018f7a4e-5000-7000-9000-000000000099"
+      },
+      "relatedResourceIds": {
+        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002",
+        "taskId": "018f7a4e-5000-7000-9000-000000000099"
+      },
+      "deliveredAt": "2026-05-18T09:00:00+09:00",
+      "readAt": null,
+      "createdAt": "2026-05-18T09:00:00+09:00"
+    },
+    {
+      "id": "018f7a4e-9000-7000-9000-000000000002",
+      "recipientUserId": "018f7a4e-0000-7000-9000-000000000001",
+      "type": "RETROSPECTIVE_READY",
+      "channel": "IN_APP",
+      "status": "READ",
+      "title": "2주차 회고가 준비되었어요",
+      "body": "AI 팀장이 다음 주 조정안을 함께 제안했어요.",
+      "payload": {
+        "action": "OPEN_RETROSPECTIVE",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002"
+      },
+      "relatedResourceIds": {
+        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002"
+      },
+      "deliveredAt": "2026-05-18T10:00:00+09:00",
+      "readAt": "2026-05-18T10:05:00+09:00",
+      "createdAt": "2026-05-18T10:00:00+09:00"
+    },
+    {
+      "id": "018f7a4e-9000-7000-9000-000000000003",
+      "recipientUserId": "018f7a4e-0000-7000-9000-000000000001",
+      "type": "WEEK_STARTED",
+      "channel": "IN_APP",
+      "status": "DELIVERED",
+      "title": "이번 주 할 일이 게시되었어요",
+      "body": "Spring Security 구조 이해 - 3개 할 일이 준비됐습니다.",
+      "payload": {
+        "action": "OPEN_CURRENT_WEEK",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003"
+      },
+      "relatedResourceIds": {
+        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003"
+      },
+      "deliveredAt": "2026-05-18T09:14:00+09:00",
+      "readAt": null,
+      "createdAt": "2026-05-18T09:14:00+09:00"
+    }
+  ]
+}
