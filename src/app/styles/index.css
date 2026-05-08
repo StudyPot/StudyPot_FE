@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+:root {
+  color: #14213d;
+  font-family:
+    'Pretendard Variable', Pretendard, 'SUIT Variable', 'Noto Sans KR', 'Apple SD Gothic Neo',
+    'Malgun Gothic', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(55, 102, 255, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(87, 181, 255, 0.18), transparent 24%),
+    linear-gradient(180deg, #fcfaf4 0%, #f6f4ee 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --color-surface: #f6f1e8;
+  --color-panel: #f3f0ff;
+  --color-card: #eef1ff;
+  --color-primary: #365cff;
+  --color-primary-deep: #2448df;
+  --color-ink: #16223b;
+  --color-muted: #68748f;
+  --color-line: rgba(99, 113, 146, 0.16);
+  --shadow-soft: 0 24px 80px rgba(76, 96, 133, 0.12);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(55, 102, 255, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(87, 181, 255, 0.18), transparent 24%),
+    linear-gradient(180deg, #fcfaf4 0%, #f6f4ee 100%);
+  color: var(--color-ink);
+}
+
+body,
+#app {
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(54, 92, 255, 0.18);
+}
