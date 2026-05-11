@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { apiClient, ApiError } from '@/shared/api'
+import type { ApiError } from '@/shared/api'
+import { apiClient } from '@/shared/api'
 
 describe('apiClient', () => {
   afterEach(() => {
@@ -8,7 +9,7 @@ describe('apiClient', () => {
   })
 
   it('sends cookie credentials by default and parses JSON responses', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify({ id: 'user-1' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -25,7 +26,7 @@ describe('apiClient', () => {
   })
 
   it('serializes object bodies as JSON', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -46,7 +47,10 @@ describe('apiClient', () => {
   })
 
   it('returns undefined for 204 responses without parsing a body', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 })),
+    )
 
     await expect(apiClient('/auth/logout', { method: 'POST' })).resolves.toBeUndefined()
   })
@@ -61,7 +65,7 @@ describe('apiClient', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
+      vi.fn<typeof fetch>().mockResolvedValue(
         new Response(JSON.stringify(problemDetail), {
           status: 400,
           headers: { 'Content-Type': 'application/problem+json' },

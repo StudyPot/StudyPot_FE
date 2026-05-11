@@ -8,7 +8,6 @@ import retrospectiveData from './data/retrospective.json'
 import userData from './data/user.json'
 
 export const mockUser = userData.currentUser
-export const mockAuthTokenResponse = authData.googleLoginResponse
 
 export const mockMswData = {
   aiTeamLeader: aiTeamLeaderData,
