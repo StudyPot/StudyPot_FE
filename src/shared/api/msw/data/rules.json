@@ -1,0 +1,70 @@
+{
+  "rules": [
+    {
+      "id": "018f7a4e-a000-7000-9000-000000000001",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "createdBy": "018f7a4e-0000-7000-9000-000000000001",
+      "ruleType": "TASK_DEADLINE",
+      "config": {
+        "graceHours": 24,
+        "requiredTaskOnly": true
+      },
+      "description": "Required tasks must be completed within 24 hours after the due date.",
+      "active": true,
+      "createdAt": "2026-05-18T09:00:00Z",
+      "updatedAt": "2026-05-18T09:00:00Z",
+      "deletedAt": null
+    },
+    {
+      "id": "018f7a4e-a000-7000-9000-000000000002",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "createdBy": "018f7a4e-0000-7000-9000-000000000001",
+      "ruleType": "RETROSPECTIVE_REQUIRED",
+      "config": {
+        "required": true
+      },
+      "description": "Members should request a weekly retrospective after finishing tasks.",
+      "active": true,
+      "createdAt": "2026-05-18T09:05:00Z",
+      "updatedAt": "2026-05-18T09:05:00Z",
+      "deletedAt": null
+    }
+  ],
+  "violations": [
+    {
+      "id": "018f7a4e-a100-7000-9000-000000000001",
+      "ruleId": "018f7a4e-a000-7000-9000-000000000001",
+      "memberId": "018f7a4e-1000-7000-9000-000000000004",
+      "taskCompletionId": "018f7a4e-5000-7000-9000-000000000099",
+      "violationType": "INCOMPLETE_REASON_MISSING",
+      "details": {
+        "taskTitle": "Filter Chain practice"
+      },
+      "status": "OPEN",
+      "resolvedAt": null,
+      "resolvedNote": null,
+      "occurredAt": "2026-05-24T12:00:00Z",
+      "createdAt": "2026-05-24T12:05:00Z"
+    }
+  ],
+  "saveRuleRequest": {
+    "config": {
+      "graceHours": 24
+    },
+    "description": "Required tasks must be completed within 24 hours after the due date.",
+    "active": true
+  },
+  "recordViolationRequest": {
+    "ruleId": "018f7a4e-a000-7000-9000-000000000001",
+    "memberId": "018f7a4e-1000-7000-9000-000000000004",
+    "taskCompletionId": "018f7a4e-5000-7000-9000-000000000099",
+    "violationType": "INCOMPLETE_REASON_MISSING",
+    "details": {
+      "taskTitle": "Filter Chain practice"
+    },
+    "occurredAt": "2026-05-24T12:00:00Z"
+  },
+  "handleViolationRequest": {
+    "note": "Resolved after member submitted the missing reason."
+  }
+}

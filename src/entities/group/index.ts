@@ -1,2 +1,10 @@
-export { listGroups } from './api/groupsApi'
-export type { StudyGroup, StudyGroupStatus } from './model/types'
+export { createGroup, joinGroup, listGroups } from './api/groupsApi'
+export type {
+  CreateGroupRequest,
+  GroupMember,
+  GroupMemberPermission,
+  GroupMemberStatus,
+  JoinGroupRequest,
+  StudyGroup,
+  StudyGroupStatus,
+} from './model/types'
