@@ -93,9 +93,15 @@ function formatDate(value: string): string {
       </div>
 
       <div class="flex flex-wrap gap-2">
+        <RouterLink
+          :to="{ name: 'group-create' }"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+        >
+          새 그룹 만들기
+        </RouterLink>
         <button
           type="button"
-          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
           @click="loadGroups"
         >
           새로고침
@@ -128,8 +134,17 @@ function formatDate(value: string): string {
       class="mt-8"
       variant="empty"
       title="아직 참여 중인 그룹이 없습니다."
-      description="그룹 생성과 초대 코드 참여가 연결되면 이곳에서 바로 시작할 수 있습니다."
-    />
+      description="새 스터디 그룹을 만들고 바로 온보딩 단계로 이동할 수 있습니다."
+    >
+      <template #actions>
+        <RouterLink
+          :to="{ name: 'group-create' }"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+        >
+          새 그룹 만들기
+        </RouterLink>
+      </template>
+    </ScreenState>
 
     <section v-else class="grid gap-4 py-8 sm:grid-cols-2">
       <RouterLink
