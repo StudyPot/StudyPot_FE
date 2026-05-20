@@ -5,6 +5,10 @@ export function listGroups(): Promise<StudyGroup[]> {
   return apiClient<StudyGroup[]>('/groups')
 }
 
+export function getGroup(groupId: string): Promise<StudyGroup> {
+  return apiClient<StudyGroup>(`/groups/${groupId}`)
+}
+
 export function createGroup(request: CreateGroupRequest): Promise<StudyGroup> {
   return apiClient<StudyGroup>('/groups', {
     method: 'POST',
