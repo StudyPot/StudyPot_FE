@@ -3,6 +3,11 @@ import type { RouteRecordRaw } from 'vue-router'
 
 import { useSessionStore } from '@/features/auth/session'
 import { AuthCallbackPage } from '@/pages/auth-callback'
+import {
+  GroupFeaturePlaceholderPage,
+  GroupOverviewPage,
+  GroupWorkspacePage,
+} from '@/pages/group-workspace'
 import { GroupsPage } from '@/pages/groups'
 import { LoginPage } from '../../pages/login'
 
@@ -45,6 +50,87 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
     },
+  },
+  {
+    path: '/groups/:groupId',
+    component: GroupWorkspacePage,
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'group-overview',
+        component: GroupOverviewPage,
+        meta: {
+          workspaceTitle: '그룹 홈',
+          workspaceSummary: '그룹의 주요 학습 흐름으로 이동합니다.',
+        },
+      },
+      {
+        path: 'onboarding',
+        name: 'group-onboarding',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: '온보딩',
+          workspaceSummary: '나의 준비도와 가능한 시간을 정리합니다.',
+        },
+      },
+      {
+        path: 'curriculum',
+        name: 'group-curriculum',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: '커리큘럼',
+          workspaceSummary: '스터디 전체 주차 계획을 확인합니다.',
+        },
+      },
+      {
+        path: 'todo',
+        name: 'group-todo',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: 'Todo',
+          workspaceSummary: '이번 주 과제와 나의 진행 상태를 확인합니다.',
+        },
+      },
+      {
+        path: 'retrospective',
+        name: 'group-retrospective',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: '회고',
+          workspaceSummary: '주차별 회고와 AI 피드백을 확인합니다.',
+        },
+      },
+      {
+        path: 'ai',
+        name: 'group-ai',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: 'AI 팀장',
+          workspaceSummary: '그룹 학습 흐름을 AI 팀장과 함께 점검합니다.',
+        },
+      },
+      {
+        path: 'notifications',
+        name: 'group-notifications',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: '알림',
+          workspaceSummary: '그룹과 나에게 온 알림을 확인합니다.',
+        },
+      },
+      {
+        path: 'rules',
+        name: 'group-rules',
+        component: GroupFeaturePlaceholderPage,
+        meta: {
+          workspaceTitle: '규칙',
+          workspaceSummary: '그룹 운영 규칙과 위반 내역을 관리합니다.',
+        },
+      },
+    ],
   },
 ]
 
