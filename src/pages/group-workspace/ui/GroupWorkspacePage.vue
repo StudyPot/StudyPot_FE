@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { getGroup, getGroupStatusLabel, type StudyGroup } from '@/entities/group'
 import { LogoutButton } from '@/features/auth/logout'
 import { LogoutAllButton } from '@/features/auth/logout-all'
 import { useSessionStore } from '@/features/auth/session'
+import { ApiError } from '@/shared/api'
+import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
 type WorkspaceNavItem = {
   routeName: string
@@ -17,6 +20,9 @@ const sessionStore = useSessionStore()
 
 const groupId = computed(() => String(route.params.groupId ?? ''))
 const shortGroupId = computed(() => groupId.value.slice(-8).toUpperCase())
+const group = ref<StudyGroup | null>(null)
+const isGroupLoading = ref(false)
+const groupErrorMessage = ref('')
 
 const navItems: WorkspaceNavItem[] = [
   {
@@ -60,6 +66,52 @@ const navItems: WorkspaceNavItem[] = [
     detail: '운영',
   },
 ]
+
+watch(
+  groupId,
+  () => {
+    void loadGroup()
+  },
+  { immediate: true },
+)
+
+provide(groupWorkspaceContextKey, {
+  groupId,
+  group,
+  isGroupLoading,
+  groupErrorMessage,
+  reloadGroup: loadGroup,
+})
+
+async function loadGroup(): Promise<void> {
+  if (!groupId.value) {
+    return
+  }
+
+  isGroupLoading.value = true
+  groupErrorMessage.value = ''
+  group.value = null
+
+  try {
+    group.value = await getGroup(groupId.value)
+  } catch (error) {
+    groupErrorMessage.value =
+      error instanceof ApiError ? error.message : '그룹 정보를 불러오지 못했습니다.'
+  } finally {
+    isGroupLoading.value = false
+  }
+}
+
+function formatDateRange(startsAt: string, endsAt: string): string {
+  return `${formatDate(startsAt)} - ${formatDate(endsAt)}`
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value))
+}
 </script>
 
 <template>
@@ -77,12 +129,50 @@ const navItems: WorkspaceNavItem[] = [
               그룹 목록
             </RouterLink>
             <div class="mt-4">
-              <p class="text-sm font-semibold text-[var(--color-primary)]">StudyPot</p>
+              <p class="text-sm font-semibold text-[var(--color-primary)]">
+                {{ group?.topic ?? 'StudyPot' }}
+              </p>
               <h1 class="mt-1 text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
-                그룹 워크스페이스
+                {{ group?.name ?? '그룹 워크스페이스' }}
               </h1>
-              <p class="mt-2 break-all text-sm text-[var(--color-muted)]">
-                {{ shortGroupId || groupId }}
+              <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                <span
+                  v-if="isGroupLoading"
+                  class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-[var(--color-muted)]"
+                >
+                  그룹 정보 확인 중
+                </span>
+                <span
+                  v-if="group"
+                  class="rounded-md bg-[var(--color-card)] px-2.5 py-1 text-[var(--color-primary-deep)]"
+                >
+                  {{ getGroupStatusLabel(group.status) }}
+                </span>
+                <span
+                  v-if="group"
+                  class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-[var(--color-muted)]"
+                >
+                  {{ formatDateRange(group.startsAt, group.endsAt) }}
+                </span>
+                <span
+                  v-if="group"
+                  class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-[var(--color-muted)]"
+                >
+                  초대 코드 {{ group.inviteCode }}
+                </span>
+                <span
+                  v-if="!group && !isGroupLoading"
+                  class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-[var(--color-muted)]"
+                >
+                  {{ shortGroupId || groupId }}
+                </span>
+              </div>
+              <p
+                v-if="groupErrorMessage"
+                role="alert"
+                class="mt-3 text-sm font-semibold text-red-700"
+              >
+                {{ groupErrorMessage }}
               </p>
             </div>
           </div>

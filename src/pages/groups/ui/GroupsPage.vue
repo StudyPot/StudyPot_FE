@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import { listGroups, type StudyGroup, type StudyGroupStatus } from '@/entities/group'
+import {
+  getGroupListPrimaryEntry,
+  getGroupStatusLabel,
+  listGroups,
+  type GroupEntryAction,
+  type StudyGroup,
+  type StudyGroupStatus,
+} from '@/entities/group'
 import { LogoutButton } from '@/features/auth/logout'
 import { LogoutAllButton } from '@/features/auth/logout-all'
 import { ApiError } from '@/shared/api'
@@ -31,40 +38,8 @@ async function loadGroups(): Promise<void> {
   }
 }
 
-function getStatusLabel(status: StudyGroupStatus): string {
-  const statusLabels: Record<StudyGroupStatus, string> = {
-    DRAFT: '준비 중',
-    ONBOARDING: '온보딩',
-    ACTIVE: '진행 중',
-    COMPLETED: '완료',
-    ARCHIVED: '보관됨',
-  }
-
-  return statusLabels[status]
-}
-
-function getPrimaryRouteName(status: StudyGroupStatus): string {
-  const routeNames: Record<StudyGroupStatus, string> = {
-    DRAFT: 'group-overview',
-    ONBOARDING: 'group-onboarding',
-    ACTIVE: 'group-todo',
-    COMPLETED: 'group-retrospective',
-    ARCHIVED: 'group-overview',
-  }
-
-  return routeNames[status]
-}
-
-function getPrimaryActionLabel(status: StudyGroupStatus): string {
-  const labels: Record<StudyGroupStatus, string> = {
-    DRAFT: '그룹 홈',
-    ONBOARDING: '온보딩',
-    ACTIVE: '이번 주 Todo',
-    COMPLETED: '회고',
-    ARCHIVED: '그룹 홈',
-  }
-
-  return labels[status]
+function getPrimaryEntry(status: StudyGroupStatus): GroupEntryAction {
+  return getGroupListPrimaryEntry(status)
 }
 
 function formatDateRange(startsAt: string, endsAt: string): string {
@@ -93,9 +68,21 @@ function formatDate(value: string): string {
       </div>
 
       <div class="flex flex-wrap gap-2">
+        <RouterLink
+          :to="{ name: 'group-create' }"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+        >
+          새 그룹 만들기
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'group-join' }"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        >
+          초대 코드로 참여
+        </RouterLink>
         <button
           type="button"
-          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
           @click="loadGroups"
         >
           새로고침
@@ -128,60 +115,91 @@ function formatDate(value: string): string {
       class="mt-8"
       variant="empty"
       title="아직 참여 중인 그룹이 없습니다."
-      description="그룹 생성과 초대 코드 참여가 연결되면 이곳에서 바로 시작할 수 있습니다."
-    />
+      description="새 스터디 그룹을 만들거나 공유받은 초대 코드로 참여할 수 있습니다."
+    >
+      <template #actions>
+        <RouterLink
+          :to="{ name: 'group-create' }"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+        >
+          새 그룹 만들기
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'group-join' }"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        >
+          초대 코드로 참여
+        </RouterLink>
+      </template>
+    </ScreenState>
 
     <section v-else class="grid gap-4 py-8 sm:grid-cols-2">
-      <RouterLink
+      <article
         v-for="group in groups"
         :key="group.id"
-        :to="{ name: getPrimaryRouteName(group.status), params: { groupId: group.id } }"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)] transition hover:border-[var(--color-primary)] hover:bg-white focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
       >
-        <article>
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-[var(--color-primary)]">{{ group.topic }}</p>
-              <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
-            </div>
-            <span
-              class="shrink-0 rounded-full bg-[var(--color-card)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-deep)]"
-            >
-              {{ getStatusLabel(group.status) }}
-            </span>
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-[var(--color-primary)]">{{ group.topic }}</p>
+            <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
           </div>
+          <span
+            class="shrink-0 rounded-full bg-[var(--color-card)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-deep)]"
+          >
+            {{ getGroupStatusLabel(group.status) }}
+          </span>
+        </div>
 
-          <dl class="mt-5 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt class="text-[var(--color-muted)]">기간</dt>
-              <dd class="mt-1 font-semibold text-[var(--color-ink)]">
-                {{ formatDateRange(group.startsAt, group.endsAt) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-[var(--color-muted)]">정원</dt>
-              <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.maxMembers }}명</dd>
-            </div>
-          </dl>
+        <p class="mt-4 text-sm leading-6 text-[var(--color-muted)]">
+          {{ getPrimaryEntry(group.status).summary }}
+        </p>
 
-          <div class="mt-5 flex flex-wrap gap-2">
-            <span
-              v-for="keyword in group.detailKeywords"
-              :key="keyword"
-              class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
-            >
-              {{ keyword }}
-            </span>
+        <dl class="mt-5 grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt class="text-[var(--color-muted)]">기간</dt>
+            <dd class="mt-1 font-semibold text-[var(--color-ink)]">
+              {{ formatDateRange(group.startsAt, group.endsAt) }}
+            </dd>
           </div>
-
-          <div class="mt-5 flex items-center justify-between gap-3">
-            <p class="break-all text-xs text-[var(--color-muted)]">초대 코드 {{ group.inviteCode }}</p>
-            <span class="text-sm font-semibold text-[var(--color-primary)]">
-              {{ getPrimaryActionLabel(group.status) }}
-            </span>
+          <div>
+            <dt class="text-[var(--color-muted)]">정원</dt>
+            <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.maxMembers }}명</dd>
           </div>
-        </article>
-      </RouterLink>
+        </dl>
+
+        <div class="mt-5 flex flex-wrap gap-2">
+          <span
+            v-for="keyword in group.detailKeywords"
+            :key="keyword"
+            class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
+          >
+            {{ keyword }}
+          </span>
+        </div>
+
+        <p class="mt-5 break-all text-xs text-[var(--color-muted)]">
+          초대 코드 {{ group.inviteCode }}
+        </p>
+
+        <div class="mt-5 flex flex-wrap justify-end gap-2">
+          <RouterLink
+            :to="{ name: 'group-overview', params: { groupId: group.id } }"
+            class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+          >
+            그룹 홈
+          </RouterLink>
+          <RouterLink
+            :to="{
+              name: getPrimaryEntry(group.status).routeName,
+              params: { groupId: group.id },
+            }"
+            class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+          >
+            {{ getPrimaryEntry(group.status).label }}
+          </RouterLink>
+        </div>
+      </article>
     </section>
   </main>
 </template>
