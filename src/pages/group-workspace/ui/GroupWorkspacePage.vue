@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { LogoutButton } from '@/features/auth/logout'
 import { useSessionStore } from '@/features/auth/session'
 
 type WorkspaceNavItem = {
@@ -87,10 +88,13 @@ const navItems: WorkspaceNavItem[] = [
 
           <div
             v-if="sessionStore.user"
-            class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-3 text-sm"
+            class="grid gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-3 text-sm"
           >
-            <p class="font-semibold text-[var(--color-ink)]">{{ sessionStore.user.nickname }}</p>
-            <p class="mt-1 text-[var(--color-muted)]">{{ sessionStore.user.email }}</p>
+            <div>
+              <p class="font-semibold text-[var(--color-ink)]">{{ sessionStore.user.nickname }}</p>
+              <p class="mt-1 text-[var(--color-muted)]">{{ sessionStore.user.email }}</p>
+            </div>
+            <LogoutButton />
           </div>
         </div>
       </header>

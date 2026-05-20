@@ -95,4 +95,32 @@ describe('useSessionStore', () => {
     expect(sessionStore.user).toBeNull()
     expect(sessionStore.status).toBe('anonymous')
   })
+
+  it('keeps the current session when logout fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            title: 'Logout failed',
+            status: 503,
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/problem+json' },
+          },
+        ),
+      ),
+    )
+
+    const sessionStore = useSessionStore()
+    sessionStore.user = mockUser
+    sessionStore.status = 'authenticated'
+
+    await expect(sessionStore.logoutCurrentSession()).rejects.toMatchObject({
+      status: 503,
+    })
+    expect(sessionStore.user).toEqual(mockUser)
+    expect(sessionStore.status).toBe('authenticated')
+  })
 })

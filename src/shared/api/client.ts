@@ -44,6 +44,8 @@ export async function apiClient<TResponse = unknown>(
     requestHeaders.set('Content-Type', 'application/json')
   }
 
+  appendCsrfHeader(requestHeaders, requestOptions.method)
+
   const response = await fetch(resolveApiUrl(path), {
     credentials: 'include',
     ...requestOptions,
@@ -120,4 +122,42 @@ function looksLikeJson(text: string): boolean {
   const trimmedText = text.trim()
 
   return trimmedText.startsWith('{') || trimmedText.startsWith('[')
+}
+
+function appendCsrfHeader(headers: Headers, method?: string): void {
+  if (!requiresCsrfHeader(method) || hasBearerAuthorization(headers)) {
+    return
+  }
+
+  if (headers.has('X-XSRF-TOKEN') || headers.has('X-CSRF-TOKEN')) {
+    return
+  }
+
+  const token = getCookieValue('XSRF-TOKEN')
+
+  if (token) {
+    headers.set('X-XSRF-TOKEN', token)
+  }
+}
+
+function requiresCsrfHeader(method = 'GET'): boolean {
+  return !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method.toUpperCase())
+}
+
+function hasBearerAuthorization(headers: Headers): boolean {
+  return headers.get('Authorization')?.toLowerCase().startsWith('bearer ') ?? false
+}
+
+function getCookieValue(name: string): string | null {
+  if (typeof document === 'undefined' || !document.cookie) {
+    return null
+  }
+
+  const prefix = `${encodeURIComponent(name)}=`
+  const cookie = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null
 }
