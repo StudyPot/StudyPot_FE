@@ -6,6 +6,7 @@ import { apiClient } from '@/shared/api'
 describe('apiClient', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/'
   })
 
   it('sends cookie credentials by default and parses JSON responses', async () => {
@@ -44,6 +45,41 @@ describe('apiClient', () => {
 
     expect(requestInit.body).toBe(JSON.stringify({ name: 'StudyPot' }))
     expect(new Headers(requestInit.headers).get('Content-Type')).toBe('application/json')
+  })
+
+  it('echoes the readable XSRF cookie for unsafe cookie requests', async () => {
+    document.cookie = 'XSRF-TOKEN=csrf-token-1'
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiClient('/auth/logout', {
+      method: 'POST',
+    })
+
+    const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit]
+
+    expect(new Headers(requestInit.headers).get('X-XSRF-TOKEN')).toBe('csrf-token-1')
+  })
+
+  it('does not add the XSRF header for bearer token requests', async () => {
+    document.cookie = 'XSRF-TOKEN=csrf-token-1'
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiClient('/auth/logout', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer access-token',
+      },
+    })
+
+    const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit]
+
+    expect(new Headers(requestInit.headers).get('X-XSRF-TOKEN')).toBeNull()
   })
 
   it('returns undefined for 204 responses without parsing a body', async () => {

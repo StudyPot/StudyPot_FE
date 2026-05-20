@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 
 import { listGroups, type StudyGroup, type StudyGroupStatus } from '@/entities/group'
+import { LogoutButton } from '@/features/auth/logout'
+import { LogoutAllButton } from '@/features/auth/logout-all'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 
@@ -90,13 +92,17 @@ function formatDate(value: string): string {
         </p>
       </div>
 
-      <button
-        type="button"
-        class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-        @click="loadGroups"
-      >
-        새로고침
-      </button>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+          @click="loadGroups"
+        >
+          새로고침
+        </button>
+        <LogoutButton />
+        <LogoutAllButton />
+      </div>
     </header>
 
     <ScreenState

@@ -1,4 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const noticeMessage = computed(() => {
+  if (route.query.signedOut === 'all') {
+    return '모든 기기에서 로그아웃되었습니다.'
+  }
+
+  if (route.query.signedOut === 'current') {
+    return '로그아웃되었습니다.'
+  }
+
+  return ''
+})
+
 function startGoogleLogin(): void {
   window.location.assign('/api/oauth2/authorization/google')
 }
@@ -7,6 +24,14 @@ function startGoogleLogin(): void {
 <template>
   <main class="flex min-h-screen items-center justify-center px-6 py-10">
     <section class="w-full max-w-sm rounded-lg border border-[var(--color-line)] bg-white p-6">
+      <p
+        v-if="noticeMessage"
+        role="status"
+        class="mb-4 rounded-md border border-[var(--color-line)] bg-[var(--color-card)] px-3 py-2 text-sm font-semibold text-[var(--color-primary-deep)]"
+      >
+        {{ noticeMessage }}
+      </p>
+
       <p class="text-base font-semibold text-[var(--color-ink)]">Google 계정으로 로그인</p>
       <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
         스터디 그룹과 AI 커리큘럼을 사용하려면 Google 계정으로 시작하세요.
@@ -45,3 +70,4 @@ function startGoogleLogin(): void {
     </section>
   </main>
 </template>
+
