@@ -40,6 +40,30 @@ function getStatusLabel(status: StudyGroupStatus): string {
   return statusLabels[status]
 }
 
+function getPrimaryRouteName(status: StudyGroupStatus): string {
+  const routeNames: Record<StudyGroupStatus, string> = {
+    DRAFT: 'group-overview',
+    ONBOARDING: 'group-onboarding',
+    ACTIVE: 'group-todo',
+    COMPLETED: 'group-retrospective',
+    ARCHIVED: 'group-overview',
+  }
+
+  return routeNames[status]
+}
+
+function getPrimaryActionLabel(status: StudyGroupStatus): string {
+  const labels: Record<StudyGroupStatus, string> = {
+    DRAFT: '그룹 홈',
+    ONBOARDING: '온보딩',
+    ACTIVE: '이번 주 Todo',
+    COMPLETED: '회고',
+    ARCHIVED: '그룹 홈',
+  }
+
+  return labels[status]
+}
+
 function formatDateRange(startsAt: string, endsAt: string): string {
   return `${formatDate(startsAt)} - ${formatDate(endsAt)}`
 }
@@ -94,55 +118,66 @@ function formatDate(value: string): string {
       v-else-if="!hasGroups"
       class="mt-8 rounded-lg border border-dashed border-[var(--color-line)] bg-white/75 p-8 text-center"
     >
-      <h2 class="text-lg font-semibold text-[var(--color-ink)]">아직 참여 중인 그룹이 없습니다.</h2>
+      <h2 class="text-lg font-semibold text-[var(--color-ink)]">
+        아직 참여 중인 그룹이 없습니다.
+      </h2>
       <p class="mt-2 text-sm text-[var(--color-muted)]">
-        그룹 생성과 초대 코드 참여 기능이 연결되면 이곳에서 바로 시작할 수 있습니다.
+        그룹 생성과 초대 코드 참여가 연결되면 이곳에서 바로 시작할 수 있습니다.
       </p>
     </section>
 
     <section v-else class="grid gap-4 py-8 sm:grid-cols-2">
-      <article
+      <RouterLink
         v-for="group in groups"
         :key="group.id"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        :to="{ name: getPrimaryRouteName(group.status), params: { groupId: group.id } }"
+        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)] transition hover:border-[var(--color-primary)] hover:bg-white focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
       >
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-sm font-semibold text-[var(--color-primary)]">{{ group.topic }}</p>
-            <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
+        <article>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-[var(--color-primary)]">{{ group.topic }}</p>
+              <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
+            </div>
+            <span
+              class="shrink-0 rounded-full bg-[var(--color-card)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-deep)]"
+            >
+              {{ getStatusLabel(group.status) }}
+            </span>
           </div>
-          <span
-            class="shrink-0 rounded-full bg-[var(--color-card)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-deep)]"
-          >
-            {{ getStatusLabel(group.status) }}
-          </span>
-        </div>
 
-        <dl class="mt-5 grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <dt class="text-[var(--color-muted)]">기간</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">
-              {{ formatDateRange(group.startsAt, group.endsAt) }}
-            </dd>
+          <dl class="mt-5 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <dt class="text-[var(--color-muted)]">기간</dt>
+              <dd class="mt-1 font-semibold text-[var(--color-ink)]">
+                {{ formatDateRange(group.startsAt, group.endsAt) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[var(--color-muted)]">정원</dt>
+              <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.maxMembers }}명</dd>
+            </div>
+          </dl>
+
+          <div class="mt-5 flex flex-wrap gap-2">
+            <span
+              v-for="keyword in group.detailKeywords"
+              :key="keyword"
+              class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
+            >
+              {{ keyword }}
+            </span>
           </div>
-          <div>
-            <dt class="text-[var(--color-muted)]">정원</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.maxMembers }}명</dd>
+
+          <div class="mt-5 flex items-center justify-between gap-3">
+            <p class="break-all text-xs text-[var(--color-muted)]">초대 코드 {{ group.inviteCode }}</p>
+            <span class="text-sm font-semibold text-[var(--color-primary)]">
+              {{ getPrimaryActionLabel(group.status) }}
+            </span>
           </div>
-        </dl>
-
-        <div class="mt-5 flex flex-wrap gap-2">
-          <span
-            v-for="keyword in group.detailKeywords"
-            :key="keyword"
-            class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
-          >
-            {{ keyword }}
-          </span>
-        </div>
-
-        <p class="mt-5 text-xs text-[var(--color-muted)]">초대 코드 {{ group.inviteCode }}</p>
-      </article>
+        </article>
+      </RouterLink>
     </section>
   </main>
 </template>
+
