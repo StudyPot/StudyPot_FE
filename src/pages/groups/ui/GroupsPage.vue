@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import { listGroups, type StudyGroup, type StudyGroupStatus } from '@/entities/group'
 import { ApiError } from '@/shared/api'
+import { ScreenState } from '@/shared/ui'
 
 const groups = ref<StudyGroup[]>([])
 const isLoading = ref(true)
@@ -98,33 +99,31 @@ function formatDate(value: string): string {
       </button>
     </header>
 
-    <section v-if="isLoading" class="grid gap-4 py-8 sm:grid-cols-2">
-      <div
-        v-for="index in 4"
-        :key="index"
-        class="h-48 animate-pulse rounded-lg border border-[var(--color-line)] bg-white/70"
-      />
-    </section>
+    <ScreenState
+      v-if="isLoading"
+      class="mt-8"
+      variant="loading"
+      title="그룹을 불러오는 중입니다."
+      description="참여 중인 스터디 그룹과 다음 이동 경로를 확인하고 있습니다."
+    />
 
-    <section
+    <ScreenState
       v-else-if="errorMessage"
-      class="mt-8 rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-700"
-    >
-      <p class="font-semibold">목록을 불러오지 못했습니다.</p>
-      <p class="mt-2">{{ errorMessage }}</p>
-    </section>
+      class="mt-8"
+      variant="error"
+      title="목록을 불러오지 못했습니다."
+      :description="errorMessage"
+      action-label="다시 시도"
+      @action="loadGroups"
+    />
 
-    <section
+    <ScreenState
       v-else-if="!hasGroups"
-      class="mt-8 rounded-lg border border-dashed border-[var(--color-line)] bg-white/75 p-8 text-center"
-    >
-      <h2 class="text-lg font-semibold text-[var(--color-ink)]">
-        아직 참여 중인 그룹이 없습니다.
-      </h2>
-      <p class="mt-2 text-sm text-[var(--color-muted)]">
-        그룹 생성과 초대 코드 참여가 연결되면 이곳에서 바로 시작할 수 있습니다.
-      </p>
-    </section>
+      class="mt-8"
+      variant="empty"
+      title="아직 참여 중인 그룹이 없습니다."
+      description="그룹 생성과 초대 코드 참여가 연결되면 이곳에서 바로 시작할 수 있습니다."
+    />
 
     <section v-else class="grid gap-4 py-8 sm:grid-cols-2">
       <RouterLink
@@ -180,4 +179,3 @@ function formatDate(value: string): string {
     </section>
   </main>
 </template>
-
