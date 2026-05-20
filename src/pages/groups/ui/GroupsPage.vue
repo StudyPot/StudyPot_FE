@@ -99,6 +99,12 @@ function formatDate(value: string): string {
         >
           새 그룹 만들기
         </RouterLink>
+        <RouterLink
+          :to="{ name: 'group-join' }"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        >
+          초대 코드로 참여
+        </RouterLink>
         <button
           type="button"
           class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
@@ -134,7 +140,7 @@ function formatDate(value: string): string {
       class="mt-8"
       variant="empty"
       title="아직 참여 중인 그룹이 없습니다."
-      description="새 스터디 그룹을 만들고 바로 온보딩 단계로 이동할 수 있습니다."
+      description="새 스터디 그룹을 만들거나 공유받은 초대 코드로 참여할 수 있습니다."
     >
       <template #actions>
         <RouterLink
@@ -142,6 +148,12 @@ function formatDate(value: string): string {
           class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
         >
           새 그룹 만들기
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'group-join' }"
+          class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        >
+          초대 코드로 참여
         </RouterLink>
       </template>
     </ScreenState>

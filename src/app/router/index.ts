@@ -4,6 +4,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { useSessionStore } from '@/features/auth/session'
 import { AuthCallbackPage } from '@/pages/auth-callback'
 import { GroupCreatePage } from '@/pages/group-create'
+import { GroupJoinPage } from '@/pages/group-join'
 import {
   GroupFeaturePlaceholderPage,
   GroupOverviewPage,
@@ -56,6 +57,22 @@ const routes: RouteRecordRaw[] = [
     path: '/groups/new',
     name: 'group-create',
     component: GroupCreatePage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/groups/join',
+    name: 'group-join',
+    component: GroupJoinPage,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/groups/:groupId/join',
+    name: 'group-join-with-id',
+    component: GroupJoinPage,
     meta: {
       requiresAuth: true,
     },

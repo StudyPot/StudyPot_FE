@@ -13,6 +13,16 @@ describe('router', () => {
   })
 
   it.each([
+    ['/groups/join', 'group-join'],
+    [`/groups/${routeFixtureGroupId}/join`, 'group-join-with-id'],
+  ])('resolves %s', (path, routeName) => {
+    const resolvedRoute = router.resolve(path)
+
+    expect(resolvedRoute.name).toBe(routeName)
+    expect(resolvedRoute.meta.requiresAuth).toBe(true)
+  })
+
+  it.each([
     [`/groups/${routeFixtureGroupId}`, 'group-overview'],
     [`/groups/${routeFixtureGroupId}/onboarding`, 'group-onboarding'],
     [`/groups/${routeFixtureGroupId}/curriculum`, 'group-curriculum'],
