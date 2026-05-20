@@ -123,4 +123,48 @@ describe('useSessionStore', () => {
     expect(sessionStore.user).toEqual(mockUser)
     expect(sessionStore.status).toBe('authenticated')
   })
+
+  it('clears the session after logout-all', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 })),
+    )
+
+    const sessionStore = useSessionStore()
+    sessionStore.user = mockUser
+    sessionStore.status = 'authenticated'
+
+    await sessionStore.logoutEverySession()
+
+    expect(sessionStore.user).toBeNull()
+    expect(sessionStore.status).toBe('anonymous')
+  })
+
+  it('keeps the current session when logout-all fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            title: 'Logout-all failed',
+            status: 503,
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/problem+json' },
+          },
+        ),
+      ),
+    )
+
+    const sessionStore = useSessionStore()
+    sessionStore.user = mockUser
+    sessionStore.status = 'authenticated'
+
+    await expect(sessionStore.logoutEverySession()).rejects.toMatchObject({
+      status: 503,
+    })
+    expect(sessionStore.user).toEqual(mockUser)
+    expect(sessionStore.status).toBe('authenticated')
+  })
 })

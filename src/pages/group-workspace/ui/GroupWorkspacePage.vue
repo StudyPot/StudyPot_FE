@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { LogoutButton } from '@/features/auth/logout'
+import { LogoutAllButton } from '@/features/auth/logout-all'
 import { useSessionStore } from '@/features/auth/session'
 
 type WorkspaceNavItem = {
@@ -94,7 +95,10 @@ const navItems: WorkspaceNavItem[] = [
               <p class="font-semibold text-[var(--color-ink)]">{{ sessionStore.user.nickname }}</p>
               <p class="mt-1 text-[var(--color-muted)]">{{ sessionStore.user.email }}</p>
             </div>
-            <LogoutButton />
+            <div class="flex flex-wrap gap-2">
+              <LogoutButton />
+              <LogoutAllButton />
+            </div>
           </div>
         </div>
       </header>

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import { listGroups, type StudyGroup, type StudyGroupStatus } from '@/entities/group'
 import { LogoutButton } from '@/features/auth/logout'
+import { LogoutAllButton } from '@/features/auth/logout-all'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 
@@ -100,6 +101,7 @@ function formatDate(value: string): string {
           새로고침
         </button>
         <LogoutButton />
+        <LogoutAllButton />
       </div>
     </header>
 

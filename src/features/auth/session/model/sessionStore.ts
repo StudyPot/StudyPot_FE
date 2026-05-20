@@ -60,11 +60,8 @@ export const useSessionStore = defineStore('session', {
     },
 
     async logoutEverySession(): Promise<void> {
-      try {
-        await logoutAll()
-      } finally {
-        this.clearSession()
-      }
+      await logoutAll()
+      this.clearSession()
     },
 
     clearSession(): void {

@@ -22,4 +22,22 @@ describe('App', () => {
     expect(renderedText).toContain('Google 계정으로 로그인')
     expect(loginButton.text()).toBe('Google로 시작하기')
   })
+
+  it('renders the logout-all notice on the login page', async () => {
+    await router.push({
+      name: 'login',
+      query: {
+        signedOut: 'all',
+      },
+    })
+    await router.isReady()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router],
+      },
+    })
+
+    expect(wrapper.text()).toContain('모든 기기에서 로그아웃되었습니다.')
+  })
 })

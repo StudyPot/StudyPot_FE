@@ -4,7 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { useSessionStore } from '@/features/auth/session'
-import LogoutButton from '../LogoutButton.vue'
+import LogoutAllButton from '../LogoutAllButton.vue'
 
 const mockUser = {
   id: '018f7a4e-0000-7000-9000-000000000001',
@@ -30,7 +30,7 @@ function createTestRouter() {
   })
 }
 
-describe('LogoutButton', () => {
+describe('LogoutAllButton', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
@@ -39,11 +39,9 @@ describe('LogoutButton', () => {
     vi.unstubAllGlobals()
   })
 
-  it('logs out the current session and redirects to login', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 })),
-    )
+  it('logs out every session and redirects to login with a notice flag', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
 
     const router = createTestRouter()
     await router.push('/groups')
@@ -52,7 +50,7 @@ describe('LogoutButton', () => {
     sessionStore.user = mockUser
     sessionStore.status = 'authenticated'
 
-    const wrapper = mount(LogoutButton, {
+    const wrapper = mount(LogoutAllButton, {
       global: {
         plugins: [router],
       },
@@ -61,23 +59,30 @@ describe('LogoutButton', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
 
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/auth/logout-all',
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'POST',
+      }),
+    )
     expect(sessionStore.user).toBeNull()
     expect(sessionStore.status).toBe('anonymous')
     expect(router.currentRoute.value.name).toBe('login')
-    expect(router.currentRoute.value.query.signedOut).toBe('current')
+    expect(router.currentRoute.value.query.signedOut).toBe('all')
   })
 
-  it('shows an error and keeps the session when logout fails', async () => {
+  it('shows an error and keeps the session when logout-all fails', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>().mockResolvedValue(
         new Response(
           JSON.stringify({
-            detail: 'CSRF token is required.',
-            status: 403,
+            detail: 'Logout-all failed.',
+            status: 503,
           }),
           {
-            status: 403,
+            status: 503,
             headers: { 'Content-Type': 'application/problem+json' },
           },
         ),
@@ -91,7 +96,7 @@ describe('LogoutButton', () => {
     sessionStore.user = mockUser
     sessionStore.status = 'authenticated'
 
-    const wrapper = mount(LogoutButton, {
+    const wrapper = mount(LogoutAllButton, {
       global: {
         plugins: [router],
       },
@@ -100,9 +105,10 @@ describe('LogoutButton', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('CSRF token is required.')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Logout-all failed.')
     expect(sessionStore.user).toEqual(mockUser)
     expect(sessionStore.status).toBe('authenticated')
     expect(router.currentRoute.value.name).toBe('groups')
   })
 })
+
