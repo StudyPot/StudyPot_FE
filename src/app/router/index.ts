@@ -13,6 +13,7 @@ import {
   GroupOnboardingPage,
   GroupOverviewPage,
   GroupRetrospectivePage,
+  GroupRulesPage,
   GroupTodoPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
@@ -132,11 +133,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'rules',
         name: 'group-rules',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '규칙',
-          workspaceSummary: '그룹 운영 규칙과 위반 내역을 관리합니다.',
-        },
+        component: GroupRulesPage,
       },
     ],
   },
