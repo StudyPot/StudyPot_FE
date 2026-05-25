@@ -6,9 +6,11 @@ import { AuthCallbackPage } from '@/pages/auth-callback'
 import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
+  GroupCurriculumPage,
   GroupFeaturePlaceholderPage,
   GroupOnboardingPage,
   GroupOverviewPage,
+  GroupTodoPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
 import { GroupsPage } from '@/pages/groups'
@@ -102,20 +104,12 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'curriculum',
         name: 'group-curriculum',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '커리큘럼',
-          workspaceSummary: '스터디 전체 주차 계획을 확인합니다.',
-        },
+        component: GroupCurriculumPage,
       },
       {
         path: 'todo',
         name: 'group-todo',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: 'Todo',
-          workspaceSummary: '이번 주 과제와 나의 진행 상태를 확인합니다.',
-        },
+        component: GroupTodoPage,
       },
       {
         path: 'retrospective',
