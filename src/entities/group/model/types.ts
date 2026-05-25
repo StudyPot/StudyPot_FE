@@ -26,6 +26,16 @@ export type CreateGroupRequest = {
   description?: string
 }
 
+export type SuggestDetailKeywordsRequest = {
+  topic: string
+  hintKeywords?: string[]
+  maxCandidates?: number
+}
+
+export type DetailKeywordSuggestionsResponse = {
+  keywords: string[]
+}
+
 export type JoinGroupRequest = {
   inviteCode: string
 }

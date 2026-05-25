@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { createGroup, type CreateGroupRequest } from '@/entities/group'
+import { createGroup, suggestDetailKeywords, type CreateGroupRequest } from '@/entities/group'
 import { ApiError } from '@/shared/api'
 
 type GroupCreateForm = {
@@ -28,7 +28,10 @@ const form = reactive<GroupCreateForm>({
 })
 
 const isSubmitting = ref(false)
+const isSuggestingKeywords = ref(false)
 const errorMessage = ref('')
+const suggestionErrorMessage = ref('')
+const suggestedKeywords = ref<string[]>([])
 const fieldErrors = ref<Record<string, string>>({})
 
 const parsedKeywords = computed(() =>
@@ -61,6 +64,52 @@ async function submitGroup(): Promise<void> {
   } finally {
     isSubmitting.value = false
   }
+}
+
+async function requestKeywordSuggestions(): Promise<void> {
+  suggestionErrorMessage.value = ''
+
+  if (!form.topic.trim()) {
+    fieldErrors.value = {
+      ...fieldErrors.value,
+      topic: '스터디 주제를 입력해주세요.',
+    }
+    return
+  }
+
+  clearFieldError('topic')
+  isSuggestingKeywords.value = true
+
+  try {
+    const response = await suggestDetailKeywords({
+      topic: form.topic.trim(),
+      hintKeywords: parsedKeywords.value,
+      maxCandidates: 5,
+    })
+    suggestedKeywords.value = response.keywords.filter(Boolean)
+
+    if (suggestedKeywords.value.length === 0) {
+      suggestionErrorMessage.value = '추가로 추천할 키워드가 없습니다.'
+    }
+  } catch (error) {
+    suggestionErrorMessage.value =
+      error instanceof ApiError ? error.message : '추천 키워드를 불러오지 못했습니다.'
+  } finally {
+    isSuggestingKeywords.value = false
+  }
+}
+
+function addSuggestedKeyword(keyword: string): void {
+  if (isSuggestedKeywordSelected(keyword)) {
+    return
+  }
+
+  form.detailKeywords = [...parsedKeywords.value, keyword].join(', ')
+  clearFieldError('detailKeywords')
+}
+
+function isSuggestedKeywordSelected(keyword: string): boolean {
+  return parsedKeywords.value.includes(keyword)
 }
 
 function validateForm(): boolean {
@@ -99,6 +148,12 @@ function validateForm(): boolean {
   fieldErrors.value = errors
 
   return Object.keys(errors).length === 0
+}
+
+function clearFieldError(field: string): void {
+  const nextErrors = { ...fieldErrors.value }
+  delete nextErrors[field]
+  fieldErrors.value = nextErrors
 }
 
 function toCreateGroupRequest(): CreateGroupRequest {
@@ -163,6 +218,45 @@ function toCreateGroupRequest(): CreateGroupRequest {
             {{ fieldErrors.topic }}
           </span>
         </label>
+
+        <div class="grid gap-3 border-t border-[var(--color-line)] pt-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-[var(--color-ink)]">세부 키워드 추천</p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="isSuggestingKeywords"
+              @click="requestKeywordSuggestions"
+            >
+              {{ isSuggestingKeywords ? '추천 중' : '키워드 추천' }}
+            </button>
+          </div>
+
+          <p v-if="suggestionErrorMessage" role="alert" class="text-xs font-semibold text-red-700">
+            {{ suggestionErrorMessage }}
+          </p>
+
+          <div v-if="suggestedKeywords.length" class="flex flex-wrap gap-2">
+            <button
+              v-for="keyword in suggestedKeywords"
+              :key="keyword"
+              type="button"
+              class="inline-flex min-h-9 items-center rounded-md border px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:cursor-default"
+              :class="
+                isSuggestedKeywordSelected(keyword)
+                  ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
+                  : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+              "
+              :disabled="isSuggestedKeywordSelected(keyword)"
+              :aria-pressed="isSuggestedKeywordSelected(keyword)"
+              @click="addSuggestedKeyword(keyword)"
+            >
+              {{ keyword }}
+            </button>
+          </div>
+        </div>
 
         <label class="grid gap-2">
           <span class="text-sm font-semibold text-[var(--color-ink)]">세부 키워드</span>
@@ -261,4 +355,3 @@ function toCreateGroupRequest(): CreateGroupRequest {
     </form>
   </main>
 </template>
-
