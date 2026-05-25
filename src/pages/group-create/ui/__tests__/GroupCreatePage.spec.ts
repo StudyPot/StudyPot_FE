@@ -66,6 +66,63 @@ describe('GroupCreatePage', () => {
     expect(wrapper.text()).toContain('세부 키워드를 하나 이상 입력해주세요.')
   })
 
+  it('requests detail keyword suggestions and appends a selected keyword', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ keywords: ['JPA', 'Spring Security'] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const router = createTestRouter()
+    await router.push('/groups/new')
+    await router.isReady()
+
+    const wrapper = mount(GroupCreatePage, {
+      global: {
+        plugins: [router],
+      },
+    })
+
+    await wrapper.get('input[name="topic"]').setValue('Spring Boot')
+    await wrapper.get('textarea[name="detailKeywords"]').setValue('JPA')
+
+    const suggestButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === '키워드 추천')
+
+    expect(suggestButton).toBeTruthy()
+    await suggestButton!.trigger('click')
+    await flushPromises()
+
+    const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit]
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/groups/detail-keyword-suggestions',
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'POST',
+      }),
+    )
+    expect(JSON.parse(requestInit.body as string)).toEqual({
+      topic: 'Spring Boot',
+      hintKeywords: ['JPA'],
+      maxCandidates: 5,
+    })
+
+    const springSecurityButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Spring Security')
+
+    expect(springSecurityButton).toBeTruthy()
+    await springSecurityButton!.trigger('click')
+
+    expect(
+      (wrapper.get('textarea[name="detailKeywords"]').element as HTMLTextAreaElement).value,
+    ).toBe('JPA, Spring Security')
+  })
+
   it('submits a create group request and redirects to onboarding', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify(createdGroup), {

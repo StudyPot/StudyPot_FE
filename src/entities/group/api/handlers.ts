@@ -33,6 +33,17 @@ export const groupHandlers = [
       { status: 201 },
     )
   }),
+  http.post(`${apiBaseUrl}/groups/detail-keyword-suggestions`, async ({ request }) => {
+    const body = (await request.json()) as { hintKeywords?: string[]; maxCandidates?: number }
+    const sourceKeywords = mockMswData.groups.detailKeywordSuggestionResponse.keywords
+    const hintKeywords = new Set(body.hintKeywords ?? [])
+    const maxCandidates = body.maxCandidates ?? 5
+    const keywords = sourceKeywords
+      .filter((keyword) => !hintKeywords.has(keyword))
+      .slice(0, maxCandidates)
+
+    return HttpResponse.json({ keywords })
+  }),
   http.post(`${apiBaseUrl}/groups/:groupId/join`, ({ params }) => {
     return HttpResponse.json({
       id: '018f7a4e-1000-7000-9000-000000000099',

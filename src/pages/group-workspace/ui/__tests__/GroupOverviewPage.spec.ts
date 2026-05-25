@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -68,6 +68,10 @@ function createTestRouter() {
 }
 
 describe('GroupOverviewPage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('renders the primary entry action from the current group status', async () => {
     const router = createTestRouter()
     await router.push(`/groups/${activeGroup.id}`)
@@ -91,6 +95,42 @@ describe('GroupOverviewPage', () => {
     expect(wrapper.text()).toContain('이번 주 Todo')
     expect(wrapper.text()).toContain('지금 진행해야 할 과제와 학습 흐름을 확인합니다.')
     expect(wrapper.find(`a[href="/groups/${activeGroup.id}/todo"]`).exists()).toBe(true)
+  })
+
+  it('copies the invite code from the group home', async () => {
+    const writeText = vi.fn<Clipboard['writeText']>().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', {
+      clipboard: {
+        writeText,
+      },
+    })
+
+    const router = createTestRouter()
+    await router.push(`/groups/${activeGroup.id}`)
+    await router.isReady()
+
+    const wrapper = mount(GroupOverviewPage, {
+      global: {
+        plugins: [router],
+        provide: {
+          [groupWorkspaceContextKey as symbol]: {
+            groupId: computed(() => activeGroup.id),
+            group: ref(activeGroup),
+            isGroupLoading: ref(false),
+            groupErrorMessage: ref(''),
+            reloadGroup: vi.fn(async () => {}),
+          },
+        },
+      },
+    })
+
+    const copyCodeButton = wrapper.findAll('button').find((button) => button.text() === '코드 복사')
+
+    expect(copyCodeButton).toBeTruthy()
+    await copyCodeButton!.trigger('click')
+
+    expect(writeText).toHaveBeenCalledWith(activeGroup.inviteCode)
+    expect(wrapper.text()).toContain('초대 코드를 복사했습니다.')
   })
 
   it('renders an error state when the group detail cannot be loaded', async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 
 import {
   getGroupOverviewPrimaryEntry,
@@ -22,9 +22,19 @@ if (!workspaceContext) {
 }
 
 const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup } = workspaceContext
+const copyStatusMessage = ref('')
 const primaryEntry = computed<GroupEntryAction | null>(() =>
   group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
 )
+const inviteLink = computed(() => {
+  if (!group.value?.inviteCode) {
+    return ''
+  }
+
+  return `${window.location.origin}/groups/${groupId.value}/join?inviteCode=${encodeURIComponent(
+    group.value.inviteCode,
+  )}`
+})
 
 const quickLinks: QuickLink[] = [
   {
@@ -74,6 +84,31 @@ function formatDate(value: string): string {
     day: 'numeric',
   }).format(new Date(value))
 }
+
+async function copyInviteCode(): Promise<void> {
+  if (!group.value?.inviteCode) {
+    return
+  }
+
+  await copyToClipboard(group.value.inviteCode, '초대 코드를 복사했습니다.')
+}
+
+async function copyInviteLink(): Promise<void> {
+  if (!inviteLink.value) {
+    return
+  }
+
+  await copyToClipboard(inviteLink.value, '초대 링크를 복사했습니다.')
+}
+
+async function copyToClipboard(value: string, successMessage: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(value)
+    copyStatusMessage.value = successMessage
+  } catch {
+    copyStatusMessage.value = '복사하지 못했습니다.'
+  }
+}
 </script>
 
 <template>
@@ -115,7 +150,7 @@ function formatDate(value: string): string {
           </RouterLink>
         </div>
 
-        <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-3">
+        <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-4">
           <div>
             <dt class="text-[var(--color-muted)]">상태</dt>
             <dd class="mt-1 font-semibold text-[var(--color-ink)]">
@@ -132,7 +167,35 @@ function formatDate(value: string): string {
             <dt class="text-[var(--color-muted)]">정원</dt>
             <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.maxMembers }}명</dd>
           </div>
+          <div>
+            <dt class="text-[var(--color-muted)]">초대 코드</dt>
+            <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.inviteCode }}</dd>
+          </div>
         </dl>
+
+        <div class="mt-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+            @click="copyInviteCode"
+          >
+            코드 복사
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+            @click="copyInviteLink"
+          >
+            링크 복사
+          </button>
+          <span
+            v-if="copyStatusMessage"
+            role="status"
+            class="text-xs font-semibold text-[var(--color-primary-deep)]"
+          >
+            {{ copyStatusMessage }}
+          </span>
+        </div>
 
         <div class="mt-5 flex flex-wrap gap-2">
           <span
@@ -145,10 +208,7 @@ function formatDate(value: string): string {
         </div>
       </section>
 
-      <section
-        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-        aria-label="그룹 내부 기능"
-      >
+      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="그룹 내부 기능">
         <RouterLink
           v-for="link in quickLinks"
           :key="link.routeName"
@@ -164,4 +224,3 @@ function formatDate(value: string): string {
     </template>
   </div>
 </template>
-

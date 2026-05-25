@@ -1,4 +1,10 @@
-export { createGroup, getGroup, joinGroup, listGroups } from './api/groupsApi'
+export {
+  createGroup,
+  getGroup,
+  joinGroup,
+  listGroups,
+  suggestDetailKeywords,
+} from './api/groupsApi'
 export {
   getGroupListPrimaryEntry,
   getGroupOverviewPrimaryEntry,
@@ -7,10 +13,12 @@ export {
 export type { GroupEntryAction, GroupEntryRouteName } from './model/entry'
 export type {
   CreateGroupRequest,
+  DetailKeywordSuggestionsResponse,
   GroupMember,
   GroupMemberPermission,
   GroupMemberStatus,
   JoinGroupRequest,
   StudyGroup,
   StudyGroupStatus,
+  SuggestDetailKeywordsRequest,
 } from './model/types'
