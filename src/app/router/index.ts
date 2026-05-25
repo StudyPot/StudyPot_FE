@@ -9,6 +9,7 @@ import {
   GroupAiPage,
   GroupCurriculumPage,
   GroupFeaturePlaceholderPage,
+  GroupNotificationsPage,
   GroupOnboardingPage,
   GroupOverviewPage,
   GroupRetrospectivePage,
@@ -126,11 +127,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'notifications',
         name: 'group-notifications',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '알림',
-          workspaceSummary: '그룹과 나에게 온 알림을 확인합니다.',
-        },
+        component: GroupNotificationsPage,
       },
       {
         path: 'rules',
