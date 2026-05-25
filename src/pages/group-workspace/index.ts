@@ -5,6 +5,7 @@ export { default as GroupNotificationsPage } from './ui/GroupNotificationsPage.v
 export { default as GroupOnboardingPage } from './ui/GroupOnboardingPage.vue'
 export { default as GroupOverviewPage } from './ui/GroupOverviewPage.vue'
 export { default as GroupRetrospectivePage } from './ui/GroupRetrospectivePage.vue'
+export { default as GroupRulesPage } from './ui/GroupRulesPage.vue'
 export { default as GroupTodoPage } from './ui/GroupTodoPage.vue'
 export { default as GroupWorkspacePage } from './ui/GroupWorkspacePage.vue'
 
