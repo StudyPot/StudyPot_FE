@@ -6,10 +6,12 @@ import { AuthCallbackPage } from '@/pages/auth-callback'
 import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
+  GroupAiPage,
   GroupCurriculumPage,
   GroupFeaturePlaceholderPage,
   GroupOnboardingPage,
   GroupOverviewPage,
+  GroupRetrospectivePage,
   GroupTodoPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
@@ -114,20 +116,12 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'retrospective',
         name: 'group-retrospective',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '회고',
-          workspaceSummary: '주차별 회고와 AI 피드백을 확인합니다.',
-        },
+        component: GroupRetrospectivePage,
       },
       {
         path: 'ai',
         name: 'group-ai',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: 'AI 팀장',
-          workspaceSummary: '그룹 학습 흐름을 AI 팀장과 함께 점검합니다.',
-        },
+        component: GroupAiPage,
       },
       {
         path: 'notifications',

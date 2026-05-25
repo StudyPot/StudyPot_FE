@@ -1,7 +1,9 @@
+export { default as GroupAiPage } from './ui/GroupAiPage.vue'
 export { default as GroupCurriculumPage } from './ui/GroupCurriculumPage.vue'
 export { default as GroupFeaturePlaceholderPage } from './ui/GroupFeaturePlaceholderPage.vue'
 export { default as GroupOnboardingPage } from './ui/GroupOnboardingPage.vue'
 export { default as GroupOverviewPage } from './ui/GroupOverviewPage.vue'
+export { default as GroupRetrospectivePage } from './ui/GroupRetrospectivePage.vue'
 export { default as GroupTodoPage } from './ui/GroupTodoPage.vue'
 export { default as GroupWorkspacePage } from './ui/GroupWorkspacePage.vue'
 
