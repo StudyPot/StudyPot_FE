@@ -7,6 +7,7 @@ import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
   GroupFeaturePlaceholderPage,
+  GroupOnboardingPage,
   GroupOverviewPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
@@ -96,11 +97,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'onboarding',
         name: 'group-onboarding',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '온보딩',
-          workspaceSummary: '나의 준비도와 가능한 시간을 정리합니다.',
-        },
+        component: GroupOnboardingPage,
       },
       {
         path: 'curriculum',

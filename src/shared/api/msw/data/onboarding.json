@@ -1,223 +1,35 @@
 {
   "myOnboarding": {
+    "id": "018f7a4e-2000-7000-9000-000000000001",
     "groupId": "018f7a4e-0000-7000-9000-000000000010",
+    "memberId": "018f7a4e-1000-7000-9000-000000000001",
+    "skillLevel": 3,
+    "additionalNote": "실전 위주의 과제를 많이 하고 싶어요. 테스트 코드도 함께 강화하고 싶습니다.",
+    "availabilitySlots": [
+      {
+        "dayOfWeek": 2,
+        "startTime": "20:00",
+        "endTime": "22:30",
+        "timezone": "Asia/Seoul"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "10:00",
+        "endTime": "13:00",
+        "timezone": "Asia/Seoul"
+      }
+    ],
     "status": "SUBMITTED",
-    "detailKeywordLevels": [
-      {
-        "keyword": "JPA",
-        "skillLevel": 3
-      },
-      {
-        "keyword": "Security",
-        "skillLevel": 2
-      },
-      {
-        "keyword": "Testing",
-        "skillLevel": 4
-      }
-    ],
-    "taskPreferences": [
-      {
-        "taskType": "READING",
-        "score": 3
-      },
-      {
-        "taskType": "PRACTICE",
-        "score": 5
-      },
-      {
-        "taskType": "ASSIGNMENT",
-        "score": 4
-      },
-      {
-        "taskType": "PROJECT",
-        "score": 5
-      },
-      {
-        "taskType": "CUSTOM",
-        "score": 2
-      }
-    ],
-    "availabilitySlots": [
-      {
-        "dayOfWeek": "TUESDAY",
-        "startTime": "20:00",
-        "endTime": "22:30",
-        "timezone": "Asia/Seoul"
-      },
-      {
-        "dayOfWeek": "SATURDAY",
-        "startTime": "10:00",
-        "endTime": "13:00",
-        "timezone": "Asia/Seoul"
-      }
-    ],
-    "memo": "실전 위주의 과제를 많이 하고 싶어요. 테스트 코드도 함께 강화하고 싶습니다.",
     "submittedAt": "2026-05-08T14:02:00+09:00"
-  },
-  "saveOnboardingRequest": {
-    "detailKeywordLevels": [
-      {
-        "keyword": "JPA",
-        "skillLevel": 3
-      },
-      {
-        "keyword": "Security",
-        "skillLevel": 2
-      },
-      {
-        "keyword": "Testing",
-        "skillLevel": 4
-      }
-    ],
-    "taskPreferences": [
-      {
-        "taskType": "READING",
-        "score": 3
-      },
-      {
-        "taskType": "PRACTICE",
-        "score": 5
-      },
-      {
-        "taskType": "ASSIGNMENT",
-        "score": 4
-      },
-      {
-        "taskType": "PROJECT",
-        "score": 5
-      },
-      {
-        "taskType": "CUSTOM",
-        "score": 2
-      }
-    ],
-    "availabilitySlots": [
-      {
-        "dayOfWeek": "TUESDAY",
-        "startTime": "20:00",
-        "endTime": "22:30",
-        "timezone": "Asia/Seoul"
-      },
-      {
-        "dayOfWeek": "SATURDAY",
-        "startTime": "10:00",
-        "endTime": "13:00",
-        "timezone": "Asia/Seoul"
-      }
-    ],
-    "memo": "실전 위주의 과제를 많이 하고 싶어요. 테스트 코드도 함께 강화하고 싶습니다."
-  },
-  "saveOnboardingResponse": {
-    "groupId": "018f7a4e-0000-7000-9000-000000000010",
-    "status": "DRAFT",
-    "detailKeywordLevels": [
-      {
-        "keyword": "JPA",
-        "skillLevel": 3
-      },
-      {
-        "keyword": "Security",
-        "skillLevel": 2
-      },
-      {
-        "keyword": "Testing",
-        "skillLevel": 4
-      }
-    ],
-    "taskPreferences": [
-      {
-        "taskType": "READING",
-        "score": 3
-      },
-      {
-        "taskType": "PRACTICE",
-        "score": 5
-      },
-      {
-        "taskType": "ASSIGNMENT",
-        "score": 4
-      },
-      {
-        "taskType": "PROJECT",
-        "score": 5
-      },
-      {
-        "taskType": "CUSTOM",
-        "score": 2
-      }
-    ],
-    "availabilitySlots": [
-      {
-        "dayOfWeek": "TUESDAY",
-        "startTime": "20:00",
-        "endTime": "22:30",
-        "timezone": "Asia/Seoul"
-      },
-      {
-        "dayOfWeek": "SATURDAY",
-        "startTime": "10:00",
-        "endTime": "13:00",
-        "timezone": "Asia/Seoul"
-      }
-    ],
-    "memo": "실전 위주의 과제를 많이 하고 싶어요. 테스트 코드도 함께 강화하고 싶습니다.",
-    "updatedAt": "2026-05-08T13:40:00+09:00"
   },
   "submitOnboardingResponse": {
+    "id": "018f7a4e-2000-7000-9000-000000000001",
     "groupId": "018f7a4e-0000-7000-9000-000000000010",
+    "memberId": "018f7a4e-1000-7000-9000-000000000001",
+    "skillLevel": 3,
+    "additionalNote": null,
+    "availabilitySlots": [],
     "status": "SUBMITTED",
-    "detailKeywordLevels": [
-      {
-        "keyword": "JPA",
-        "skillLevel": 3
-      },
-      {
-        "keyword": "Security",
-        "skillLevel": 2
-      },
-      {
-        "keyword": "Testing",
-        "skillLevel": 4
-      }
-    ],
-    "taskPreferences": [
-      {
-        "taskType": "READING",
-        "score": 3
-      },
-      {
-        "taskType": "PRACTICE",
-        "score": 5
-      },
-      {
-        "taskType": "ASSIGNMENT",
-        "score": 4
-      },
-      {
-        "taskType": "PROJECT",
-        "score": 5
-      },
-      {
-        "taskType": "CUSTOM",
-        "score": 2
-      }
-    ],
-    "availabilitySlots": [
-      {
-        "dayOfWeek": "TUESDAY",
-        "startTime": "20:00",
-        "endTime": "22:30",
-        "timezone": "Asia/Seoul"
-      },
-      {
-        "dayOfWeek": "SATURDAY",
-        "startTime": "10:00",
-        "endTime": "13:00",
-        "timezone": "Asia/Seoul"
-      }
-    ],
-    "memo": "실전 위주의 과제를 많이 하고 싶어요. 테스트 코드도 함께 강화하고 싶습니다.",
-    "submittedAt": "2026-05-08T14:02:00+09:00"
+    "submittedAt": null
   }
 }
