@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { apiOrigin } from '@/shared/config/api'
 
 const route = useRoute()
 
@@ -17,7 +18,7 @@ const noticeMessage = computed(() => {
 })
 
 function startGoogleLogin(): void {
-  window.location.assign('/api/oauth2/authorization/google')
+  window.location.assign(`${apiOrigin}/api/oauth2/authorization/google`)
 }
 </script>
 
