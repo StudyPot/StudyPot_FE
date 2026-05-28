@@ -1,4 +1,4 @@
-import { apiBaseUrl } from '@/shared/config/api'
+import { apiBaseUrl, apiOrigin } from '@/shared/config/api'
 
 export type ProblemDetail = {
   type?: string
@@ -32,6 +32,12 @@ export type ApiClientOptions = Omit<RequestInit, 'body'> & {
   body?: BodyInit | Record<string, unknown> | unknown[] | null
 }
 
+type CsrfBootstrapResponse = {
+  cookieName?: string
+  headerName?: string
+  token?: string
+}
+
 export async function apiClient<TResponse = unknown>(
   path: string,
   options: ApiClientOptions = {},
@@ -44,7 +50,7 @@ export async function apiClient<TResponse = unknown>(
     requestHeaders.set('Content-Type', 'application/json')
   }
 
-  appendCsrfHeader(requestHeaders, requestOptions.method)
+  await appendCsrfHeader(requestHeaders, requestOptions.method)
 
   const response = await fetch(resolveApiUrl(path), {
     credentials: 'include',
@@ -124,7 +130,7 @@ function looksLikeJson(text: string): boolean {
   return trimmedText.startsWith('{') || trimmedText.startsWith('[')
 }
 
-function appendCsrfHeader(headers: Headers, method?: string): void {
+async function appendCsrfHeader(headers: Headers, method?: string): Promise<void> {
   if (!requiresCsrfHeader(method) || hasBearerAuthorization(headers)) {
     return
   }
@@ -137,6 +143,44 @@ function appendCsrfHeader(headers: Headers, method?: string): void {
 
   if (token) {
     headers.set('X-XSRF-TOKEN', token)
+    return
+  }
+
+  if (!requiresCsrfBootstrap()) {
+    return
+  }
+
+  const bootstrappedToken = await fetchCsrfToken()
+
+  if (bootstrappedToken?.token) {
+    headers.set(bootstrappedToken.headerName ?? 'X-XSRF-TOKEN', bootstrappedToken.token)
+  }
+}
+
+async function fetchCsrfToken(): Promise<CsrfBootstrapResponse | null> {
+  const response = await fetch(resolveApiUrl('/auth/csrf'), {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const body = await parseResponseBody<CsrfBootstrapResponse>(response)
+  const headerToken = response.headers.get('X-XSRF-TOKEN')
+  const token = typeof body?.token === 'string' && body.token ? body.token : headerToken
+
+  if (!token) {
+    return null
+  }
+
+  return {
+    cookieName: body?.cookieName,
+    headerName: body?.headerName,
+    token,
   }
 }
 
@@ -146,6 +190,10 @@ function requiresCsrfHeader(method = 'GET'): boolean {
 
 function hasBearerAuthorization(headers: Headers): boolean {
   return headers.get('Authorization')?.toLowerCase().startsWith('bearer ') ?? false
+}
+
+function requiresCsrfBootstrap(): boolean {
+  return Boolean(apiOrigin && typeof window !== 'undefined' && apiOrigin !== window.location.origin)
 }
 
 function getCookieValue(name: string): string | null {

@@ -6,6 +6,7 @@ import { apiClient } from '@/shared/api'
 describe('apiClient', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.doUnmock('@/shared/config/api')
     document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/'
   })
 
@@ -61,6 +62,54 @@ describe('apiClient', () => {
     const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit]
 
     expect(new Headers(requestInit.headers).get('X-XSRF-TOKEN')).toBe('csrf-token-1')
+  })
+
+  it('bootstraps an XSRF token when the cookie is not readable by the frontend origin', async () => {
+    vi.resetModules()
+    vi.doMock('@/shared/config/api', () => ({
+      apiBaseUrl: 'https://api.example.test/api/v1',
+      apiOrigin: 'https://api.example.test',
+    }))
+
+    const { apiClient: crossOriginApiClient } = await import('@/shared/api/client')
+
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            cookieName: 'XSRF-TOKEN',
+            headerName: 'X-XSRF-TOKEN',
+            token: 'bootstrapped-csrf-token',
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await crossOriginApiClient('/auth/refresh', {
+      method: 'POST',
+    })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://api.example.test/api/v1/auth/csrf',
+      expect.objectContaining({
+        credentials: 'include',
+      }),
+    )
+    expect(
+      new Headers((fetchMock.mock.calls[0] as [string, RequestInit])[1].headers).get('Accept'),
+    ).toBe('application/json')
+
+    const [, requestInit] = fetchMock.mock.calls[1] as [string, RequestInit]
+
+    expect(new Headers(requestInit.headers).get('X-XSRF-TOKEN')).toBe('bootstrapped-csrf-token')
   })
 
   it('does not add the XSRF header for bearer token requests', async () => {
