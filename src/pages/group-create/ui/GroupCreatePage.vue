@@ -99,13 +99,13 @@ async function requestKeywordSuggestions(): Promise<void> {
   }
 }
 
-function addSuggestedKeyword(keyword: string): void {
+function toggleSuggestedKeyword(keyword: string): void {
   if (isSuggestedKeywordSelected(keyword)) {
-    return
+    form.detailKeywords = parsedKeywords.value.filter((k) => k !== keyword).join(', ')
+  } else {
+    form.detailKeywords = [...parsedKeywords.value, keyword].join(', ')
+    clearFieldError('detailKeywords')
   }
-
-  form.detailKeywords = [...parsedKeywords.value, keyword].join(', ')
-  clearFieldError('detailKeywords')
 }
 
 function isSuggestedKeywordSelected(keyword: string): boolean {
@@ -249,9 +249,8 @@ function toCreateGroupRequest(): CreateGroupRequest {
                   ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
                   : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
               "
-              :disabled="isSuggestedKeywordSelected(keyword)"
               :aria-pressed="isSuggestedKeywordSelected(keyword)"
-              @click="addSuggestedKeyword(keyword)"
+              @click="toggleSuggestedKeyword(keyword)"
             >
               {{ keyword }}
             </button>
