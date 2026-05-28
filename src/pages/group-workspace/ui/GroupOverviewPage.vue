@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 
 import {
   getGroupOverviewPrimaryEntry,
   getGroupStatusLabel,
   type GroupEntryAction,
 } from '@/entities/group'
+import { getMyOnboarding } from '@/entities/onboarding'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -23,6 +24,25 @@ if (!workspaceContext) {
 
 const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup } = workspaceContext
 const copyStatusMessage = ref('')
+const onboardingSubmitted = ref(false)
+
+watch(
+  () => group.value,
+  async (newGroup) => {
+    if (newGroup?.status !== 'ONBOARDING') {
+      onboardingSubmitted.value = false
+      return
+    }
+    try {
+      const data = await getMyOnboarding(groupId.value)
+      onboardingSubmitted.value = data.status === 'SUBMITTED'
+    } catch {
+      onboardingSubmitted.value = false
+    }
+  },
+  { immediate: true },
+)
+
 const primaryEntry = computed<GroupEntryAction | null>(() =>
   group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
 )
@@ -142,9 +162,40 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
             </p>
           </div>
 
+          <div
+            v-if="group.status === 'ONBOARDING' && onboardingSubmitted"
+            class="flex shrink-0 items-center gap-3"
+          >
+            <span
+              class="inline-flex h-11 items-center gap-1.5 rounded-md bg-emerald-50 px-5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              온보딩 제출 완료
+            </span>
+            <RouterLink
+              :to="{ name: 'group-onboarding', params: { groupId } }"
+              class="text-sm font-semibold text-[var(--color-primary)] underline-offset-2 hover:underline focus:outline-none"
+            >
+              확인하기
+            </RouterLink>
+          </div>
+
           <RouterLink
+            v-else
             :to="{ name: primaryEntry.routeName, params: { groupId } }"
-            class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+            class="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
           >
             {{ primaryEntry.label }}
           </RouterLink>
