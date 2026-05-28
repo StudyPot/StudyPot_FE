@@ -41,6 +41,8 @@ const parsedKeywords = computed(() =>
     .filter(Boolean),
 )
 
+const today = computed(() => new Date().toISOString().slice(0, 10))
+
 async function submitGroup(): Promise<void> {
   errorMessage.value = ''
 
@@ -295,6 +297,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               v-model="form.startsAt"
               name="startsAt"
               type="date"
+              :min="today"
               class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
             <span v-if="fieldErrors.startsAt" class="text-xs font-semibold text-red-700">
@@ -308,6 +311,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               v-model="form.endsAt"
               name="endsAt"
               type="date"
+              :min="form.startsAt || today"
               class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
             <span v-if="fieldErrors.endsAt" class="text-xs font-semibold text-red-700">
