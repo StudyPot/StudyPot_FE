@@ -59,14 +59,15 @@ const inviteLink = computed(() => {
 const allOnboardingDone = computed(() => {
   if (!group.value || members.value.length === 0) return false
   if (group.value.status !== 'ONBOARDING') return false
-  const submitted = members.value.filter((m) => m.onboardingStatus === 'SUBMITTED').length
-  return submitted >= group.value.maxMembers
+  const active = members.value.filter((m) => m.status !== 'LEFT')
+  return active.length > 0 && active.every((m) => m.onboardingStatus === 'SUBMITTED')
 })
 
 const onboardingProgress = computed(() => {
   if (!group.value || members.value.length === 0) return null
-  const submitted = members.value.filter((m) => m.onboardingStatus === 'SUBMITTED').length
-  return { submitted, total: group.value.maxMembers }
+  const active = members.value.filter((m) => m.status !== 'LEFT')
+  const submitted = active.filter((m) => m.onboardingStatus === 'SUBMITTED').length
+  return { submitted, total: active.length }
 })
 
 // 잔디 계산: 최근 28일 × 멤버 행
