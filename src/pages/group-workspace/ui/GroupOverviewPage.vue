@@ -56,7 +56,7 @@ const heatmapDays = computed(() => {
   for (let i = 27; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
-    days.push(d.toISOString().split('T')[0])
+    days.push(d.toISOString().slice(0, 10))
   }
   return days
 })

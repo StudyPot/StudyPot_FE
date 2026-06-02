@@ -176,7 +176,7 @@ describe('GroupOnboardingPage', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').exists()).toBe(true)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
     expect(wrapper.find('form').exists()).toBe(false)
   })
 })

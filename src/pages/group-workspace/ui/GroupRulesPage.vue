@@ -132,7 +132,7 @@ async function handleDeactivate(rule: GroupRule): Promise<void> {
     const index = rules.value.findIndex((r) => r.id === rule.id)
 
     if (index !== -1) {
-      rules.value[index] = { ...rules.value[index], active: false }
+      rules.value[index] = { ...rules.value[index]!, active: false }
     }
   } catch (error) {
     actionError[rule.id] = toErrorMessage(error, '비활성화에 실패했습니다.')

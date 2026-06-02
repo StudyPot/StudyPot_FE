@@ -72,7 +72,7 @@ export const boardHandlers = [
       )
     }
     const body = (await request.json()) as Record<string, unknown>
-    const updated = { ...posts[index] }
+    const updated = { ...posts[index]! }
     if (body.title !== undefined) updated.title = String(body.title)
     if (body.content !== undefined) {
       updated.content = String(body.content)
@@ -122,9 +122,10 @@ export const boardHandlers = [
     for (const comments of Object.values(commentsByPost)) {
       const index = comments.findIndex((c) => c.id === params.commentId)
       if (index !== -1) {
+        const existing = comments[index]!
         comments[index] = {
-          ...comments[index],
-          content: String(body.content ?? comments[index].content),
+          ...existing,
+          content: String(body.content ?? existing.content),
           updatedAt: new Date().toISOString(),
         }
         return HttpResponse.json(comments[index])
