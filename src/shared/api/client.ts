@@ -1,5 +1,15 @@
 import { apiBaseUrl } from '@/shared/config/api'
 
+export type PageInfo = {
+  nextCursor: string | null
+  hasNext: boolean
+}
+
+export type CursorPageResponse<T> = {
+  items: T[]
+  pageInfo: PageInfo
+}
+
 export type ProblemDetail = {
   type?: string
   title?: string
