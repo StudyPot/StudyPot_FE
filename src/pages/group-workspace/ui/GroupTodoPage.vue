@@ -572,7 +572,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     v-for="action in COMPLETION_ACTIONS"
                     :key="action.status"
                     type="button"
-                    :disabled="updatingTaskId === task.id || getCompletionStatus(task) === action.status || selectedWeek.status === 'PENDING'"
+                    :disabled="updatingTaskId === task.id || getCompletionStatus(task) === action.status"
                     :class="[
                       'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
                       getCompletionStatus(task) === action.status
