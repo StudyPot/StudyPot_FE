@@ -46,6 +46,8 @@ watch(() => form.selectedKeywords, () => {
   if (form.selectedKeywords.length > 0) clearFieldError('selectedKeywords')
 })
 
+const today = computed(() => new Date().toISOString().slice(0, 10))
+
 async function submitGroup(): Promise<void> {
   errorMessage.value = ''
 
@@ -137,14 +139,13 @@ async function requestKeywordSuggestions(): Promise<void> {
   }
 }
 
-function addKeyword(keyword: string): void {
-  if (!form.selectedKeywords.includes(keyword)) {
-    form.selectedKeywords.push(keyword)
+function toggleSuggestedKeyword(keyword: string): void {
+  if (isSuggestedKeywordSelected(keyword)) {
+    form.detailKeywords = parsedKeywords.value.filter((k) => k !== keyword).join(', ')
+  } else {
+    form.detailKeywords = [...parsedKeywords.value, keyword].join(', ')
+    clearFieldError('detailKeywords')
   }
-}
-
-function removeKeyword(keyword: string): void {
-  form.selectedKeywords = form.selectedKeywords.filter((k) => k !== keyword)
 }
 
 function isSuggestedKeywordSelected(keyword: string): boolean {
@@ -353,6 +354,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               v-model="form.startsAt"
               name="startsAt"
               type="date"
+              :min="today"
               class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
             <span v-if="fieldErrors.startsAt" class="text-xs font-semibold text-red-700">
@@ -366,6 +368,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               v-model="form.endsAt"
               name="endsAt"
               type="date"
+              :min="form.startsAt || today"
               class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
             <span v-if="fieldErrors.endsAt" class="text-xs font-semibold text-red-700">
