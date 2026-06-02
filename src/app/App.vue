@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useSessionStore } from '@/features/auth/session'
-import { useInAppNotificationStore } from '@/features/notification/model/inAppNotificationStore'
+import { useInAppNotificationStore } from '@/features/notification'
 import { InAppToast } from '@/shared/ui'
 
 const sessionStore = useSessionStore()

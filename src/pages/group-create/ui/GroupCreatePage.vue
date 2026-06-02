@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { createGroup, suggestDetailKeywords, type CreateGroupRequest } from '@/entities/group'
@@ -32,7 +32,13 @@ const isSuggestingKeywords = ref(false)
 const errorMessage = ref('')
 const suggestionErrorMessage = ref('')
 const suggestedKeywords = ref<string[]>([])
+const customKeywords = ref<string[]>([])
+const showCustomInput = ref(false)
+const customKeywordInput = ref('')
+const customInputRef = ref<HTMLInputElement | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
+
+const allKeywords = computed(() => [...suggestedKeywords.value, ...customKeywords.value])
 
 const showProgressModal = ref(false)
 const showSuccessModal = ref(false)
@@ -137,18 +143,33 @@ async function requestKeywordSuggestions(): Promise<void> {
   }
 }
 
-function addKeyword(keyword: string): void {
-  if (!form.selectedKeywords.includes(keyword)) {
+function toggleKeyword(keyword: string): void {
+  if (form.selectedKeywords.includes(keyword)) {
+    form.selectedKeywords = form.selectedKeywords.filter((k) => k !== keyword)
+  } else {
     form.selectedKeywords.push(keyword)
   }
 }
 
-function removeKeyword(keyword: string): void {
-  form.selectedKeywords = form.selectedKeywords.filter((k) => k !== keyword)
+async function openCustomInput(): Promise<void> {
+  showCustomInput.value = true
+  await nextTick()
+  customInputRef.value?.focus()
 }
 
-function isSuggestedKeywordSelected(keyword: string): boolean {
-  return form.selectedKeywords.includes(keyword)
+function confirmCustomKeyword(): void {
+  const keyword = customKeywordInput.value.trim()
+  if (keyword && !allKeywords.value.includes(keyword)) {
+    customKeywords.value.push(keyword)
+    form.selectedKeywords.push(keyword)
+  }
+  customKeywordInput.value = ''
+  showCustomInput.value = false
+}
+
+function cancelCustomInput(): void {
+  customKeywordInput.value = ''
+  showCustomInput.value = false
 }
 
 function validateForm(): boolean {
@@ -167,7 +188,7 @@ function validateForm(): boolean {
   }
 
   if (form.selectedKeywords.length === 0) {
-    errors.selectedKeywords = 'AI 추천 버튼(+)으로 키워드를 하나 이상 추가해주세요.'
+    errors.selectedKeywords = '키워드를 하나 이상 선택하거나 추가해주세요.'
   }
 
   if (!Number.isInteger(form.maxMembers) || form.maxMembers < 1) {
@@ -263,7 +284,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p class="text-sm font-semibold text-[var(--color-ink)]">세부 키워드</p>
-              <p class="mt-0.5 text-xs text-[var(--color-muted)]">주제를 입력 후 AI 추천을 받아 + 버튼으로 추가하세요.</p>
+              <p class="mt-0.5 text-xs text-[var(--color-muted)]">AI 추천 키워드를 클릭해 선택하거나, + 버튼으로 직접 추가하세요.</p>
             </div>
             <button
               type="button"
@@ -279,52 +300,64 @@ function toCreateGroupRequest(): CreateGroupRequest {
             {{ suggestionErrorMessage }}
           </p>
 
-          <!-- AI 추천 키워드 -->
-          <div v-if="suggestedKeywords.length" class="flex flex-wrap gap-2">
-            <div
-              v-for="keyword in suggestedKeywords"
+          <!-- 키워드 버튼 목록 + + 버튼 -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="keyword in allKeywords"
               :key="keyword"
-              class="inline-flex min-h-9 items-center rounded-md border text-xs font-semibold transition focus:outline-none"
-              :class="
-                isSuggestedKeywordSelected(keyword)
-                  ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                  : 'border-[var(--color-line)] bg-white text-[var(--color-muted)]'
-              "
+              type="button"
+              :class="[
+                'inline-flex h-8 items-center rounded-md border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
+                form.selectedKeywords.includes(keyword)
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                  : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+              ]"
+              :aria-pressed="form.selectedKeywords.includes(keyword)"
+              @click="toggleKeyword(keyword)"
             >
-              <span class="pl-3 pr-2 py-1.5">{{ keyword }}</span>
-              <button
-                v-if="!isSuggestedKeywordSelected(keyword)"
-                type="button"
-                class="pr-2.5 pl-0.5 py-1.5 text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
-                :aria-label="`${keyword} 추가`"
-                @click="addKeyword(keyword)"
-              >
-                +
-              </button>
-              <span v-else class="pr-2.5 text-[var(--color-primary)]">✓</span>
-            </div>
-          </div>
+              {{ keyword }}
+            </button>
 
-          <!-- 선택된 키워드 -->
-          <div v-if="form.selectedKeywords.length > 0">
-            <p class="mb-2 text-xs font-semibold text-[var(--color-muted)]">선택된 키워드</p>
-            <div class="flex flex-wrap gap-2">
-              <span
-                v-for="keyword in form.selectedKeywords"
-                :key="keyword"
-                class="inline-flex min-h-8 items-center gap-1 rounded-md bg-[var(--color-primary)] pl-3 pr-2 py-1 text-xs font-semibold text-white"
-              >
-                {{ keyword }}
+            <!-- 직접 입력 중일 때 -->
+            <template v-if="showCustomInput">
+              <div class="inline-flex items-center gap-1">
+                <input
+                  ref="customInputRef"
+                  v-model="customKeywordInput"
+                  type="text"
+                  maxlength="30"
+                  placeholder="키워드 입력"
+                  class="h-8 w-28 rounded-md border border-[var(--color-primary)] bg-white px-2 text-xs text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+                  @keydown.enter.prevent="confirmCustomKeyword"
+                  @keydown.escape="cancelCustomInput"
+                />
                 <button
                   type="button"
-                  class="ml-0.5 text-white/70 hover:text-white focus:outline-none"
-                  :aria-label="`${keyword} 제거`"
-                  @click="removeKeyword(keyword)"
+                  class="inline-flex h-8 items-center rounded-md bg-[var(--color-primary)] px-2.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none"
+                  @click="confirmCustomKeyword"
                 >
-                  ✕
+                  확인
                 </button>
-              </span>
-            </div>
+                <button
+                  type="button"
+                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-line)] bg-white px-2.5 text-xs font-semibold text-[var(--color-muted)] transition hover:text-[var(--color-ink)] focus:outline-none"
+                  @click="cancelCustomInput"
+                >
+                  취소
+                </button>
+              </div>
+            </template>
+
+            <!-- + 버튼 -->
+            <button
+              v-else
+              type="button"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-white text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              aria-label="키워드 직접 추가"
+              @click="openCustomInput"
+            >
+              +
+            </button>
           </div>
 
           <span v-if="fieldErrors.selectedKeywords" class="text-xs font-semibold text-red-700">

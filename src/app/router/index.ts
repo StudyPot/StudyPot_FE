@@ -11,7 +11,6 @@ import {
   GroupCurriculumPage,
   GroupFeaturePlaceholderPage,
   GroupMyPage,
-  GroupNotificationsPage,
   GroupOnboardingPage,
   GroupOverviewPage,
   GroupRetrospectivePage,
@@ -125,11 +124,6 @@ const routes: RouteRecordRaw[] = [
         path: 'ai',
         name: 'group-ai',
         component: GroupAiPage,
-      },
-      {
-        path: 'notifications',
-        name: 'group-notifications',
-        component: GroupNotificationsPage,
       },
       {
         path: 'board',

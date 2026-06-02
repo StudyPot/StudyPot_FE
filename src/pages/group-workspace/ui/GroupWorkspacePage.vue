@@ -5,8 +5,8 @@ import { useRoute } from 'vue-router'
 import { getGroup, getGroupStatusLabel, listGroupMembers, type GroupMember, type StudyGroup } from '@/entities/group'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { LogoutButton } from '@/features/auth/logout'
-import { LogoutAllButton } from '@/features/auth/logout-all'
 import { useSessionStore } from '@/features/auth/session'
+import { NotificationBell } from '@/features/notification'
 import { ApiError } from '@/shared/api'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -50,11 +50,6 @@ const baseNavItems: WorkspaceNavItem[] = [
     routeName: 'group-ai',
     label: 'AI 팀장',
     detail: '대화',
-  },
-  {
-    routeName: 'group-notifications',
-    label: '알림',
-    detail: '활동',
   },
   {
     routeName: 'group-board',
@@ -217,15 +212,15 @@ function formatDate(value: string): string {
 
           <div
             v-if="sessionStore.user"
-            class="grid gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-3 text-sm"
+            class="flex flex-wrap items-center gap-3"
           >
-            <div>
+            <NotificationBell />
+            <div class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-3 text-sm">
               <p class="font-semibold text-[var(--color-ink)]">{{ sessionStore.user.nickname }}</p>
               <p class="mt-1 text-[var(--color-muted)]">{{ sessionStore.user.email }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <LogoutButton />
-              <LogoutAllButton />
+              <div class="mt-2">
+                <LogoutButton />
+              </div>
             </div>
           </div>
         </div>
