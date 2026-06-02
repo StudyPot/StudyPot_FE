@@ -10,6 +10,7 @@ import {
 } from '@/entities/group'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
+import { useSessionStore } from '@/features/auth/session'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -26,6 +27,13 @@ if (!workspaceContext) {
 }
 
 const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, members } = workspaceContext
+const sessionStore = useSessionStore()
+
+const isOwner = computed(() =>
+  members.value.some(
+    (m) => m.userId === sessionStore.user?.id && m.permission === 'OWNER',
+  ),
+)
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
 const isStartingStudy = ref(false)
@@ -174,7 +182,7 @@ function getDayLabel(dayStr: string): string {
     <template v-else-if="group && primaryEntry">
       <!-- 스터디 시작하기 배너 -->
       <section
-        v-if="allOnboardingDone"
+        v-if="allOnboardingDone && isOwner"
         class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
