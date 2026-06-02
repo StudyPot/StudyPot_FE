@@ -67,7 +67,7 @@ const navItems = computed<WorkspaceNavItem[]>(() => {
   if (!showOnboarding.value) return baseNavItems
 
   return [
-    baseNavItems[0],
+    baseNavItems[0]!,
     {
       routeName: 'group-onboarding',
       label: '온보딩',

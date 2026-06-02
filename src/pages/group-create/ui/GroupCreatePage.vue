@@ -145,7 +145,6 @@ async function requestKeywordSuggestions(): Promise<void> {
   }
 }
 
-<<<<<<< feat/alert
 function toggleKeyword(keyword: string): void {
   if (form.selectedKeywords.includes(keyword)) {
     form.selectedKeywords = form.selectedKeywords.filter((k) => k !== keyword)
@@ -173,19 +172,6 @@ function confirmCustomKeyword(): void {
 function cancelCustomInput(): void {
   customKeywordInput.value = ''
   showCustomInput.value = false
-=======
-function toggleSuggestedKeyword(keyword: string): void {
-  if (isSuggestedKeywordSelected(keyword)) {
-    form.detailKeywords = parsedKeywords.value.filter((k) => k !== keyword).join(', ')
-  } else {
-    form.detailKeywords = [...parsedKeywords.value, keyword].join(', ')
-    clearFieldError('detailKeywords')
-  }
-}
-
-function isSuggestedKeywordSelected(keyword: string): boolean {
-  return form.selectedKeywords.includes(keyword)
->>>>>>> dev
 }
 
 function validateForm(): boolean {

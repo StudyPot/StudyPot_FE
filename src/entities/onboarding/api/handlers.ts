@@ -8,7 +8,7 @@ export const onboardingHandlers = [
     return HttpResponse.json(mockMswData.onboarding.myOnboarding)
   }),
   http.post(`${apiBaseUrl}/groups/:groupId/onboarding/me`, async ({ request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as Record<string, unknown>
 
     return HttpResponse.json({
       ...mockMswData.onboarding.submitOnboardingResponse,

@@ -9,6 +9,7 @@ import {
   type GroupEntryAction,
 } from '@/entities/group'
 import { getMyOnboarding } from '@/entities/onboarding'
+import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -27,6 +28,8 @@ if (!workspaceContext) {
 const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, members } = workspaceContext
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
+const isStartingStudy = ref(false)
+const startStudyError = ref('')
 
 watch(
   () => group.value,
@@ -73,7 +76,7 @@ const heatmapDays = computed(() => {
   for (let i = 27; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
-    days.push(d.toISOString().split('T')[0])
+    days.push(d.toISOString().slice(0, 10))
   }
   return days
 })
@@ -100,9 +103,7 @@ const HEAT_COLORS = [
 const quickLinks: QuickLink[] = [
   { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
   { routeName: 'group-ai', title: 'AI 팀장', caption: '학습 흐름을 함께 점검합니다.' },
-  { routeName: 'group-notifications', title: '알림', caption: '그룹 활동 소식을 확인합니다.' },
   { routeName: 'group-board', title: '게시판', caption: '공지와 토론을 나눕니다.' },
-  { routeName: 'group-rules', title: '규칙', caption: '운영 규칙과 위반 내역을 관리합니다.' },
 ]
 
 function formatDateRange(startsAt: string, endsAt: string): string {
