@@ -62,11 +62,6 @@ const baseNavItems: WorkspaceNavItem[] = [
     detail: '공지·토론',
   },
   {
-    routeName: 'group-rules',
-    label: '규칙',
-    detail: '운영',
-  },
-  {
     routeName: 'group-my',
     label: '마이페이지',
     detail: '내 정보',

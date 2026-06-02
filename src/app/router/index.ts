@@ -15,7 +15,6 @@ import {
   GroupOnboardingPage,
   GroupOverviewPage,
   GroupRetrospectivePage,
-  GroupRulesPage,
   GroupTodoPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
@@ -131,11 +130,6 @@ const routes: RouteRecordRaw[] = [
         path: 'notifications',
         name: 'group-notifications',
         component: GroupNotificationsPage,
-      },
-      {
-        path: 'rules',
-        name: 'group-rules',
-        component: GroupRulesPage,
       },
       {
         path: 'board',

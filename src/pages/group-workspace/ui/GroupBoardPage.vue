@@ -38,7 +38,12 @@ const newPostForm = ref({ title: '', content: '', pinned: false })
 const isCreating = ref(false)
 const createError = ref('')
 
-const markdownPreviewHtml = computed(() => renderMarkdown(newPostForm.value.content))
+const previewContent = ref('')
+const markdownPreviewHtml = computed(() => renderMarkdown(previewContent.value))
+
+function syncPreview(event: Event): void {
+  previewContent.value = (event.target as HTMLTextAreaElement).value
+}
 
 onMounted(() => {
   void loadBoards()
@@ -132,6 +137,7 @@ async function submitNewPost(): Promise<void> {
       pinned: newPostForm.value.pinned || undefined,
     })
     newPostForm.value = { title: '', content: '', pinned: false }
+    previewContent.value = ''
     await loadPosts()
     viewMode.value = 'list'
   } catch (error) {
@@ -593,6 +599,8 @@ function formatDate(value: string): string {
                 rows="18"
                 placeholder="내용을 입력하세요"
                 class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line)] bg-white px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+                @input="syncPreview"
+                @compositionupdate="syncPreview"
               />
             </label>
 
