@@ -2,27 +2,17 @@
 import { inject, onMounted, ref, computed } from 'vue'
 
 import {
+  listBoards,
   listBoardPosts,
+  getBoardPost,
   createBoardPost,
   listPostComments,
   createPostComment,
 } from '@/entities/board/api/boardApi'
-import type { BoardPost, BoardComment, BoardCategory } from '@/entities/board/model/types'
+import type { GroupBoard, BoardPostSummary, BoardPost, BoardComment } from '@/entities/board/model/types'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
-
-const CATEGORY_LABEL: Record<BoardCategory, string> = {
-  NOTICE: '공지',
-  QUESTION: '질문',
-  DISCUSSION: '토론',
-}
-
-const CATEGORY_CLASS: Record<BoardCategory, string> = {
-  NOTICE: 'bg-amber-50 text-amber-700 border-amber-200',
-  QUESTION: 'bg-blue-50 text-blue-700 border-blue-200',
-  DISCUSSION: 'bg-[var(--color-card)] text-[var(--color-muted)] border-[var(--color-line)]',
-}
 
 const workspaceContext = inject(groupWorkspaceContextKey)
 if (!workspaceContext) throw new Error('GroupBoardPage must be inside GroupWorkspacePage.')
@@ -32,37 +22,57 @@ const { groupId } = workspaceContext
 type ViewMode = 'list' | 'detail' | 'create'
 
 const viewMode = ref<ViewMode>('list')
+const isLoadingBoards = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
-const posts = ref<BoardPost[]>([])
+const boards = ref<GroupBoard[]>([])
+const selectedBoard = ref<GroupBoard | null>(null)
+const posts = ref<BoardPostSummary[]>([])
 const selectedPost = ref<BoardPost | null>(null)
 const comments = ref<BoardComment[]>([])
 const isLoadingComments = ref(false)
 const newCommentText = ref('')
 const isSubmittingComment = ref(false)
 
-const newPostForm = ref({ title: '', content: '', category: 'DISCUSSION' as BoardCategory })
+const newPostForm = ref({ title: '', content: '', pinned: false })
 const isCreating = ref(false)
 const createError = ref('')
-
-const filteredCategory = ref<BoardCategory | 'ALL'>('ALL')
-
-const filteredPosts = computed(() => {
-  if (filteredCategory.value === 'ALL') return posts.value
-  return posts.value.filter((p) => p.category === filteredCategory.value)
-})
 
 const markdownPreviewHtml = computed(() => renderMarkdown(newPostForm.value.content))
 
 onMounted(() => {
-  void loadPosts()
+  void loadBoards()
 })
 
+async function loadBoards(): Promise<void> {
+  isLoadingBoards.value = true
+  errorMessage.value = ''
+  try {
+    boards.value = await listBoards(groupId.value)
+    if (boards.value.length > 0) {
+      selectedBoard.value = boards.value.find((b) => b.defaultBoard) ?? boards.value[0] ?? null
+      await loadPosts()
+    }
+  } catch (error) {
+    errorMessage.value = error instanceof ApiError ? error.message : '게시판을 불러오지 못했습니다.'
+  } finally {
+    isLoadingBoards.value = false
+  }
+}
+
+async function selectBoard(board: GroupBoard): Promise<void> {
+  selectedBoard.value = board
+  viewMode.value = 'list'
+  await loadPosts()
+}
+
 async function loadPosts(): Promise<void> {
+  if (!selectedBoard.value) return
   isLoading.value = true
   errorMessage.value = ''
   try {
-    posts.value = await listBoardPosts(groupId.value)
+    const result = await listBoardPosts(groupId.value, selectedBoard.value.id)
+    posts.value = result.items
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : '게시글을 불러오지 못했습니다.'
   } finally {
@@ -70,13 +80,18 @@ async function loadPosts(): Promise<void> {
   }
 }
 
-async function openPost(post: BoardPost): Promise<void> {
-  selectedPost.value = post
+async function openPost(summary: BoardPostSummary): Promise<void> {
   viewMode.value = 'detail'
+  selectedPost.value = null
   comments.value = []
   isLoadingComments.value = true
   try {
-    comments.value = await listPostComments(groupId.value, post.id)
+    const [post, commentPage] = await Promise.all([
+      getBoardPost(groupId.value, summary.id),
+      listPostComments(groupId.value, summary.id),
+    ])
+    selectedPost.value = post
+    comments.value = commentPage.items
   } catch {
     // ignore
   } finally {
@@ -103,6 +118,7 @@ async function submitComment(): Promise<void> {
 }
 
 async function submitNewPost(): Promise<void> {
+  if (!selectedBoard.value) return
   if (!newPostForm.value.title.trim() || !newPostForm.value.content.trim()) {
     createError.value = '제목과 내용을 입력해주세요.'
     return
@@ -110,12 +126,12 @@ async function submitNewPost(): Promise<void> {
   isCreating.value = true
   createError.value = ''
   try {
-    await createBoardPost(groupId.value, {
+    await createBoardPost(groupId.value, selectedBoard.value.id, {
       title: newPostForm.value.title.trim(),
       content: newPostForm.value.content.trim(),
-      category: newPostForm.value.category,
+      pinned: newPostForm.value.pinned || undefined,
     })
-    newPostForm.value = { title: '', content: '', category: 'DISCUSSION' }
+    newPostForm.value = { title: '', content: '', pinned: false }
     await loadPosts()
     viewMode.value = 'list'
   } catch (error) {
@@ -376,6 +392,27 @@ function formatDate(value: string): string {
 
 <template>
   <div class="grid gap-5">
+    <!-- 게시판 탭 -->
+    <div
+      v-if="boards.length > 0"
+      class="flex flex-wrap gap-1 rounded-lg border border-[var(--color-line)] bg-white/85 px-4 py-2 shadow-[var(--shadow-soft)]"
+    >
+      <button
+        v-for="board in boards"
+        :key="board.id"
+        type="button"
+        :class="[
+          'rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
+          selectedBoard?.id === board.id
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'bg-[var(--color-card)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
+        ]"
+        @click="selectBoard(board)"
+      >
+        {{ board.name }}
+      </button>
+    </div>
+
     <!-- 목록 -->
     <template v-if="viewMode === 'list'">
       <section
@@ -386,9 +423,12 @@ function formatDate(value: string): string {
         >
           <div>
             <p class="text-sm font-semibold text-[var(--color-primary)]">게시판</p>
-            <h2 class="mt-1 text-lg font-bold text-[var(--color-ink)]">그룹 게시판</h2>
+            <h2 class="mt-1 text-lg font-bold text-[var(--color-ink)]">
+              {{ selectedBoard?.name ?? '그룹 게시판' }}
+            </h2>
           </div>
           <button
+            v-if="selectedBoard"
             type="button"
             class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
             @click="viewMode = 'create'"
@@ -397,26 +437,8 @@ function formatDate(value: string): string {
           </button>
         </div>
 
-        <!-- 카테고리 필터 -->
-        <div class="flex gap-1 border-b border-[var(--color-line)] px-5 py-2">
-          <button
-            v-for="cat in ['ALL', 'NOTICE', 'QUESTION', 'DISCUSSION'] as const"
-            :key="cat"
-            type="button"
-            :class="[
-              'rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
-              filteredCategory === cat
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'bg-[var(--color-card)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
-            ]"
-            @click="filteredCategory = cat"
-          >
-            {{ cat === 'ALL' ? '전체' : CATEGORY_LABEL[cat] }}
-          </button>
-        </div>
-
         <ScreenState
-          v-if="isLoading"
+          v-if="isLoadingBoards || isLoading"
           variant="loading"
           title="게시글을 불러오는 중입니다."
           class="p-8"
@@ -426,33 +448,28 @@ function formatDate(value: string): string {
           variant="error"
           :title="errorMessage"
           action-label="다시 시도"
-          @action="loadPosts"
+          @action="loadBoards"
           class="p-8"
         />
 
-        <ul v-else-if="filteredPosts.length > 0" class="divide-y divide-[var(--color-line)]">
+        <ul v-else-if="posts.length > 0" class="divide-y divide-[var(--color-line)]">
           <li
-            v-for="post in filteredPosts"
+            v-for="post in posts"
             :key="post.id"
             class="flex cursor-pointer items-start gap-3 px-5 py-4 transition hover:bg-[var(--color-card)]"
             @click="openPost(post)"
           >
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
-                <span v-if="post.isPinned" class="text-sm">📌</span>
-                <span
-                  class="rounded border px-1.5 py-0.5 text-xs font-semibold"
-                  :class="CATEGORY_CLASS[post.category]"
-                >
-                  {{ CATEGORY_LABEL[post.category] }}
-                </span>
+                <span v-if="post.pinned" class="text-sm">📌</span>
                 <span class="font-semibold text-[var(--color-ink)]">{{ post.title }}</span>
               </div>
               <div class="mt-1 flex flex-wrap gap-3 text-xs text-[var(--color-muted)]">
-                <span>{{ post.authorNickname }}</span>
+                <span>{{ post.author.displayName }}</span>
                 <span>{{ formatDate(post.createdAt) }}</span>
                 <span v-if="post.commentCount > 0">댓글 {{ post.commentCount }}</span>
               </div>
+              <p class="mt-1 truncate text-xs text-[var(--color-muted)]">{{ post.contentPreview }}</p>
             </div>
           </li>
         </ul>
@@ -464,7 +481,7 @@ function formatDate(value: string): string {
     </template>
 
     <!-- 상세 -->
-    <template v-else-if="viewMode === 'detail' && selectedPost">
+    <template v-else-if="viewMode === 'detail'">
       <section
         class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
       >
@@ -476,27 +493,29 @@ function formatDate(value: string): string {
           >
             ← 목록으로
           </button>
-          <div class="flex flex-wrap items-center gap-2">
-            <span v-if="selectedPost.isPinned" class="text-sm">📌</span>
-            <span
-              class="rounded border px-1.5 py-0.5 text-xs font-semibold"
-              :class="CATEGORY_CLASS[selectedPost.category]"
-            >
-              {{ CATEGORY_LABEL[selectedPost.category] }}
-            </span>
-          </div>
-          <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedPost.title }}</h2>
-          <p class="mt-1 text-xs text-[var(--color-muted)]">
-            {{ selectedPost.authorNickname }} · {{ formatDate(selectedPost.createdAt) }}
-          </p>
+          <ScreenState
+            v-if="!selectedPost && isLoadingComments"
+            variant="loading"
+            title="게시글을 불러오는 중입니다."
+            class="py-4"
+          />
+          <template v-else-if="selectedPost">
+            <div class="flex flex-wrap items-center gap-2">
+              <span v-if="selectedPost.pinned" class="text-sm">📌</span>
+            </div>
+            <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedPost.title }}</h2>
+            <p class="mt-1 text-xs text-[var(--color-muted)]">
+              {{ selectedPost.author.displayName }} · {{ formatDate(selectedPost.createdAt) }}
+            </p>
+          </template>
         </div>
 
-        <div class="px-5 py-4">
+        <div v-if="selectedPost" class="px-5 py-4">
           <article class="markdown-body" v-html="renderMarkdown(selectedPost.content)" />
         </div>
 
         <!-- 댓글 -->
-        <div class="border-t border-[var(--color-line)] px-5 py-4">
+        <div v-if="selectedPost" class="border-t border-[var(--color-line)] px-5 py-4">
           <h3 class="text-sm font-bold text-[var(--color-ink)]">댓글 {{ comments.length }}</h3>
 
           <ScreenState v-if="isLoadingComments" variant="loading" title="댓글을 불러오는 중…" />
@@ -508,7 +527,7 @@ function formatDate(value: string): string {
               class="rounded-md border border-[var(--color-line)] bg-white px-3 py-2 text-sm"
             >
               <p class="font-semibold text-[var(--color-ink)]">
-                {{ comment.authorNickname }}
+                {{ comment.author.displayName }}
                 <span class="ml-2 text-xs font-normal text-[var(--color-muted)]">{{
                   formatDate(comment.createdAt)
                 }}</span>
@@ -551,33 +570,10 @@ function formatDate(value: string): string {
         >
           ← 목록으로
         </button>
-        <p class="text-sm font-semibold text-[var(--color-primary)]">게시판</p>
+        <p class="text-sm font-semibold text-[var(--color-primary)]">{{ selectedBoard?.name }}</p>
         <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">새 글 작성</h2>
 
         <form class="mt-5 grid gap-4" @submit.prevent="submitNewPost">
-          <div class="grid gap-2">
-            <label class="text-sm font-semibold text-[var(--color-ink)]">카테고리</label>
-            <div class="flex gap-2">
-              <label
-                v-for="cat in ['DISCUSSION', 'QUESTION', 'NOTICE'] as BoardCategory[]"
-                :key="cat"
-                class="cursor-pointer"
-              >
-                <input v-model="newPostForm.category" type="radio" :value="cat" class="sr-only" />
-                <span
-                  :class="[
-                    'inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-semibold transition',
-                    newPostForm.category === cat
-                      ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                      : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)]',
-                  ]"
-                >
-                  {{ CATEGORY_LABEL[cat] }}
-                </span>
-              </label>
-            </div>
-          </div>
-
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-[var(--color-ink)]">제목</span>
             <input
