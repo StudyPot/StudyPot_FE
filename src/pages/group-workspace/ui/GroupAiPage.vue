@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 import { inject, nextTick, ref } from 'vue'
 
 import {
@@ -104,6 +106,11 @@ function formatTime(value: string): string {
     new Date(value),
   )
 }
+
+function renderMarkdown(content: string): string {
+  const html = marked.parse(content, { async: false }) as string
+  return DOMPurify.sanitize(html)
+}
 </script>
 
 <template>
@@ -191,11 +198,10 @@ function formatTime(value: string): string {
           >
             <div class="max-w-[75%]">
               <p class="mb-1 text-xs font-semibold text-[var(--color-primary)]">AI 팀장</p>
-              <p
-                class="rounded-2xl rounded-tl-sm bg-[var(--color-card)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)]"
-              >
-                {{ message.content }}
-              </p>
+              <div
+                class="ai-markdown rounded-2xl rounded-tl-sm bg-[var(--color-card)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)]"
+                v-html="renderMarkdown(message.content)"
+              />
               <p class="mt-1 text-xs text-[var(--color-muted)]">
                 {{ formatTime(message.createdAt) }}
               </p>
@@ -265,3 +271,68 @@ function formatTime(value: string): string {
     </section>
   </div>
 </template>
+
+<style scoped>
+.ai-markdown :deep(h1),
+.ai-markdown :deep(h2),
+.ai-markdown :deep(h3),
+.ai-markdown :deep(h4) {
+  font-weight: 700;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.ai-markdown :deep(h1) { font-size: 1.125rem; }
+.ai-markdown :deep(h2) { font-size: 1rem; }
+.ai-markdown :deep(h3) { font-size: 0.9375rem; }
+
+.ai-markdown :deep(p) {
+  margin-bottom: 0.5rem;
+}
+.ai-markdown :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.ai-markdown :deep(ul),
+.ai-markdown :deep(ol) {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.ai-markdown :deep(ul) { list-style-type: disc; }
+.ai-markdown :deep(ol) { list-style-type: decimal; }
+.ai-markdown :deep(li) { margin-bottom: 0.125rem; }
+
+.ai-markdown :deep(code) {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+  font-family: ui-monospace, monospace;
+}
+.ai-markdown :deep(pre) {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin-bottom: 0.5rem;
+}
+.ai-markdown :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.ai-markdown :deep(blockquote) {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 0.75rem;
+  color: var(--color-muted);
+  margin-bottom: 0.5rem;
+}
+
+.ai-markdown :deep(strong) { font-weight: 700; }
+.ai-markdown :deep(em) { font-style: italic; }
+
+.ai-markdown :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--color-line);
+  margin: 0.75rem 0;
+}
+</style>

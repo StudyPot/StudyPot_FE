@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { apiOrigin } from '@/shared/config/api'
 
 const route = useRoute()
 
 const noticeMessage = computed(() => {
+  if (route.query.error === 'oauth') {
+    return 'Google 로그인에 실패했습니다. 다시 시도해주세요.'
+  }
+
   if (route.query.signedOut === 'all') {
     return '모든 기기에서 로그아웃되었습니다.'
   }
@@ -17,7 +22,7 @@ const noticeMessage = computed(() => {
 })
 
 function startGoogleLogin(): void {
-  window.location.assign('/api/oauth2/authorization/google')
+  window.location.assign(`${apiOrigin}/api/oauth2/authorization/google`)
 }
 </script>
 
