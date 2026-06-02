@@ -1,4 +1,5 @@
 import { aiHandlers } from '@/entities/ai/api/handlers'
+import { boardHandlers } from '@/entities/board/api/handlers'
 import { curriculumHandlers } from '@/entities/curriculum/api/handlers'
 import { userHandlers } from '@/entities/user/api/handlers'
 import { groupHandlers } from '@/entities/group/api/handlers'
@@ -26,4 +27,5 @@ export const handlers = [
   ...notificationHandlers,
   ...ruleHandlers,
   ...operationHandlers,
+  ...boardHandlers,
 ]

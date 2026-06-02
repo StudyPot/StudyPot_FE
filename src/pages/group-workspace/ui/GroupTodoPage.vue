@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { inject, onMounted, reactive, ref } from 'vue'
+import { computed, inject, onMounted, reactive, ref, watch } from 'vue'
 
 import {
   completeTask,
-  getCurrentWeek,
+  getCurriculum,
   getMyWeekProgress,
+  getWeek,
+  getCurrentWeek,
   listWeeklyTasks,
   updateMyWeekProgress,
+  type Curriculum,
   type CurriculumWeek,
+  type CurriculumWeekSummary,
+  type CurriculumWeekStatus,
   type MemberWeekProgress,
   type MemberWeekProgressStatus,
   type TaskCompletionStatus,
@@ -25,6 +30,20 @@ const TASK_TYPE_LABEL: Record<string, string> = {
   CUSTOM: '기타',
 }
 
+const TASK_TYPE_COLOR: Record<string, string> = {
+  READING: 'bg-blue-50 text-blue-700 border-blue-200',
+  PRACTICE: 'bg-green-50 text-green-700 border-green-200',
+  ASSIGNMENT: 'bg-amber-50 text-amber-700 border-amber-200',
+  PROJECT: 'bg-purple-50 text-purple-700 border-purple-200',
+  CUSTOM: 'bg-[var(--color-card)] text-[var(--color-muted)] border-[var(--color-line)]',
+}
+
+const WEEK_STATUS_LABEL: Record<CurriculumWeekStatus, string> = {
+  PENDING: '예정',
+  IN_PROGRESS: '진행 중',
+  COMPLETED: '완료',
+}
+
 const PROGRESS_STATUS_LABEL: Record<MemberWeekProgressStatus, string> = {
   NOT_STARTED: '시작 전',
   IN_PROGRESS: '진행 중',
@@ -40,51 +59,108 @@ const COMPLETION_ACTIONS: { status: TaskCompletionStatus; label: string }[] = [
 ]
 
 const workspaceContext = inject(groupWorkspaceContextKey)
-
-if (!workspaceContext) {
-  throw new Error('GroupTodoPage must be used inside GroupWorkspacePage.')
-}
-
+if (!workspaceContext) throw new Error('GroupTodoPage must be used inside GroupWorkspacePage.')
 const { groupId } = workspaceContext
 
+// ─── 전체 페이지 상태 ───────────────────────────────────────────
 type PageState = 'loading' | 'loaded' | 'none' | 'error'
-
 const pageState = ref<PageState>('loading')
 const errorMessage = ref('')
-const currentWeek = ref<CurriculumWeek | null>(null)
+
+// ─── 커리큘럼 주차 목록 ──────────────────────────────────────────
+const curriculum = ref<Curriculum | null>(null)
+const weekSummaries = computed<CurriculumWeekSummary[]>(() => curriculum.value?.weeks ?? [])
+
+// ─── 선택된 주차 ─────────────────────────────────────────────────
+const selectedWeekId = ref<string>('')
+const selectedWeek = ref<CurriculumWeek | null>(null)
+const isWeekLoading = ref(false)
+
+// ─── 태스크 + 진행 상태 ───────────────────────────────────────────
 const tasks = ref<WeeklyTask[]>([])
 const progress = ref<MemberWeekProgress | null>(null)
 const completionMap = reactive<Record<string, TaskCompletionStatus>>({})
 const updatingTaskId = ref<string | null>(null)
 const taskError = reactive<Record<string, string>>({})
 const isUpdatingProgress = ref(false)
+const justCompletedIds = ref<Set<string>>(new Set())
 
+const allTasksDone = computed(
+  () => tasks.value.length > 0 && tasks.value.every((t) => completionMap[t.id] === 'DONE'),
+)
+
+// ─── 탭 스크롤 ref ────────────────────────────────────────────────
+const tabsRef = ref<HTMLElement | null>(null)
+
+// ─────────────────────────────────────────────────────────────────
 onMounted(() => {
-  void loadAll()
+  void loadInitial()
 })
 
-async function loadAll(): Promise<void> {
+watch(selectedWeekId, async (weekId) => {
+  if (!weekId) return
+  await loadWeekDetail(weekId)
+})
+
+// 초기 로드: 커리큘럼 + 현재 주차 결정
+async function loadInitial(): Promise<void> {
   pageState.value = 'loading'
   errorMessage.value = ''
-  currentWeek.value = null
-  tasks.value = []
-  progress.value = null
 
   try {
-    const week = await getCurrentWeek(groupId.value)
-    currentWeek.value = week
+    // 커리큘럼 목록 로드
+    const [curriculumData, currentWeek] = await Promise.all([
+      getCurriculum(groupId.value).catch(() => null),
+      getCurrentWeek(groupId.value).catch(() => null),
+    ])
 
-    const [fetchedTasks, fetchedProgress] = await Promise.all([
-      listWeeklyTasks(week.id),
-      getMyWeekProgress(week.id).catch((e) => {
-        if (e instanceof ApiError && e.status === 404) {
-          return null
-        }
+    if (!currentWeek && !curriculumData) {
+      pageState.value = 'none'
+      return
+    }
+
+    curriculum.value = curriculumData
+
+    // 현재 진행 주차를 기본 선택
+    const defaultWeekId = currentWeek?.id
+      ?? curriculumData?.weeks?.find((w) => w.status === 'IN_PROGRESS')?.id
+      ?? curriculumData?.weeks?.[0]?.id
+      ?? ''
+
+    selectedWeekId.value = defaultWeekId
+    pageState.value = 'loaded'
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      pageState.value = 'none'
+    } else {
+      errorMessage.value = error instanceof ApiError ? error.message : '정보를 불러오지 못했습니다.'
+      pageState.value = 'error'
+    }
+  }
+}
+
+// 선택한 주차의 상세 + 태스크 로드
+async function loadWeekDetail(weekId: string): Promise<void> {
+  isWeekLoading.value = true
+  tasks.value = []
+  progress.value = null
+  selectedWeek.value = null
+
+  // completionMap 초기화
+  Object.keys(completionMap).forEach((k) => delete completionMap[k])
+
+  try {
+    const [week, fetchedTasks, fetchedProgress] = await Promise.all([
+      getWeek(weekId),
+      listWeeklyTasks(weekId),
+      getMyWeekProgress(weekId).catch((e) => {
+        if (e instanceof ApiError && e.status === 404) return null
         throw e
       }),
     ])
 
-    tasks.value = fetchedTasks
+    selectedWeek.value = week
+    tasks.value = fetchedTasks.sort((a, b) => a.displayOrder - b.displayOrder)
     progress.value = fetchedProgress
 
     for (const task of fetchedTasks) {
@@ -92,17 +168,16 @@ async function loadAll(): Promise<void> {
         completionMap[task.id] = task.completion.status
       }
     }
-
-    pageState.value = 'loaded'
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      pageState.value = 'none'
-    } else {
-      errorMessage.value =
-        error instanceof ApiError ? error.message : '주차 정보를 불러오지 못했습니다.'
-      pageState.value = 'error'
-    }
+    errorMessage.value = error instanceof ApiError ? error.message : '주차 정보를 불러오지 못했습니다.'
+  } finally {
+    isWeekLoading.value = false
   }
+}
+
+function selectWeek(weekId: string): void {
+  if (weekId === selectedWeekId.value) return
+  selectedWeekId.value = weekId
 }
 
 async function handleCompleteTask(taskId: string, status: TaskCompletionStatus): Promise<void> {
@@ -111,7 +186,17 @@ async function handleCompleteTask(taskId: string, status: TaskCompletionStatus):
 
   try {
     const result = await completeTask(taskId, { status })
+    const prev = completionMap[taskId]
     completionMap[taskId] = result.status
+
+    if (result.status === 'DONE' && prev !== 'DONE') {
+      justCompletedIds.value = new Set([...justCompletedIds.value, taskId])
+      setTimeout(() => {
+        const next = new Set(justCompletedIds.value)
+        next.delete(taskId)
+        justCompletedIds.value = next
+      }, 800)
+    }
   } catch (error) {
     taskError[taskId] = error instanceof ApiError ? error.message : '저장에 실패했습니다.'
   } finally {
@@ -120,25 +205,19 @@ async function handleCompleteTask(taskId: string, status: TaskCompletionStatus):
 }
 
 async function handleUpdateProgress(status: MemberWeekProgressStatus): Promise<void> {
-  if (!currentWeek.value) {
-    return
-  }
-
+  if (!selectedWeek.value) return
   isUpdatingProgress.value = true
-
   try {
-    progress.value = await updateMyWeekProgress(currentWeek.value.id, { status })
+    progress.value = await updateMyWeekProgress(selectedWeek.value.id, { status })
   } catch {
-    // 진행 상태 업데이트 실패 시 조용히 무시
+    // silent
   } finally {
     isUpdatingProgress.value = false
   }
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
-    new Date(value),
-  )
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
 }
 
 function formatDateTime(value: string): string {
@@ -153,182 +232,391 @@ function formatDateTime(value: string): string {
 function getCompletionStatus(task: WeeklyTask): TaskCompletionStatus {
   return completionMap[task.id] ?? 'TODO'
 }
+
+function scrollTabs(direction: 'left' | 'right'): void {
+  if (!tabsRef.value) return
+  tabsRef.value.scrollBy({ left: direction === 'right' ? 200 : -200, behavior: 'smooth' })
+}
 </script>
 
 <template>
   <div class="grid gap-5">
+    <!-- 초기 로딩 -->
     <ScreenState
       v-if="pageState === 'loading'"
       variant="loading"
-      title="이번 주 정보를 불러오는 중입니다."
+      title="커리큘럼을 불러오는 중입니다."
       description="잠시만 기다려 주세요."
     />
 
     <ScreenState
       v-else-if="pageState === 'error'"
       variant="error"
-      title="주차 정보를 불러오지 못했습니다."
+      title="정보를 불러오지 못했습니다."
       :description="errorMessage"
       action-label="다시 시도"
-      @action="loadAll"
+      @action="loadInitial"
     />
 
     <ScreenState
       v-else-if="pageState === 'none'"
       variant="empty"
-      eyebrow="Todo"
-      title="현재 진행 중인 주차가 없습니다."
-      description="스터디가 시작되면 이번 주 과제가 여기에 표시됩니다."
+      eyebrow="학습"
+      title="현재 진행 중인 커리큘럼이 없습니다."
+      description="스터디가 시작되면 커리큘럼과 이번 주 과제가 여기에 표시됩니다."
     />
 
-    <template v-else-if="pageState === 'loaded' && currentWeek">
-      <!-- 주차 정보 -->
+    <template v-else-if="pageState === 'loaded'">
+      <!-- ── 주차 탭 네비게이션 ────────────────────────────────── -->
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
       >
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div class="min-w-0">
-            <p class="text-sm font-semibold text-[var(--color-primary)]">
-              {{ currentWeek.weekNumber }}주차
-            </p>
-            <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">{{ currentWeek.title }}</h2>
-            <p v-if="currentWeek.sprintGoal" class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-              {{ currentWeek.sprintGoal }}
-            </p>
-          </div>
-
-          <div v-if="progress" class="shrink-0 text-right text-sm">
-            <p class="font-semibold text-[var(--color-ink)]">
-              {{ PROGRESS_STATUS_LABEL[progress.status] }}
-            </p>
-            <div class="mt-2 flex flex-wrap justify-end gap-1">
-              <button
-                v-for="opt in (['IN_PROGRESS', 'COMPLETED', 'INCOMPLETE'] as MemberWeekProgressStatus[])"
-                :key="opt"
-                type="button"
-                :disabled="isUpdatingProgress || progress.status === opt"
-                :class="[
-                  'inline-flex h-7 items-center rounded border px-2.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
-                  progress.status === opt
-                    ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                    : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
-                ]"
-                @click="handleUpdateProgress(opt)"
-              >
-                {{ PROGRESS_STATUS_LABEL[opt] }}
-              </button>
-            </div>
-          </div>
+        <div class="border-b border-[var(--color-line)] px-4 py-3">
+          <p class="text-xs font-semibold text-[var(--color-primary)]">커리큘럼</p>
+          <h2 v-if="curriculum" class="mt-0.5 text-sm font-bold text-[var(--color-ink)]">
+            {{ curriculum.title }}
+          </h2>
         </div>
 
-        <dl
-          v-if="currentWeek.startsAt || currentWeek.endsAt"
-          class="mt-5 grid gap-3 text-sm sm:grid-cols-2"
-        >
-          <div v-if="currentWeek.startsAt">
-            <dt class="text-[var(--color-muted)]">시작일</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">
-              {{ formatDate(currentWeek.startsAt) }}
-            </dd>
+        <div class="relative flex items-center">
+          <!-- 좌측 스크롤 버튼 -->
+          <button
+            type="button"
+            class="absolute left-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-r from-white to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
+            aria-label="이전 주차"
+            @click="scrollTabs('left')"
+          >
+            ‹
+          </button>
+
+          <!-- 주차 탭 목록 -->
+          <div
+            ref="tabsRef"
+            class="flex gap-0 overflow-x-auto scroll-smooth px-8"
+            style="scrollbar-width: none; -ms-overflow-style: none;"
+          >
+            <button
+              v-for="week in weekSummaries"
+              :key="week.id"
+              type="button"
+              :class="[
+                'relative flex shrink-0 flex-col items-start px-4 py-3 text-left transition-colors focus:outline-none',
+                'border-b-2',
+                selectedWeekId === week.id
+                  ? 'border-[var(--color-primary)] bg-[var(--color-card)]'
+                  : 'border-transparent hover:bg-[var(--color-card)]/60',
+              ]"
+              @click="selectWeek(week.id)"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  :class="[
+                    'text-xs font-bold',
+                    selectedWeekId === week.id
+                      ? 'text-[var(--color-primary)]'
+                      : 'text-[var(--color-muted)]',
+                  ]"
+                >
+                  {{ week.weekNumber }}주차
+                </span>
+                <span
+                  :class="[
+                    'rounded px-1.5 py-0.5 text-[10px] font-semibold',
+                    week.status === 'IN_PROGRESS'
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : week.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-[var(--color-card)] text-[var(--color-muted)]',
+                  ]"
+                >
+                  {{ WEEK_STATUS_LABEL[week.status] }}
+                </span>
+              </div>
+              <span
+                :class="[
+                  'mt-0.5 max-w-[120px] truncate text-xs',
+                  selectedWeekId === week.id
+                    ? 'font-semibold text-[var(--color-ink)]'
+                    : 'text-[var(--color-muted)]',
+                ]"
+              >
+                {{ week.title }}
+              </span>
+            </button>
           </div>
-          <div v-if="currentWeek.endsAt">
-            <dt class="text-[var(--color-muted)]">종료일</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">
-              {{ formatDate(currentWeek.endsAt) }}
-            </dd>
-          </div>
-        </dl>
+
+          <!-- 우측 스크롤 버튼 -->
+          <button
+            type="button"
+            class="absolute right-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-l from-white to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
+            aria-label="다음 주차"
+            @click="scrollTabs('right')"
+          >
+            ›
+          </button>
+        </div>
       </section>
 
-      <!-- 과제 목록 -->
-      <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
-      >
-        <h3 class="text-base font-bold text-[var(--color-ink)]">과제 목록</h3>
+      <!-- ── 주차 상세 로딩 ────────────────────────────────────── -->
+      <ScreenState
+        v-if="isWeekLoading"
+        variant="loading"
+        title="주차 정보를 불러오는 중입니다."
+        description="잠시만 기다려 주세요."
+      />
 
-        <ul v-if="tasks.length > 0" class="mt-4 grid gap-4">
-          <li
-            v-for="task in tasks"
-            :key="task.id"
-            class="rounded-md border border-[var(--color-line)] bg-white p-4"
+      <template v-else-if="selectedWeek">
+        <!-- AI 팀장 회고 배너 (모든 태스크 완료 시) -->
+        <Transition
+          enter-active-class="transition-all duration-500 ease-out"
+          enter-from-class="opacity-0 -translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+        >
+          <section
+            v-if="allTasksDone && selectedWeek.status === 'IN_PROGRESS'"
+            class="flex items-start gap-4 rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)]"
+            role="alert"
           >
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span
-                    class="rounded border border-[var(--color-line)] px-2 py-0.5 text-xs font-semibold text-[var(--color-muted)]"
-                  >
-                    {{ TASK_TYPE_LABEL[task.taskType] ?? task.taskType }}
-                  </span>
-                  <span
-                    v-if="task.required"
-                    class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700"
-                  >
-                    필수
-                  </span>
-                  <span
-                    :class="[
-                      'rounded px-2 py-0.5 text-xs font-semibold',
-                      getCompletionStatus(task) === 'DONE'
-                        ? 'bg-green-100 text-green-700'
-                        : getCompletionStatus(task) === 'SKIPPED'
-                          ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
-                          : getCompletionStatus(task) === 'INCOMPLETE'
-                            ? 'bg-red-50 text-red-700'
-                            : 'bg-[var(--color-card)] text-[var(--color-muted)]',
-                    ]"
-                  >
-                    {{
-                      getCompletionStatus(task) === 'DONE'
-                        ? '완료'
-                        : getCompletionStatus(task) === 'SKIPPED'
-                          ? '스킵'
-                          : getCompletionStatus(task) === 'INCOMPLETE'
-                            ? '미완료'
-                            : '미시작'
-                    }}
-                  </span>
-                </div>
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg text-white">
+              💬
+            </div>
+            <div>
+              <p class="font-bold text-[var(--color-ink)]">AI 팀장에게 회고가 도착했어요</p>
+              <p class="mt-1 text-sm text-[var(--color-muted)]">
+                이번 주 할 일을 모두 완료했습니다. AI 팀장이 회고를 보냈습니다.
+              </p>
+              <RouterLink
+                :to="{ name: 'group-ai', params: { groupId } }"
+                class="mt-2 inline-flex h-8 items-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none"
+              >
+                AI 팀장과 회고하기
+              </RouterLink>
+            </div>
+          </section>
+        </Transition>
 
-                <p class="mt-2 font-semibold text-[var(--color-ink)]">{{ task.title }}</p>
-                <p
-                  v-if="task.description"
-                  class="mt-1 text-sm leading-6 text-[var(--color-muted)]"
-                >
-                  {{ task.description }}
-                </p>
-                <p v-if="task.dueAt" class="mt-1 text-xs text-[var(--color-muted)]">
-                  마감: {{ formatDateTime(task.dueAt) }}
-                </p>
-              </div>
-
-              <div class="flex shrink-0 flex-wrap gap-1 sm:flex-col">
-                <button
-                  v-for="action in COMPLETION_ACTIONS"
-                  :key="action.status"
-                  type="button"
-                  :disabled="updatingTaskId === task.id || getCompletionStatus(task) === action.status"
+        <!-- ── 주차 정보 카드 ─────────────────────────────────── -->
+        <section
+          class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        >
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-bold text-[var(--color-primary)]">
+                  {{ selectedWeek.weekNumber }}주차
+                </span>
+                <span
                   :class="[
-                    'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
-                    getCompletionStatus(task) === action.status
+                    'rounded px-2 py-0.5 text-xs font-semibold',
+                    selectedWeek.status === 'IN_PROGRESS'
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : selectedWeek.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-[var(--color-card)] text-[var(--color-muted)]',
+                  ]"
+                >
+                  {{ WEEK_STATUS_LABEL[selectedWeek.status] }}
+                </span>
+              </div>
+              <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedWeek.title }}</h2>
+              <p
+                v-if="selectedWeek.sprintGoal || selectedWeek.focus"
+                class="mt-2 text-sm leading-6 text-[var(--color-muted)]"
+              >
+                {{ selectedWeek.sprintGoal ?? selectedWeek.focus }}
+              </p>
+
+              <dl
+                v-if="selectedWeek.startsAt || selectedWeek.endsAt"
+                class="mt-4 flex flex-wrap gap-4 text-sm"
+              >
+                <div v-if="selectedWeek.startsAt">
+                  <dt class="text-xs text-[var(--color-muted)]">시작</dt>
+                  <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">{{ formatDate(selectedWeek.startsAt) }}</dd>
+                </div>
+                <div v-if="selectedWeek.endsAt">
+                  <dt class="text-xs text-[var(--color-muted)]">마감</dt>
+                  <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">{{ formatDate(selectedWeek.endsAt) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- 내 진행 상태 -->
+            <div v-if="progress" class="shrink-0">
+              <p class="text-xs text-[var(--color-muted)]">내 진행 상태</p>
+              <p class="mt-1 text-sm font-semibold text-[var(--color-ink)]">
+                {{ PROGRESS_STATUS_LABEL[progress.status] }}
+              </p>
+              <div class="mt-2 flex flex-wrap gap-1">
+                <button
+                  v-for="opt in (['IN_PROGRESS', 'COMPLETED', 'INCOMPLETE'] as MemberWeekProgressStatus[])"
+                  :key="opt"
+                  type="button"
+                  :disabled="isUpdatingProgress || progress.status === opt"
+                  :class="[
+                    'inline-flex h-7 items-center rounded border px-2.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
+                    progress.status === opt
                       ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
                       : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
                   ]"
-                  @click="handleCompleteTask(task.id, action.status)"
+                  @click="handleUpdateProgress(opt)"
                 >
-                  {{ action.label }}
+                  {{ PROGRESS_STATUS_LABEL[opt] }}
                 </button>
               </div>
             </div>
+          </div>
 
-            <p v-if="taskError[task.id]" role="alert" class="mt-2 text-xs font-semibold text-red-700">
-              {{ taskError[task.id] }}
-            </p>
-          </li>
-        </ul>
+          <!-- 태스크 완료 요약 -->
+          <div v-if="tasks.length > 0" class="mt-4">
+            <div class="flex items-center justify-between text-xs text-[var(--color-muted)]">
+              <span>태스크 완료</span>
+              <span class="font-semibold text-[var(--color-ink)]">
+                {{ tasks.filter((t) => completionMap[t.id] === 'DONE').length }} / {{ tasks.length }}
+              </span>
+            </div>
+            <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--color-card)]">
+              <div
+                class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-500"
+                :style="{
+                  width: `${(tasks.filter((t) => completionMap[t.id] === 'DONE').length / tasks.length) * 100}%`
+                }"
+              />
+            </div>
+          </div>
+        </section>
 
-        <p v-else class="mt-4 text-sm text-[var(--color-muted)]">과제가 없습니다.</p>
-      </section>
+        <!-- ── 태스크 목록 ─────────────────────────────────────── -->
+        <section
+          class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        >
+          <h3 class="text-sm font-bold text-[var(--color-ink)]">
+            {{ selectedWeek.weekNumber }}주차 과제 ({{ tasks.length }}개)
+          </h3>
+
+          <ul v-if="tasks.length > 0" class="mt-4 grid gap-3">
+            <li
+              v-for="task in tasks"
+              :key="task.id"
+              :class="[
+                'rounded-lg border p-4 transition-all duration-300',
+                getCompletionStatus(task) === 'DONE'
+                  ? 'border-gray-200 bg-gray-50'
+                  : 'border-[var(--color-line)] bg-white',
+                justCompletedIds.has(task.id) ? 'scale-[0.99]' : '',
+              ]"
+            >
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0 flex-1">
+                  <!-- 배지 행 -->
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span
+                      class="rounded border px-2 py-0.5 text-xs font-semibold"
+                      :class="TASK_TYPE_COLOR[task.taskType] ?? TASK_TYPE_COLOR.CUSTOM"
+                    >
+                      {{ TASK_TYPE_LABEL[task.taskType] ?? task.taskType }}
+                    </span>
+                    <span
+                      v-if="task.required"
+                      class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700"
+                    >
+                      필수
+                    </span>
+                    <span
+                      :class="[
+                        'rounded px-2 py-0.5 text-xs font-semibold',
+                        getCompletionStatus(task) === 'DONE'
+                          ? 'bg-green-100 text-green-700'
+                          : getCompletionStatus(task) === 'INCOMPLETE'
+                            ? 'bg-red-50 text-red-700'
+                            : getCompletionStatus(task) === 'SKIPPED'
+                              ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
+                              : 'bg-[var(--color-card)] text-[var(--color-muted)]',
+                      ]"
+                    >
+                      {{
+                        getCompletionStatus(task) === 'DONE' ? '✓ 완료'
+                        : getCompletionStatus(task) === 'SKIPPED' ? '스킵'
+                        : getCompletionStatus(task) === 'INCOMPLETE' ? '미완료'
+                        : '미시작'
+                      }}
+                    </span>
+                  </div>
+
+                  <!-- 제목 -->
+                  <p
+                    :class="[
+                      'mt-2 font-semibold transition-colors duration-300',
+                      getCompletionStatus(task) === 'DONE'
+                        ? 'text-gray-400 line-through'
+                        : 'text-[var(--color-ink)]',
+                    ]"
+                  >
+                    {{ task.title }}
+                  </p>
+
+                  <p v-if="task.description" class="mt-1 text-sm leading-6 text-[var(--color-muted)]">
+                    {{ task.description }}
+                  </p>
+                  <p v-if="task.dueAt" class="mt-1 text-xs text-[var(--color-muted)]">
+                    마감: {{ formatDateTime(task.dueAt) }}
+                  </p>
+                </div>
+
+                <!-- 액션 버튼 (현재 진행 주차만 활성) -->
+                <div
+                  v-if="selectedWeek.status !== 'PENDING'"
+                  class="flex shrink-0 flex-wrap gap-1 sm:flex-col"
+                >
+                  <button
+                    v-for="action in COMPLETION_ACTIONS"
+                    :key="action.status"
+                    type="button"
+                    :disabled="updatingTaskId === task.id || getCompletionStatus(task) === action.status || selectedWeek.status === 'PENDING'"
+                    :class="[
+                      'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
+                      getCompletionStatus(task) === action.status
+                        ? action.status === 'DONE'
+                          ? 'border-green-400 bg-green-100 text-green-700'
+                          : 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
+                        : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                      action.status === 'DONE' && getCompletionStatus(task) !== 'DONE'
+                        ? 'hover:border-green-400 hover:bg-green-50 hover:text-green-700'
+                        : '',
+                    ]"
+                    @click="handleCompleteTask(task.id, action.status)"
+                  >
+                    {{ updatingTaskId === task.id ? '…' : action.label }}
+                  </button>
+                </div>
+
+                <!-- 예정 주차 안내 -->
+                <div v-else class="shrink-0">
+                  <span class="rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2.5 py-1 text-xs text-[var(--color-muted)]">
+                    예정
+                  </span>
+                </div>
+              </div>
+
+              <p v-if="taskError[task.id]" role="alert" class="mt-2 text-xs font-semibold text-red-700">
+                {{ taskError[task.id] }}
+              </p>
+            </li>
+          </ul>
+
+          <p v-else class="mt-4 text-sm text-[var(--color-muted)]">
+            이 주차에 등록된 과제가 없습니다.
+          </p>
+        </section>
+      </template>
+
+      <!-- 주차 미선택 상태 -->
+      <ScreenState
+        v-else-if="!isWeekLoading && weekSummaries.length === 0"
+        variant="empty"
+        title="커리큘럼 주차가 없습니다."
+        description="스터디가 시작되면 주차별 과제가 표시됩니다."
+      />
     </template>
   </div>
 </template>

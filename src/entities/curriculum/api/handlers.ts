@@ -47,6 +47,9 @@ export const curriculumHandlers = [
   http.get(`${apiBaseUrl}/groups/:groupId/weeks/current`, ({ params }) => {
     return HttpResponse.json(toCurrentWeek(params.groupId))
   }),
+  http.get(`${apiBaseUrl}/weeks/:weekId`, ({ params }) => {
+    return HttpResponse.json(toWeekById(params.weekId))
+  }),
   http.get(`${apiBaseUrl}/weeks/:weekId/tasks`, ({ params }) => {
     return HttpResponse.json(toWeeklyTasks(params.weekId))
   }),
@@ -95,30 +98,47 @@ function toCurrentWeek(groupId: ParamValue): CurriculumWeek {
   }
 }
 
-function toWeeklyTasks(weekId: ParamValue): WeeklyTask[] {
-  return (mockMswData.curriculum.tasks as unknown as LegacyTask[]).map((task) => {
-    const normalizedWeekId = String(weekId || task.weekId)
+function toWeekById(weekId: ParamValue): CurriculumWeek {
+  const id = String(weekId)
+  const weeks = (mockMswData.curriculum as unknown as Record<string, unknown[]>).weeks as LegacyWeek[]
+  const found = weeks?.find((w) => w.id === id)
 
+  if (found) {
     return {
-      id: task.id,
-      curriculumWeekId: task.weekId || normalizedWeekId,
-      weekId: normalizedWeekId,
-      displayOrder: task.displayOrder,
-      taskType: task.taskType as WeeklyTask['taskType'],
-      title: task.title,
-      description: task.description ?? null,
-      required: true,
-      dueAt: task.dueAt ?? null,
-      completion: task.completion
-        ? {
-            id: `completion-${task.id}`,
-            status: task.completion.status ?? 'TODO',
-            completedAt: task.completion.completedAt ?? null,
-            incompleteReason: task.completion.incompleteReason ?? null,
-          }
-        : undefined,
+      ...found,
+      sprintGoal: (found as LegacyWeek & { sprintGoal?: string }).sprintGoal ?? found.focus ?? null,
+      status: toWeekStatus(found.status),
     }
-  })
+  }
+
+  // fallback: current week
+  return toCurrentWeek(undefined)
+}
+
+function toWeeklyTasks(weekId: ParamValue): WeeklyTask[] {
+  const id = String(weekId)
+  const tasksByWeek = (mockMswData.curriculum as unknown as Record<string, unknown>).tasksByWeek as Record<string, LegacyTask[]>
+  const weekTasks = tasksByWeek?.[id] ?? (mockMswData.curriculum.tasks as unknown as LegacyTask[])
+
+  return weekTasks.map((task) => ({
+    id: task.id,
+    curriculumWeekId: task.weekId || id,
+    weekId: id,
+    displayOrder: task.displayOrder,
+    taskType: task.taskType as WeeklyTask['taskType'],
+    title: task.title,
+    description: task.description ?? null,
+    required: true,
+    dueAt: task.dueAt ?? null,
+    completion: task.completion
+      ? {
+          id: `completion-${task.id}`,
+          status: task.completion.status ?? 'TODO',
+          completedAt: task.completion.completedAt ?? null,
+          incompleteReason: task.completion.incompleteReason ?? null,
+        }
+      : undefined,
+  }))
 }
 
 function toWeekProgress(

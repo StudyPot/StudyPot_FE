@@ -2,7 +2,9 @@ export {
   createGroup,
   getGroup,
   joinGroup,
+  listGroupMembers,
   listGroups,
+  startStudy,
   suggestDetailKeywords,
 } from './api/groupsApi'
 export {

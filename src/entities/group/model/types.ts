@@ -47,4 +47,7 @@ export type GroupMember = {
   permission: GroupMemberPermission
   status: GroupMemberStatus
   displayName?: string | null
+  nickname?: string | null
+  email?: string | null
+  onboardingStatus?: 'DRAFT' | 'SUBMITTED' | null
 }

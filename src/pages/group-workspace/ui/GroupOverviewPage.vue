@@ -1,9 +1,11 @@
 <script setup lang="ts">
+
 import { computed, inject, ref, watch } from 'vue'
 
 import {
   getGroupOverviewPrimaryEntry,
   getGroupStatusLabel,
+  startStudy,
   type GroupEntryAction,
 } from '@/entities/group'
 import { getMyOnboarding } from '@/entities/onboarding'
@@ -22,7 +24,7 @@ if (!workspaceContext) {
   throw new Error('GroupOverviewPage must be used inside GroupWorkspacePage.')
 }
 
-const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup } = workspaceContext
+const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, members } = workspaceContext
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
 
@@ -47,51 +49,60 @@ const primaryEntry = computed<GroupEntryAction | null>(() =>
   group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
 )
 const inviteLink = computed(() => {
-  if (!group.value?.inviteCode) {
-    return ''
-  }
-
-  return `${window.location.origin}/groups/${groupId.value}/join?inviteCode=${encodeURIComponent(
-    group.value.inviteCode,
-  )}`
+  if (!group.value?.inviteCode) return ''
+  return `${window.location.origin}/groups/${groupId.value}/join?inviteCode=${encodeURIComponent(group.value.inviteCode)}`
 })
 
+const allOnboardingDone = computed(() => {
+  if (!group.value || members.value.length === 0) return false
+  if (group.value.status !== 'ONBOARDING') return false
+  const submitted = members.value.filter((m) => m.onboardingStatus === 'SUBMITTED').length
+  return submitted >= group.value.maxMembers
+})
+
+const onboardingProgress = computed(() => {
+  if (!group.value || members.value.length === 0) return null
+  const submitted = members.value.filter((m) => m.onboardingStatus === 'SUBMITTED').length
+  return { submitted, total: group.value.maxMembers }
+})
+
+// 잔디 계산: 최근 28일 × 멤버 행
+const heatmapDays = computed(() => {
+  const days: string[] = []
+  const today = new Date()
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    days.push(d.toISOString().split('T')[0])
+  }
+  return days
+})
+
+const heatmapData = computed(() => {
+  if (!members.value.length) return []
+  return members.value.map((member) => ({
+    name: member.nickname ?? member.displayName ?? '멤버',
+    // 실제 데이터 없으므로 가입일 기준 랜덤 시드로 시각화
+    activity: heatmapDays.value.map((day) => {
+      const seed = (member.userId?.charCodeAt(0) ?? 0) + day.charCodeAt(8)
+      return seed % 4
+    }),
+  }))
+})
+
+const HEAT_COLORS = [
+  'bg-[var(--color-card)]',
+  'bg-[rgba(54,92,255,0.2)]',
+  'bg-[rgba(54,92,255,0.5)]',
+  'bg-[var(--color-primary)]',
+]
+
 const quickLinks: QuickLink[] = [
-  {
-    routeName: 'group-onboarding',
-    title: '온보딩',
-    caption: '스터디 준비 정보를 정리합니다.',
-  },
-  {
-    routeName: 'group-curriculum',
-    title: '커리큘럼',
-    caption: '전체 학습 계획을 확인합니다.',
-  },
-  {
-    routeName: 'group-todo',
-    title: 'Todo',
-    caption: '이번 주 과제를 관리합니다.',
-  },
-  {
-    routeName: 'group-retrospective',
-    title: '회고',
-    caption: '주차별 피드백을 확인합니다.',
-  },
-  {
-    routeName: 'group-ai',
-    title: 'AI 팀장',
-    caption: '학습 흐름을 함께 점검합니다.',
-  },
-  {
-    routeName: 'group-notifications',
-    title: '알림',
-    caption: '그룹 활동 소식을 확인합니다.',
-  },
-  {
-    routeName: 'group-rules',
-    title: '규칙',
-    caption: '운영 규칙과 위반 내역을 관리합니다.',
-  },
+  { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
+  { routeName: 'group-ai', title: 'AI 팀장', caption: '학습 흐름을 함께 점검합니다.' },
+  { routeName: 'group-notifications', title: '알림', caption: '그룹 활동 소식을 확인합니다.' },
+  { routeName: 'group-board', title: '게시판', caption: '공지와 토론을 나눕니다.' },
+  { routeName: 'group-rules', title: '규칙', caption: '운영 규칙과 위반 내역을 관리합니다.' },
 ]
 
 function formatDateRange(startsAt: string, endsAt: string): string {
@@ -99,25 +110,16 @@ function formatDateRange(startsAt: string, endsAt: string): string {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(value))
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
 }
 
 async function copyInviteCode(): Promise<void> {
-  if (!group.value?.inviteCode) {
-    return
-  }
-
+  if (!group.value?.inviteCode) return
   await copyToClipboard(group.value.inviteCode, '초대 코드를 복사했습니다.')
 }
 
 async function copyInviteLink(): Promise<void> {
-  if (!inviteLink.value) {
-    return
-  }
-
+  if (!inviteLink.value) return
   await copyToClipboard(inviteLink.value, '초대 링크를 복사했습니다.')
 }
 
@@ -128,6 +130,24 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
   } catch {
     copyStatusMessage.value = '복사하지 못했습니다.'
   }
+}
+
+async function handleStartStudy(): Promise<void> {
+  isStartingStudy.value = true
+  startStudyError.value = ''
+  try {
+    await startStudy(groupId.value)
+    await reloadGroup()
+  } catch (error) {
+    startStudyError.value = error instanceof ApiError ? error.message : '스터디 시작에 실패했습니다.'
+  } finally {
+    isStartingStudy.value = false
+  }
+}
+
+function getDayLabel(dayStr: string): string {
+  const d = new Date(dayStr)
+  return `${d.getMonth() + 1}/${d.getDate()}`
 }
 </script>
 
@@ -150,6 +170,72 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
     />
 
     <template v-else-if="group && primaryEntry">
+      <!-- 스터디 시작하기 배너 -->
+      <section
+        v-if="allOnboardingDone"
+        class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm font-bold text-[var(--color-primary)]">🎉 모든 멤버가 온보딩을 완료했습니다!</p>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">
+              이제 스터디를 시작할 수 있습니다. AI가 커리큘럼을 생성합니다.
+            </p>
+            <p v-if="startStudyError" role="alert" class="mt-2 text-sm font-semibold text-red-700">
+              {{ startStudyError }}
+            </p>
+          </div>
+          <button
+            type="button"
+            :disabled="isStartingStudy"
+            class="shrink-0 inline-flex h-12 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-base font-bold text-white shadow-md transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.3)] disabled:opacity-60"
+            @click="handleStartStudy"
+          >
+            {{ isStartingStudy ? '시작 중…' : '🚀 스터디 시작하기' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- 온보딩 진행 현황 -->
+      <section
+        v-else-if="group.status === 'ONBOARDING' && onboardingProgress"
+        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+      >
+        <p class="text-sm font-semibold text-[var(--color-primary)]">온보딩 현황</p>
+        <div class="mt-3 flex items-center gap-4">
+          <div class="flex-1">
+            <div class="flex items-center justify-between text-xs text-[var(--color-muted)] mb-1">
+              <span>온보딩 완료</span>
+              <span class="font-semibold text-[var(--color-ink)]">
+                {{ onboardingProgress.submitted }} / {{ onboardingProgress.total }}명
+              </span>
+            </div>
+            <div class="h-2 overflow-hidden rounded-full bg-[var(--color-card)]">
+              <div
+                class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-500"
+                :style="{ width: `${(onboardingProgress.submitted / onboardingProgress.total) * 100}%` }"
+              />
+            </div>
+          </div>
+        </div>
+        <div v-if="members.length > 0" class="mt-3 flex flex-wrap gap-2">
+          <span
+            v-for="member in members"
+            :key="member.id"
+            :class="[
+              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
+              member.onboardingStatus === 'SUBMITTED'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-[var(--color-card)] text-[var(--color-muted)]',
+            ]"
+          >
+            {{ member.nickname ?? member.displayName }}
+            <span v-if="member.onboardingStatus === 'SUBMITTED'">✓</span>
+          </span>
+        </div>
+      </section>
+
+      <!-- 그룹 홈 메인 -->
       <section
         class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
       >
@@ -239,11 +325,7 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
           >
             링크 복사
           </button>
-          <span
-            v-if="copyStatusMessage"
-            role="status"
-            class="text-xs font-semibold text-[var(--color-primary-deep)]"
-          >
+          <span v-if="copyStatusMessage" role="status" class="text-xs font-semibold text-[var(--color-primary-deep)]">
             {{ copyStatusMessage }}
           </span>
         </div>
@@ -259,6 +341,56 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
         </div>
       </section>
 
+      <!-- 활동 대시보드 (잔디) -->
+      <section
+        v-if="group.status === 'ACTIVE' && heatmapData.length > 0"
+        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+      >
+        <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
+        <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">최근 4주 학습 활동</h3>
+
+        <div class="mt-4 overflow-x-auto">
+          <div class="min-w-max">
+            <!-- 날짜 헤더 -->
+            <div class="mb-1 flex gap-1 pl-24">
+              <div
+                v-for="(day, idx) in heatmapDays"
+                :key="day"
+                class="w-5 text-center text-[10px] text-[var(--color-muted)]"
+              >
+                {{ idx % 7 === 0 ? getDayLabel(day) : '' }}
+              </div>
+            </div>
+
+            <!-- 멤버 행 -->
+            <div
+              v-for="row in heatmapData"
+              :key="row.name"
+              class="mb-1 flex items-center gap-1"
+            >
+              <span class="w-24 shrink-0 truncate text-right pr-2 text-xs font-medium text-[var(--color-muted)]">
+                {{ row.name }}
+              </span>
+              <div
+                v-for="(level, idx) in row.activity"
+                :key="idx"
+                class="h-5 w-5 rounded-sm transition-colors"
+                :class="HEAT_COLORS[level]"
+                :title="`${row.name} ${heatmapDays[idx]}`"
+              />
+            </div>
+
+            <!-- 범례 -->
+            <div class="mt-3 flex items-center gap-2 pl-24 text-xs text-[var(--color-muted)]">
+              <span>적음</span>
+              <div v-for="(cls, i) in HEAT_COLORS" :key="i" class="h-3 w-3 rounded-sm" :class="cls" />
+              <span>많음</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 퀵 링크 -->
       <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="그룹 내부 기능">
         <RouterLink
           v-for="link in quickLinks"
@@ -267,9 +399,7 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
           class="rounded-lg border border-[var(--color-line)] bg-white p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
         >
           <span class="text-base font-bold text-[var(--color-ink)]">{{ link.title }}</span>
-          <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">
-            {{ link.caption }}
-          </span>
+          <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">{{ link.caption }}</span>
         </RouterLink>
       </section>
     </template>

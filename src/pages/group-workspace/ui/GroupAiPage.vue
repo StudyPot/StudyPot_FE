@@ -209,14 +209,31 @@ function renderMarkdown(content: string): string {
           </div>
         </template>
 
-        <!-- 전송 중 indicator -->
-        <div v-if="isSending" class="flex justify-start">
+        <!-- 전송 중 indicator: 마지막 메시지가 USER일 때만 표시 -->
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="opacity-0 translate-y-1"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
           <div
-            class="rounded-2xl rounded-tl-sm bg-[var(--color-card)] px-4 py-3 text-sm text-[var(--color-muted)]"
+            v-if="isSending && messages.length > 0 && messages[messages.length - 1]?.senderType === 'USER'"
+            class="flex justify-start"
           >
-            <span class="animate-pulse">응답 중…</span>
+            <div class="max-w-[75%]">
+              <p class="mb-1 text-xs font-semibold text-[var(--color-primary)]">AI 팀장</p>
+              <div
+                class="flex items-center gap-1.5 rounded-2xl rounded-tl-sm bg-[var(--color-card)] px-4 py-3 text-sm text-[var(--color-muted)]"
+              >
+                <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--color-muted)]" style="animation-delay: 0ms" />
+                <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--color-muted)]" style="animation-delay: 150ms" />
+                <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--color-muted)]" style="animation-delay: 300ms" />
+              </div>
+            </div>
           </div>
-        </div>
+        </Transition>
 
         <div ref="messagesEndRef" aria-hidden="true" />
       </div>

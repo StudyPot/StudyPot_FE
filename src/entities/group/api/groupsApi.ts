@@ -51,6 +51,16 @@ export function joinGroup(groupId: string, request: JoinGroupRequest): Promise<G
   })
 }
 
+export function listGroupMembers(groupId: string): Promise<GroupMember[]> {
+  return apiClient<GroupMember[]>(`/groups/${groupId}/members`)
+}
+
+export function startStudy(groupId: string): Promise<{ status: string }> {
+  return apiClient<{ status: string }>(`/groups/${groupId}/start`, {
+    method: 'POST',
+  })
+}
+
 function isMissingGroupDetailEndpoint(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 404 || error.status === 405)
 }

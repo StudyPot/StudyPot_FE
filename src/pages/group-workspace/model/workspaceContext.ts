@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 
-import type { StudyGroup } from '@/entities/group'
+import type { GroupMember, StudyGroup } from '@/entities/group'
 
 export type GroupWorkspaceContext = {
   groupId: ComputedRef<string>
@@ -8,6 +8,7 @@ export type GroupWorkspaceContext = {
   isGroupLoading: Ref<boolean>
   groupErrorMessage: Ref<string>
   reloadGroup: () => Promise<void>
+  members: Ref<GroupMember[]>
 }
 
 export const groupWorkspaceContextKey: InjectionKey<GroupWorkspaceContext> =

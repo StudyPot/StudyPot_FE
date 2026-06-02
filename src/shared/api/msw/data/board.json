@@ -1,0 +1,74 @@
+{
+  "posts": [
+    {
+      "id": "board-001",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "title": "3주차 스터디 자료 공유",
+      "content": "이번 주 Spring Security 관련 자료입니다. 공식 문서와 블로그 링크를 첨부합니다.\n\nhttps://docs.spring.io/spring-security/reference/",
+      "authorNickname": "user1",
+      "category": "NOTICE",
+      "isPinned": true,
+      "commentCount": 3,
+      "createdAt": "2026-05-19T09:00:00+09:00",
+      "updatedAt": "2026-05-19T09:00:00+09:00"
+    },
+    {
+      "id": "board-002",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "title": "SecurityConfig 설정 질문",
+      "content": "SecurityConfig에서 csrf().disable()을 하면 어떤 보안 이슈가 생기나요? 프로덕션 환경에서는 어떻게 처리해야 할지 궁금합니다.",
+      "authorNickname": "minji",
+      "category": "QUESTION",
+      "isPinned": false,
+      "commentCount": 5,
+      "createdAt": "2026-05-20T14:30:00+09:00",
+      "updatedAt": "2026-05-20T16:00:00+09:00"
+    },
+    {
+      "id": "board-003",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "title": "JWT 구현 완료 후기",
+      "content": "드디어 JWT 기반 인증을 구현했어요! access token + refresh token 방식으로 구현했는데 생각보다 고려할 게 많더라고요. 혹시 비슷하게 구현하신 분 계신가요?",
+      "authorNickname": "dohoon",
+      "category": "DISCUSSION",
+      "isPinned": false,
+      "commentCount": 8,
+      "createdAt": "2026-05-21T11:00:00+09:00",
+      "updatedAt": "2026-05-21T11:00:00+09:00"
+    },
+    {
+      "id": "board-004",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "title": "이번 주 온라인 스터디 시간 변경 공지",
+      "content": "이번 주 토요일 온라인 미팅이 오후 3시에서 오후 5시로 변경됩니다. 모두 일정 확인해 주세요!",
+      "authorNickname": "user1",
+      "category": "NOTICE",
+      "isPinned": true,
+      "commentCount": 2,
+      "createdAt": "2026-05-22T10:00:00+09:00",
+      "updatedAt": "2026-05-22T10:00:00+09:00"
+    },
+    {
+      "id": "board-005",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "title": "Spring Data JPA N+1 문제 정리",
+      "content": "N+1 문제를 해결하는 방법들을 정리해봤습니다.\n1. Fetch Join\n2. @EntityGraph\n3. Batch Size 설정\n\n각 방법의 장단점을 비교해보겠습니다.",
+      "authorNickname": "suin",
+      "category": "DISCUSSION",
+      "isPinned": false,
+      "commentCount": 4,
+      "createdAt": "2026-05-23T15:30:00+09:00",
+      "updatedAt": "2026-05-23T15:30:00+09:00"
+    }
+  ],
+  "comments": {
+    "board-001": [
+      { "id": "c-001-1", "postId": "board-001", "authorNickname": "minji", "content": "감사합니다!", "createdAt": "2026-05-19T09:30:00+09:00" },
+      { "id": "c-001-2", "postId": "board-001", "authorNickname": "dohoon", "content": "공식 문서 링크도 있네요. 도움이 됩니다.", "createdAt": "2026-05-19T10:00:00+09:00" },
+      { "id": "c-001-3", "postId": "board-001", "authorNickname": "jaewon", "content": "블로그도 추가해주셔서 이해하기 쉬웠어요.", "createdAt": "2026-05-19T12:00:00+09:00" }
+    ],
+    "board-002": [
+      { "id": "c-002-1", "postId": "board-002", "authorNickname": "user1", "content": "REST API 서버에서는 stateless하게 운영되기 때문에 CSRF 위험이 낮아요.", "createdAt": "2026-05-20T15:00:00+09:00" }
+    ]
+  }
+}
