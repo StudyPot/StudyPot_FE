@@ -1,4 +1,4 @@
-export type StudyGroupStatus = 'DRAFT' | 'ONBOARDING' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
+export type StudyGroupStatus = 'DRAFT' | 'ONBOARDING' | 'READY_TO_START' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
 
 export type GroupMemberPermission = 'OWNER' | 'MEMBER'
 

@@ -16,6 +16,7 @@ export type GroupEntryAction = {
 const statusLabels: Record<StudyGroupStatus, string> = {
   DRAFT: '준비 중',
   ONBOARDING: '온보딩',
+  READY_TO_START: '시작 대기',
   ACTIVE: '진행 중',
   COMPLETED: '완료',
   ARCHIVED: '보관됨',
@@ -31,6 +32,11 @@ const listPrimaryEntries: Record<StudyGroupStatus, GroupEntryAction> = {
     routeName: 'group-onboarding',
     label: '온보딩 작성',
     summary: '나의 준비도와 가능한 시간을 정리합니다.',
+  },
+  READY_TO_START: {
+    routeName: 'group-overview',
+    label: '스터디 시작하기',
+    summary: '모든 멤버가 온보딩을 완료했습니다. 스터디를 시작하세요.',
   },
   ACTIVE: {
     routeName: 'group-todo',
@@ -59,6 +65,11 @@ const overviewPrimaryEntries: Record<StudyGroupStatus, GroupEntryAction> = {
     routeName: 'group-onboarding',
     label: '온보딩 작성',
     summary: '스터디 참여를 위해 준비도와 가능한 시간을 입력합니다.',
+  },
+  READY_TO_START: {
+    routeName: 'group-overview',
+    label: '스터디 시작하기',
+    summary: '모든 멤버가 온보딩을 완료했습니다. 스터디를 시작하세요.',
   },
   ACTIVE: {
     routeName: 'group-todo',

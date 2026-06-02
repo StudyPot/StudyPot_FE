@@ -29,7 +29,7 @@ const members = ref<GroupMember[]>([])
 
 const showOnboarding = computed(() => {
   if (!group.value) return false
-  if (group.value.status === 'ACTIVE' || group.value.status === 'COMPLETED' || group.value.status === 'ARCHIVED') {
+  if (group.value.status === 'READY_TO_START' || group.value.status === 'ACTIVE' || group.value.status === 'COMPLETED' || group.value.status === 'ARCHIVED') {
     return false
   }
   return !myOnboardingSubmitted.value

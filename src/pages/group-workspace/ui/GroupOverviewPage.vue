@@ -65,7 +65,8 @@ const inviteLink = computed(() => {
 })
 
 const allOnboardingDone = computed(() => {
-  if (!group.value || members.value.length === 0) return false
+  if (!group.value) return false
+  if (group.value.status === 'READY_TO_START') return true
   if (group.value.status !== 'ONBOARDING') return false
   const active = members.value.filter((m) => m.status !== 'LEFT')
   return active.length > 0 && active.every((m) => m.onboardingStatus === 'SUBMITTED')
