@@ -128,6 +128,166 @@
       }
     }
   ],
+  "weeks": [
+    {
+      "id": "018f7a4e-4000-7000-9000-000000000001",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
+      "weekNumber": 1,
+      "title": "JPA 엔티티 매핑",
+      "status": "COMPLETED",
+      "sprintGoal": "JPA 엔티티와 연관관계 매핑의 핵심을 이해하고 실습합니다.",
+      "focus": "단방향/양방향 매핑, 지연 로딩",
+      "startsAt": "2026-04-28",
+      "endsAt": "2026-05-04"
+    },
+    {
+      "id": "018f7a4e-4000-7000-9000-000000000002",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
+      "weekNumber": 2,
+      "title": "Security 기본기 다지기",
+      "status": "COMPLETED",
+      "sprintGoal": "Spring Security의 기본 구조와 설정 방법을 이해합니다.",
+      "focus": "SecurityConfig, 기본 인증 흐름",
+      "startsAt": "2026-05-05",
+      "endsAt": "2026-05-11"
+    },
+    {
+      "id": "018f7a4e-4000-7000-9000-000000000003",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
+      "weekNumber": 3,
+      "title": "Spring Security 구조 이해",
+      "status": "IN_PROGRESS",
+      "sprintGoal": "필터 체인과 인증 흐름 이해",
+      "focus": "FilterChain, AuthenticationManager",
+      "startsAt": "2026-05-18",
+      "endsAt": "2026-05-24"
+    },
+    {
+      "id": "018f7a4e-4000-7000-9000-000000000004",
+      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
+      "weekNumber": 4,
+      "title": "인증/인가 실전",
+      "status": "PENDING",
+      "sprintGoal": "JWT 기반 인증 구현 및 역할별 인가 처리를 실습합니다.",
+      "focus": "JWT, Role-based access control",
+      "startsAt": "2026-05-25",
+      "endsAt": "2026-05-31"
+    }
+  ],
+  "tasksByWeek": {
+    "018f7a4e-4000-7000-9000-000000000001": [
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000101",
+        "weekId": "018f7a4e-4000-7000-9000-000000000001",
+        "displayOrder": 1,
+        "title": "JPA 엔티티 매핑 공식 문서 정독",
+        "description": "@Entity, @Id, @Column 어노테이션 사용법을 이해하고 예제를 실습하세요.",
+        "taskType": "READING",
+        "dueAt": "2026-05-02T20:00:00+09:00",
+        "completion": { "status": "DONE", "completedAt": "2026-05-01T19:00:00+09:00", "completionNote": null }
+      },
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000102",
+        "weekId": "018f7a4e-4000-7000-9000-000000000001",
+        "displayOrder": 2,
+        "title": "단방향/양방향 연관관계 실습",
+        "description": "@OneToMany, @ManyToOne 관계를 직접 구현하고 N+1 문제를 확인하세요.",
+        "taskType": "PRACTICE",
+        "dueAt": "2026-05-03T21:00:00+09:00",
+        "completion": { "status": "DONE", "completedAt": "2026-05-03T18:30:00+09:00", "completionNote": null }
+      },
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000103",
+        "weekId": "018f7a4e-4000-7000-9000-000000000001",
+        "displayOrder": 3,
+        "title": "지연 로딩 vs 즉시 로딩 비교 정리",
+        "description": "LAZY와 EAGER의 차이를 실제 쿼리 로그로 확인하고 요약해 공유하세요.",
+        "taskType": "ASSIGNMENT",
+        "dueAt": "2026-05-04T21:00:00+09:00",
+        "completion": { "status": "DONE", "completedAt": "2026-05-04T20:00:00+09:00", "completionNote": null }
+      }
+    ],
+    "018f7a4e-4000-7000-9000-000000000002": [
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000201",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002",
+        "displayOrder": 1,
+        "title": "Spring Security Getting Started 실습",
+        "description": "공식 튜토리얼을 따라 기본 인증 설정을 구성하세요.",
+        "taskType": "PRACTICE",
+        "dueAt": "2026-05-09T21:00:00+09:00",
+        "completion": { "status": "DONE", "completedAt": "2026-05-08T20:00:00+09:00", "completionNote": null }
+      },
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000202",
+        "weekId": "018f7a4e-4000-7000-9000-000000000002",
+        "displayOrder": 2,
+        "title": "SecurityConfig 커스터마이징",
+        "description": "permitAll, authenticated, hasRole 등 접근 제어 규칙을 직접 설정해보세요.",
+        "taskType": "ASSIGNMENT",
+        "dueAt": "2026-05-11T21:00:00+09:00",
+        "completion": { "status": "DONE", "completedAt": "2026-05-10T19:30:00+09:00", "completionNote": null }
+      }
+    ],
+    "018f7a4e-4000-7000-9000-000000000003": [
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000001",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003",
+        "displayOrder": 1,
+        "title": "Spring Security Architecture 문서 정독",
+        "description": "공식 문서의 Architecture 챕터를 읽고 핵심 개념 5가지를 메모해 주세요.",
+        "taskType": "READING",
+        "dueAt": "2026-05-23T20:00:00+09:00",
+        "completion": { "status": "DONE", "completedAt": "2026-05-21T19:30:00+09:00", "completionNote": "필터 체인과 AuthenticationEntryPoint 흐름 정리 완료" }
+      },
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000002",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003",
+        "displayOrder": 2,
+        "title": "Filter Chain 직접 구성하기",
+        "description": "강의 자료 4-2를 따라 인증/인가 필터를 구성하고, 동작을 캡처해 공유해 주세요.",
+        "taskType": "PRACTICE",
+        "dueAt": "2026-05-23T21:00:00+09:00",
+        "completion": { "status": "TODO", "completedAt": null, "completionNote": null }
+      },
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000003",
+        "weekId": "018f7a4e-4000-7000-9000-000000000003",
+        "displayOrder": 3,
+        "title": "JWT 인증 흐름 다이어그램 그리기",
+        "description": "요청부터 응답까지 흐름을 본인 언어로 그려 공유해 주세요.",
+        "taskType": "ASSIGNMENT",
+        "dueAt": "2026-05-24T21:00:00+09:00",
+        "completion": { "status": "TODO", "completedAt": null, "completionNote": null }
+      }
+    ],
+    "018f7a4e-4000-7000-9000-000000000004": [
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000401",
+        "weekId": "018f7a4e-4000-7000-9000-000000000004",
+        "displayOrder": 1,
+        "title": "JWT 라이브러리 비교 및 선택",
+        "description": "jjwt vs nimbus-jose-jwt를 비교하고 팀 프로젝트에 적합한 이유를 작성하세요.",
+        "taskType": "READING",
+        "dueAt": "2026-05-30T20:00:00+09:00",
+        "completion": { "status": "TODO", "completedAt": null, "completionNote": null }
+      },
+      {
+        "id": "018f7a4e-5000-7000-9000-000000000402",
+        "weekId": "018f7a4e-4000-7000-9000-000000000004",
+        "displayOrder": 2,
+        "title": "JWT 발급/검증 구현",
+        "description": "Access Token + Refresh Token 구조로 인증 API를 구현하세요.",
+        "taskType": "PROJECT",
+        "dueAt": "2026-05-31T21:00:00+09:00",
+        "completion": { "status": "TODO", "completedAt": null, "completionNote": null }
+      }
+    ]
+  },
   "updateWeekProgressRequest": {
     "status": "IN_PROGRESS"
   },

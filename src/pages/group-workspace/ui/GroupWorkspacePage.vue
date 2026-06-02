@@ -2,7 +2,8 @@
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { getGroup, getGroupStatusLabel, type StudyGroup } from '@/entities/group'
+import { getGroup, getGroupStatusLabel, listGroupMembers, type GroupMember, type StudyGroup } from '@/entities/group'
+import { getMyOnboarding } from '@/entities/onboarding'
 import { LogoutButton } from '@/features/auth/logout'
 import { LogoutAllButton } from '@/features/auth/logout-all'
 import { useSessionStore } from '@/features/auth/session'
@@ -23,32 +24,27 @@ const shortGroupId = computed(() => groupId.value.slice(-8).toUpperCase())
 const group = ref<StudyGroup | null>(null)
 const isGroupLoading = ref(false)
 const groupErrorMessage = ref('')
+const myOnboardingSubmitted = ref(false)
+const members = ref<GroupMember[]>([])
 
-const navItems: WorkspaceNavItem[] = [
+const showOnboarding = computed(() => {
+  if (!group.value) return false
+  if (group.value.status === 'ACTIVE' || group.value.status === 'COMPLETED' || group.value.status === 'ARCHIVED') {
+    return false
+  }
+  return !myOnboardingSubmitted.value
+})
+
+const baseNavItems: WorkspaceNavItem[] = [
   {
     routeName: 'group-overview',
     label: '홈',
     detail: '그룹 흐름',
   },
   {
-    routeName: 'group-onboarding',
-    label: '온보딩',
-    detail: '준비도',
-  },
-  {
-    routeName: 'group-curriculum',
-    label: '커리큘럼',
-    detail: '학습 계획',
-  },
-  {
     routeName: 'group-todo',
     label: 'Todo',
-    detail: '이번 주',
-  },
-  {
-    routeName: 'group-retrospective',
-    label: '회고',
-    detail: '피드백',
+    detail: '주차별 학습',
   },
   {
     routeName: 'group-ai',
@@ -61,11 +57,35 @@ const navItems: WorkspaceNavItem[] = [
     detail: '활동',
   },
   {
+    routeName: 'group-board',
+    label: '게시판',
+    detail: '공지·토론',
+  },
+  {
     routeName: 'group-rules',
     label: '규칙',
     detail: '운영',
   },
+  {
+    routeName: 'group-my',
+    label: '마이페이지',
+    detail: '내 정보',
+  },
 ]
+
+const navItems = computed<WorkspaceNavItem[]>(() => {
+  if (!showOnboarding.value) return baseNavItems
+
+  return [
+    baseNavItems[0],
+    {
+      routeName: 'group-onboarding',
+      label: '온보딩',
+      detail: '준비도',
+    },
+    ...baseNavItems.slice(1),
+  ]
+})
 
 watch(
   groupId,
@@ -81,6 +101,7 @@ provide(groupWorkspaceContextKey, {
   isGroupLoading,
   groupErrorMessage,
   reloadGroup: loadGroup,
+  members,
 })
 
 async function loadGroup(): Promise<void> {
@@ -94,11 +115,33 @@ async function loadGroup(): Promise<void> {
 
   try {
     group.value = await getGroup(groupId.value)
+    void loadSidebarData()
   } catch (error) {
     groupErrorMessage.value =
       error instanceof ApiError ? error.message : '그룹 정보를 불러오지 못했습니다.'
   } finally {
     isGroupLoading.value = false
+  }
+}
+
+async function loadSidebarData(): Promise<void> {
+  await Promise.allSettled([loadMyOnboardingStatus(), loadMembers()])
+}
+
+async function loadMyOnboardingStatus(): Promise<void> {
+  try {
+    const onboarding = await getMyOnboarding(groupId.value)
+    myOnboardingSubmitted.value = onboarding.status === 'SUBMITTED'
+  } catch {
+    myOnboardingSubmitted.value = false
+  }
+}
+
+async function loadMembers(): Promise<void> {
+  try {
+    members.value = await listGroupMembers(groupId.value)
+  } catch {
+    members.value = []
   }
 }
 
@@ -218,4 +261,3 @@ function formatDate(value: string): string {
     </div>
   </main>
 </template>
-

@@ -54,4 +54,13 @@ export const groupHandlers = [
       displayName: 'user1',
     })
   }),
+  http.get(`${apiBaseUrl}/groups/:groupId/members`, () => {
+    return HttpResponse.json(mockMswData.groups.groupMembers)
+  }),
+  http.post(`${apiBaseUrl}/groups/:groupId/start`, ({ params }) => {
+    return HttpResponse.json({
+      ...mockMswData.groups.startStudyResponse,
+      groupId: String(params.groupId),
+    })
+  }),
 ]

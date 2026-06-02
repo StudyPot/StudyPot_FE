@@ -91,12 +91,24 @@ async function loadMyNotifications(): Promise<void> {
   myError.value = ''
 
   try {
-    myNotifications.value = await listMyNotifications()
+    const raw = await listMyNotifications()
+    myNotifications.value = sortNotifications(raw)
     myState.value = 'loaded'
   } catch (error) {
     myError.value = error instanceof ApiError ? error.message : '알림을 불러오지 못했습니다.'
     myState.value = 'error'
   }
+}
+
+function sortNotifications(list: Notification[]): Notification[] {
+  return [...list].sort((a, b) => {
+    const aUnread = isUnread(a) ? 0 : 1
+    const bUnread = isUnread(b) ? 0 : 1
+    if (aUnread !== bUnread) return aUnread - bUnread
+    const aTime = new Date(a.deliveredAt ?? a.createdAt ?? '').getTime()
+    const bTime = new Date(b.deliveredAt ?? b.createdAt ?? '').getTime()
+    return bTime - aTime
+  })
 }
 
 async function loadGroupNotifications(): Promise<void> {

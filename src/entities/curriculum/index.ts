@@ -3,6 +3,7 @@ export {
   getCurrentWeek,
   getCurriculum,
   getMyWeekProgress,
+  getWeek,
   listWeeklyTasks,
   startStudy,
   updateMyWeekProgress,

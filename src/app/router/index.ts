@@ -7,8 +7,10 @@ import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
   GroupAiPage,
+  GroupBoardPage,
   GroupCurriculumPage,
   GroupFeaturePlaceholderPage,
+  GroupMyPage,
   GroupNotificationsPage,
   GroupOnboardingPage,
   GroupOverviewPage,
@@ -135,6 +137,16 @@ const routes: RouteRecordRaw[] = [
         name: 'group-rules',
         component: GroupRulesPage,
       },
+      {
+        path: 'board',
+        name: 'group-board',
+        component: GroupBoardPage,
+      },
+      {
+        path: 'my',
+        name: 'group-my',
+        component: GroupMyPage,
+      },
     ],
   },
 ]
@@ -156,6 +168,7 @@ router.beforeEach(async (to) => {
     return true
   }
 
+  // 리프레시 토큰 만료 또는 인증 실패 → 로그인으로
   return {
     name: 'login',
     query: {
