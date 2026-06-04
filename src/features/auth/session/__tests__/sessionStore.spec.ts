@@ -52,17 +52,15 @@ describe('useSessionStore', () => {
       ),
     )
     fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          tokenType: 'Cookie',
-          expiresIn: 3600,
-          user: mockUser,
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      ),
+      new Response(null, {
+        status: 200,
+      }),
+    )
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify(mockUser), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     )
 
     vi.stubGlobal('fetch', fetchMock)
@@ -76,6 +74,13 @@ describe('useSessionStore', () => {
       expect.objectContaining({
         credentials: 'include',
         method: 'POST',
+      }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/v1/users/me',
+      expect.objectContaining({
+        credentials: 'include',
       }),
     )
   })

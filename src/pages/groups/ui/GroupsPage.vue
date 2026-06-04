@@ -11,6 +11,7 @@ import {
 } from '@/entities/group'
 import { startStudy } from '@/entities/curriculum'
 import { LogoutButton } from '@/features/auth/logout'
+import { LogoutAllButton } from '@/features/auth/logout-all'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 

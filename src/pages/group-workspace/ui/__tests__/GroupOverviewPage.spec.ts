@@ -1,9 +1,10 @@
 import { computed, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import type { StudyGroup } from '@/entities/group'
+import type { GroupMember, StudyGroup } from '@/entities/group'
 import { groupWorkspaceContextKey } from '../../model/workspaceContext'
 import GroupOverviewPage from '../GroupOverviewPage.vue'
 
@@ -18,6 +19,19 @@ const activeGroup: StudyGroup = {
   startsAt: '2026-04-22',
   endsAt: '2026-06-30',
 }
+
+const activeMembers: GroupMember[] = [
+  {
+    id: '018f7a4e-0000-7000-9000-000000000101',
+    groupId: activeGroup.id,
+    userId: '018f7a4e-0000-7000-9000-000000000001',
+    permission: 'MEMBER',
+    status: 'ACTIVE',
+    displayName: '현우',
+    nickname: '현우',
+    onboardingStatus: 'SUBMITTED',
+  },
+]
 
 function createTestRouter() {
   return createRouter({
@@ -54,13 +68,13 @@ function createTestRouter() {
         component: { template: '<main />' },
       },
       {
-        path: '/groups/:groupId/notifications',
-        name: 'group-notifications',
+        path: '/groups/:groupId/board',
+        name: 'group-board',
         component: { template: '<main />' },
       },
       {
-        path: '/groups/:groupId/rules',
-        name: 'group-rules',
+        path: '/groups/:groupId/my',
+        name: 'group-my',
         component: { template: '<main />' },
       },
     ],
@@ -79,7 +93,7 @@ describe('GroupOverviewPage', () => {
 
     const wrapper = mount(GroupOverviewPage, {
       global: {
-        plugins: [router],
+        plugins: [createPinia(), router],
         provide: {
           [groupWorkspaceContextKey as symbol]: {
             groupId: computed(() => activeGroup.id),
@@ -87,6 +101,7 @@ describe('GroupOverviewPage', () => {
             isGroupLoading: ref(false),
             groupErrorMessage: ref(''),
             reloadGroup: vi.fn(async () => {}),
+            members: ref(activeMembers),
           },
         },
       },
@@ -111,7 +126,7 @@ describe('GroupOverviewPage', () => {
 
     const wrapper = mount(GroupOverviewPage, {
       global: {
-        plugins: [router],
+        plugins: [createPinia(), router],
         provide: {
           [groupWorkspaceContextKey as symbol]: {
             groupId: computed(() => activeGroup.id),
@@ -119,6 +134,7 @@ describe('GroupOverviewPage', () => {
             isGroupLoading: ref(false),
             groupErrorMessage: ref(''),
             reloadGroup: vi.fn(async () => {}),
+            members: ref(activeMembers),
           },
         },
       },
@@ -141,7 +157,7 @@ describe('GroupOverviewPage', () => {
 
     const wrapper = mount(GroupOverviewPage, {
       global: {
-        plugins: [router],
+        plugins: [createPinia(), router],
         provide: {
           [groupWorkspaceContextKey as symbol]: {
             groupId: computed(() => activeGroup.id),
@@ -149,6 +165,7 @@ describe('GroupOverviewPage', () => {
             isGroupLoading: ref(false),
             groupErrorMessage: ref('study group was not found.'),
             reloadGroup,
+            members: ref([]),
           },
         },
       },
