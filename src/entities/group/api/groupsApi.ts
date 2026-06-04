@@ -2,10 +2,22 @@ import { ApiError, apiClient } from '@/shared/api'
 import type {
   CreateGroupRequest,
   DetailKeywordSuggestionsResponse,
+  GroupMember,
+  GroupMemberPermission,
+  GroupMemberStatus,
   JoinGroupRequest,
   StudyGroup,
   SuggestDetailKeywordsRequest,
 } from '../model/types'
+
+export type MyGroupMemberProfile = {
+  memberId: string
+  groupId: string
+  userId: string
+  permission: GroupMemberPermission
+  status: GroupMemberStatus
+  displayName: string | null
+}
 
 export function listGroups(): Promise<StudyGroup[]> {
   return apiClient<StudyGroup[]>('/groups')
@@ -48,6 +60,10 @@ export function joinGroup(groupId: string, request: JoinGroupRequest): Promise<G
     method: 'POST',
     body: request,
   })
+}
+
+export function getMyGroupMemberProfile(groupId: string): Promise<MyGroupMemberProfile> {
+  return apiClient<MyGroupMemberProfile>(`/groups/${groupId}/members/me/profile`)
 }
 
 export function startStudy(groupId: string): Promise<{ status: string }> {

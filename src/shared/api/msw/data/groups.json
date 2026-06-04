@@ -12,6 +12,17 @@
       "endsAt": "2026-06-30"
     },
     {
+      "id": "018f7a4e-0000-7000-9000-000000000012",
+      "name": "스터디 시작 대기 중 (테스트용)",
+      "topic": "Java",
+      "detailKeywords": ["Stream", "Concurrency", "GC"],
+      "status": "READY_TO_START",
+      "maxMembers": 4,
+      "inviteCode": "java-ready-2026",
+      "startsAt": "2026-06-01",
+      "endsAt": "2026-07-31"
+    },
+    {
       "id": "018f7a4e-0000-7000-9000-000000000011",
       "name": "Spring Boot 실전 스터디",
       "topic": "Spring Boot",
@@ -160,5 +171,17 @@
     "status": "ACTIVE",
     "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
     "startedAt": "2026-05-12T20:00:00+09:00"
+  },
+  "myMemberProfile": {
+    "memberId": "018f7a4e-1000-7000-9000-000000000001",
+    "groupId": "018f7a4e-0000-7000-9000-000000000010",
+    "userId": "018f7a4e-0000-7000-9000-000000000001",
+    "permission": "OWNER",
+    "status": "ACTIVE",
+    "displayName": "user1",
+    "onboarding": { "submitted": true, "skillLevel": 3, "submittedAt": "2026-05-10T01:00:00Z" },
+    "currentWeek": null,
+    "taskCompletion": { "totalCount": 4, "doneCount": 2, "incompleteCount": 1, "skippedCount": 0 },
+    "retrospective": { "feedbackReady": false }
   }
 }

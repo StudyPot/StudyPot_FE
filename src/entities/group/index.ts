@@ -1,11 +1,13 @@
 export {
   createGroup,
   getGroup,
+  getMyGroupMemberProfile,
   joinGroup,
   listGroups,
   startStudy,
   suggestDetailKeywords,
 } from './api/groupsApi'
+export type { MyGroupMemberProfile } from './api/groupsApi'
 export {
   getGroupListPrimaryEntry,
   getGroupOverviewPrimaryEntry,

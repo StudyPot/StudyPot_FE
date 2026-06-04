@@ -89,14 +89,14 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         isSseConnected.value = true
       }
 
-      es.onmessage = (event) => {
+      es.addEventListener('notification-created', (event) => {
         try {
           const notification = JSON.parse(event.data as string) as Notification
           addIncomingNotification(notification)
         } catch {
           // ignore parse errors
         }
-      }
+      })
 
       es.onerror = () => {
         isSseConnected.value = false

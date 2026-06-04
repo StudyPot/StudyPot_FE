@@ -2,7 +2,7 @@
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { getGroup, getGroupStatusLabel, type GroupMember, type StudyGroup } from '@/entities/group'
+import { getGroup, getGroupStatusLabel, getMyGroupMemberProfile, type GroupMember, type StudyGroup } from '@/entities/group'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { LogoutButton } from '@/features/auth/logout'
 import { useSessionStore } from '@/features/auth/session'
@@ -115,7 +115,7 @@ async function loadGroup(): Promise<void> {
 }
 
 async function loadSidebarData(): Promise<void> {
-  await loadMyOnboardingStatus()
+  await Promise.allSettled([loadMyOnboardingStatus(), loadMyProfile()])
 }
 
 async function loadMyOnboardingStatus(): Promise<void> {
@@ -124,6 +124,22 @@ async function loadMyOnboardingStatus(): Promise<void> {
     myOnboardingSubmitted.value = onboarding.status === 'SUBMITTED'
   } catch {
     myOnboardingSubmitted.value = false
+  }
+}
+
+async function loadMyProfile(): Promise<void> {
+  try {
+    const profile = await getMyGroupMemberProfile(groupId.value)
+    members.value = [{
+      id: profile.memberId,
+      groupId: profile.groupId,
+      userId: profile.userId,
+      permission: profile.permission,
+      status: profile.status,
+      displayName: profile.displayName,
+    }]
+  } catch {
+    members.value = []
   }
 }
 
