@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import App from '../App.vue'
 import router from '../router'
 
@@ -13,7 +14,7 @@ describe('App', () => {
   it('renders the login page', () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [router],
+        plugins: [createPinia(), router],
       },
     })
     const renderedText = wrapper.text().replace(/\s+/g, ' ').trim()
@@ -34,7 +35,7 @@ describe('App', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router],
+        plugins: [createPinia(), router],
       },
     })
 

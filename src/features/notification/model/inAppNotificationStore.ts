@@ -17,6 +17,8 @@ export type ToastItem = {
 }
 
 const POLL_INTERVAL_MS = 30_000
+const SSE_RECONNECT_INITIAL_DELAY_MS = 1_000
+const SSE_RECONNECT_MAX_DELAY_MS = 30_000
 
 function isUnread(n: Notification): boolean {
   return n.status !== 'READ' && !n.readAt
@@ -41,6 +43,10 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let eventSource: EventSource | null = null
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
+  let shouldReconnectSse = false
+  let hasLoadedInitialNotifications = false
 
   const unreadCount = computed(() => notifications.value.filter(isUnread).length)
 
@@ -48,15 +54,17 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     try {
       const list = await listMyNotifications()
       const sorted = sortNotifications(list)
+      const shouldToastNewNotifications = hasLoadedInitialNotifications
 
       for (const n of sorted.filter(isUnread)) {
-        if (!seenIds.value.has(n.id) && seenIds.value.size > 0) {
+        if (!seenIds.value.has(n.id) && shouldToastNewNotifications) {
           showToast(n)
         }
         seenIds.value.add(n.id)
       }
 
       notifications.value = sorted
+      hasLoadedInitialNotifications = true
     } catch {
       // silent
     }
@@ -78,8 +86,15 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
   }
 
   function startSse(): void {
+    shouldReconnectSse = true
     void fetchNotifications()
+    if (eventSource || reconnectTimer) {
+      return
+    }
+    connectSse()
+  }
 
+  function connectSse(): void {
     try {
       const es = new EventSource(`${apiBaseUrl}/users/me/notifications/stream`, {
         withCredentials: true,
@@ -87,6 +102,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
       es.onopen = () => {
         isSseConnected.value = true
+        reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
+        stopPollingFallback()
       }
 
       es.addEventListener('notification-created', (event) => {
@@ -99,15 +116,20 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
       })
 
       es.onerror = () => {
+        if (eventSource !== es) return
         isSseConnected.value = false
         es.close()
         eventSource = null
+        void fetchNotifications()
         startPollingFallback()
+        scheduleSseReconnect()
       }
 
       eventSource = es
     } catch {
+      eventSource = null
       startPollingFallback()
+      scheduleSseReconnect()
     }
   }
 
@@ -117,16 +139,45 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     }
   }
 
+  function stopPollingFallback(): void {
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
+
+  function scheduleSseReconnect(): void {
+    if (!shouldReconnectSse || reconnectTimer) {
+      return
+    }
+    const delayMs = reconnectDelayMs
+    reconnectDelayMs = Math.min(reconnectDelayMs * 2, SSE_RECONNECT_MAX_DELAY_MS)
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      if (!shouldReconnectSse || eventSource) {
+        return
+      }
+      connectSse()
+    }, delayMs)
+  }
+
+  function clearSseReconnect(): void {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+    reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
+  }
+
   function stopSse(): void {
+    shouldReconnectSse = false
+    clearSseReconnect()
     if (eventSource) {
       eventSource.close()
       eventSource = null
       isSseConnected.value = false
     }
-    if (pollTimer) {
-      clearInterval(pollTimer)
-      pollTimer = null
-    }
+    stopPollingFallback()
   }
 
   async function markRead(notificationId: string): Promise<void> {

@@ -29,8 +29,8 @@ describe('router', () => {
     [`/groups/${routeFixtureGroupId}/todo`, 'group-todo'],
     [`/groups/${routeFixtureGroupId}/retrospective`, 'group-retrospective'],
     [`/groups/${routeFixtureGroupId}/ai`, 'group-ai'],
-    [`/groups/${routeFixtureGroupId}/notifications`, 'group-notifications'],
-    [`/groups/${routeFixtureGroupId}/rules`, 'group-rules'],
+    [`/groups/${routeFixtureGroupId}/board`, 'group-board'],
+    [`/groups/${routeFixtureGroupId}/my`, 'group-my'],
   ])('resolves %s', (path, routeName) => {
     const resolvedRoute = router.resolve(path)
 
@@ -38,4 +38,3 @@ describe('router', () => {
     expect(resolvedRoute.meta.requiresAuth).toBe(true)
   })
 })
-
