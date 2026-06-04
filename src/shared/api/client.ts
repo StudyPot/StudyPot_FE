@@ -48,6 +48,19 @@ type CsrfBootstrapResponse = {
   token?: string
 }
 
+// 동시에 여러 요청이 401 받아도 refresh를 한 번만 호출하기 위한 공유 Promise
+let refreshingPromise: Promise<void> | null = null
+
+async function refreshAccessToken(): Promise<void> {
+  const response = await fetch(resolveApiUrl('/auth/refresh'), {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseResponseBody<ApiErrorPayload>(response))
+  }
+}
+
 export async function apiClient<TResponse = unknown>(
   path: string,
   options: ApiClientOptions = {},
@@ -68,6 +81,43 @@ export async function apiClient<TResponse = unknown>(
     headers: requestHeaders,
     body: hasJsonBody ? JSON.stringify(body) : body,
   })
+
+  // access token 만료 시 refresh 후 재시도 (refresh 엔드포인트 자체는 제외)
+  if (response.status === 401 && !path.includes('/auth/refresh')) {
+    try {
+      if (!refreshingPromise) {
+        refreshingPromise = refreshAccessToken().finally(() => {
+          refreshingPromise = null
+        })
+      }
+      await refreshingPromise
+
+      // 새 토큰으로 원래 요청 재시도
+      const retryHeaders = new Headers(headers)
+      if (hasJsonBody && !retryHeaders.has('Content-Type')) {
+        retryHeaders.set('Content-Type', 'application/json')
+      }
+      await appendCsrfHeader(retryHeaders, requestOptions.method)
+
+      const retryResponse = await fetch(resolveApiUrl(path), {
+        credentials: 'include',
+        ...requestOptions,
+        headers: retryHeaders,
+        body: hasJsonBody ? JSON.stringify(body) : body,
+      })
+
+      if (!retryResponse.ok) {
+        throw new ApiError(retryResponse.status, await parseResponseBody<ApiErrorPayload>(retryResponse))
+      }
+      if (retryResponse.status === 204) {
+        return undefined as TResponse
+      }
+      return parseResponseBody<TResponse>(retryResponse)
+    } catch (refreshError) {
+      // refresh 실패 시 원래 401 에러 던짐
+      throw new ApiError(401, await parseResponseBody<ApiErrorPayload>(response))
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, await parseResponseBody<ApiErrorPayload>(response))
