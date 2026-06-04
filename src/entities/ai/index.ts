@@ -1,4 +1,4 @@
-export { openAiConversation, sendAiConversationMessage } from './api/aiApi'
+export { listAiConversationMessages, openAiConversation, sendAiConversationMessage } from './api/aiApi'
 export type {
   AiConversation,
   AiConversationMessage,

@@ -2,7 +2,6 @@ export {
   createGroup,
   getGroup,
   joinGroup,
-  listGroupMembers,
   listGroups,
   startStudy,
   suggestDetailKeywords,

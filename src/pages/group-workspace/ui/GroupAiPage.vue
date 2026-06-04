@@ -4,6 +4,7 @@ import { marked } from 'marked'
 import { inject, nextTick, ref } from 'vue'
 
 import {
+  listAiConversationMessages,
   openAiConversation,
   sendAiConversationMessage,
   type AiConversation,
@@ -40,6 +41,12 @@ async function handleOpenConversation(): Promise<void> {
     conversation.value = await openAiConversation(groupId.value, {
       conversationType: 'TEAM_LEAD_CHAT',
     })
+    try {
+      messages.value = await listAiConversationMessages(conversation.value.id)
+      await scrollToBottom()
+    } catch {
+      // 히스토리 로드 실패 시 빈 상태로 시작
+    }
     pageState.value = 'chat'
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {

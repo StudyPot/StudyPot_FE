@@ -5,7 +5,6 @@ import {
   completeTask,
   getCurriculum,
   getMyWeekProgress,
-  getWeek,
   getCurrentWeek,
   listWeeklyTasks,
   updateMyWeekProgress,
@@ -74,6 +73,7 @@ const weekSummaries = computed<CurriculumWeekSummary[]>(() => curriculum.value?.
 // ─── 선택된 주차 ─────────────────────────────────────────────────
 const selectedWeekId = ref<string>('')
 const selectedWeek = ref<CurriculumWeek | null>(null)
+const currentWeekCache = ref<CurriculumWeek | null>(null)
 const isWeekLoading = ref(false)
 
 // ─── 태스크 + 진행 상태 ───────────────────────────────────────────
@@ -120,13 +120,10 @@ async function loadInitial(): Promise<void> {
     }
 
     curriculum.value = curriculumData
+    currentWeekCache.value = currentWeek
 
     // 현재 진행 주차를 기본 선택
-    const defaultWeekId = currentWeek?.id
-      ?? curriculumData?.weeks?.find((w) => w.status === 'IN_PROGRESS')?.id
-      ?? curriculumData?.weeks?.[0]?.id
-      ?? ''
-
+    const defaultWeekId = currentWeek?.id ?? ''
     selectedWeekId.value = defaultWeekId
     pageState.value = 'loaded'
   } catch (error) {
@@ -150,8 +147,12 @@ async function loadWeekDetail(weekId: string): Promise<void> {
   Object.keys(completionMap).forEach((k) => delete completionMap[k])
 
   try {
-    const [week, fetchedTasks, fetchedProgress] = await Promise.all([
-      getWeek(weekId),
+    const weekData = currentWeekCache.value?.id === weekId ? currentWeekCache.value : null
+    if (!weekData) {
+      isWeekLoading.value = false
+      return
+    }
+    const [fetchedTasks, fetchedProgress] = await Promise.all([
       listWeeklyTasks(weekId),
       getMyWeekProgress(weekId).catch((e) => {
         if (e instanceof ApiError && e.status === 404) return null
@@ -159,7 +160,7 @@ async function loadWeekDetail(weekId: string): Promise<void> {
       }),
     ])
 
-    selectedWeek.value = week
+    selectedWeek.value = weekData
     tasks.value = fetchedTasks.sort((a, b) => a.displayOrder - b.displayOrder)
     progress.value = fetchedProgress
 

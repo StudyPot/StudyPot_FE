@@ -1,4 +1,4 @@
-import { apiClient } from '@/shared/api'
+import { apiClient, type CursorPageResponse } from '@/shared/api'
 import type {
   AiConversation,
   AiConversationMessage,
@@ -24,4 +24,9 @@ export function sendAiConversationMessage(
     method: 'POST',
     body: request,
   })
+}
+
+export function listAiConversationMessages(conversationId: string): Promise<AiConversationMessage[]> {
+  return apiClient<CursorPageResponse<AiConversationMessage>>(`/ai-conversations/${conversationId}/messages`)
+    .then((page) => page.items)
 }
