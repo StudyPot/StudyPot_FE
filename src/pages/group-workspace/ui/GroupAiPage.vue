@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
-import { inject, nextTick, ref } from 'vue'
+import { inject, nextTick, onUnmounted, ref } from 'vue'
 
 import {
   listAiConversationMessages,
@@ -11,6 +11,7 @@ import {
   type AiConversationMessage,
 } from '@/entities/ai'
 import { ApiError } from '@/shared/api'
+import { apiBaseUrl } from '@/shared/config/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -32,6 +33,55 @@ const inputText = ref('')
 const isSending = ref(false)
 const sendError = ref('')
 const messagesEndRef = ref<HTMLElement | null>(null)
+const eventSource = ref<EventSource | null>(null)
+const isSseActive = ref(false)
+
+function subscribeToStream(conversationId: string): void {
+  closeStream()
+  const url = `${apiBaseUrl.replace(/\/$/, '')}/ai-conversations/${conversationId}/stream`
+  const es = new EventSource(url, { withCredentials: true })
+
+  es.addEventListener('connected', () => {
+    isSseActive.value = true
+  })
+
+  es.addEventListener('assistant-message-created', (event: MessageEvent) => {
+    try {
+      const message = JSON.parse(event.data as string) as AiConversationMessage
+      addUniqueMessage(message)
+      void scrollToBottom()
+    } catch {
+      // JSON 파싱 실패 시 무시
+    }
+    isSending.value = false
+  })
+
+  es.addEventListener('assistant-generation-failed', () => {
+    if (isSending.value) {
+      sendError.value = 'AI 응답 생성에 실패했습니다.'
+      isSending.value = false
+    }
+  })
+
+  es.onerror = () => {
+    isSseActive.value = false
+    closeStream()
+  }
+
+  eventSource.value = es
+}
+
+function closeStream(): void {
+  eventSource.value?.close()
+  eventSource.value = null
+  isSseActive.value = false
+}
+
+function addUniqueMessage(message: AiConversationMessage): void {
+  if (!messages.value.some((m) => m.id === message.id)) {
+    messages.value.push(message)
+  }
+}
 
 async function handleOpenConversation(): Promise<void> {
   pageState.value = 'opening'
@@ -47,6 +97,7 @@ async function handleOpenConversation(): Promise<void> {
     } catch {
       // 히스토리 로드 실패 시 빈 상태로 시작
     }
+    subscribeToStream(conversation.value.id)
     pageState.value = 'chat'
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
@@ -82,7 +133,8 @@ async function handleSendMessage(): Promise<void> {
 
   try {
     const assistantMessage = await sendAiConversationMessage(conversation.value.id, { content })
-    messages.value.push(assistantMessage)
+    // SSE가 이미 메시지를 전달했으면 중복 추가 방지, 아니면 폴백으로 추가
+    addUniqueMessage(assistantMessage)
     await scrollToBottom()
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
@@ -113,6 +165,10 @@ function formatTime(value: string): string {
     new Date(value),
   )
 }
+
+onUnmounted(() => {
+  closeStream()
+})
 
 function renderMarkdown(content: string): string {
   const html = marked.parse(content, { async: false }) as string
