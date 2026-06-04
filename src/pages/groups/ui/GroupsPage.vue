@@ -9,7 +9,6 @@ import {
   type StudyGroup,
   type StudyGroupStatus,
 } from '@/entities/group'
-import { startStudy } from '@/entities/curriculum'
 import { LogoutButton } from '@/features/auth/logout'
 import { LogoutAllButton } from '@/features/auth/logout-all'
 import { ApiError } from '@/shared/api'
@@ -18,8 +17,6 @@ import { ScreenState } from '@/shared/ui'
 const groups = ref<StudyGroup[]>([])
 const isLoading = ref(true)
 const errorMessage = ref('')
-const startingGroupId = ref<string | null>(null)
-const startError = ref<Record<string, string>>({})
 
 const hasGroups = computed(() => groups.value.length > 0)
 
@@ -43,20 +40,6 @@ async function loadGroups(): Promise<void> {
 
 function getPrimaryEntry(status: StudyGroupStatus): GroupEntryAction {
   return getGroupListPrimaryEntry(status)
-}
-
-async function handleStartStudy(groupId: string): Promise<void> {
-  startingGroupId.value = groupId
-  delete startError.value[groupId]
-  try {
-    await startStudy(groupId)
-    await loadGroups()
-  } catch (error) {
-    startError.value[groupId] =
-      error instanceof ApiError ? error.message : '스터디 시작에 실패했습니다.'
-  } finally {
-    startingGroupId.value = null
-  }
 }
 
 function formatDateRange(startsAt: string, endsAt: string): string {
@@ -199,10 +182,6 @@ function formatDate(value: string): string {
           초대 코드 {{ group.inviteCode }}
         </p>
 
-        <p v-if="startError[group.id]" role="alert" class="mt-3 text-xs font-semibold text-red-700">
-          {{ startError[group.id] }}
-        </p>
-
         <div class="mt-5 flex flex-wrap justify-end gap-2">
           <RouterLink
             :to="{ name: 'group-overview', params: { groupId: group.id } }"
@@ -211,20 +190,8 @@ function formatDate(value: string): string {
             그룹 홈
           </RouterLink>
 
-          <!-- READY_TO_START: API 직접 호출 -->
-          <button
-            v-if="group.status === 'READY_TO_START'"
-            type="button"
-            :disabled="startingGroupId === group.id"
-            class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-60"
-            @click="handleStartStudy(group.id)"
-          >
-            {{ startingGroupId === group.id ? '시작 중…' : '🚀 스터디 시작하기' }}
-          </button>
-
-          <!-- 그 외: 라우터 이동 -->
           <RouterLink
-            v-else
+            v-if="getPrimaryEntry(group.status).routeName !== 'group-overview'"
             :to="{
               name: getPrimaryEntry(group.status).routeName,
               params: { groupId: group.id },

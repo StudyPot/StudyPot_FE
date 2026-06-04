@@ -7,6 +7,7 @@ import GroupsPage from '../GroupsPage.vue'
 
 const onboardingGroupId = '018f7a4e-0000-7000-9000-000000000010'
 const activeGroupId = '018f7a4e-0000-7000-9000-000000000011'
+const readyGroupId = '018f7a4e-0000-7000-9000-000000000012'
 
 const groups = [
   {
@@ -30,6 +31,17 @@ const groups = [
     inviteCode: 'sb-active-2026',
     startsAt: '2026-04-22',
     endsAt: '2026-06-30',
+  },
+  {
+    id: readyGroupId,
+    name: 'Java 시작 대기 스터디',
+    topic: 'Java',
+    detailKeywords: ['Stream', 'Concurrency'],
+    status: 'READY_TO_START',
+    maxMembers: 4,
+    inviteCode: 'java-ready-2026',
+    startsAt: '2026-06-01',
+    endsAt: '2026-07-31',
   },
 ]
 
@@ -110,8 +122,10 @@ describe('GroupsPage', () => {
 
     expect(wrapper.text()).toContain('온보딩 작성')
     expect(wrapper.text()).toContain('이번 주 Todo')
+    expect(wrapper.text()).not.toContain('스터디 시작하기')
     expect(wrapper.find(`a[href="/groups/${onboardingGroupId}/onboarding"]`).exists()).toBe(true)
     expect(wrapper.find(`a[href="/groups/${activeGroupId}/todo"]`).exists()).toBe(true)
+    expect(wrapper.find(`a[href="/groups/${readyGroupId}"]`).exists()).toBe(true)
     expect(wrapper.find(`a[href="/groups/${onboardingGroupId}"]`).exists()).toBe(true)
   })
 })

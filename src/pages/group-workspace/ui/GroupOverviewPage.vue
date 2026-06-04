@@ -84,6 +84,18 @@ watch(
 const primaryEntry = computed<GroupEntryAction | null>(() =>
   group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
 )
+const canStartStudy = computed(() =>
+  group.value?.status === 'READY_TO_START' && isOwner.value,
+)
+const canShowPrimaryEntryAction = computed(() =>
+  Boolean(primaryEntry.value) && group.value?.status !== 'READY_TO_START',
+)
+const primaryEntrySummary = computed(() => {
+  if (group.value?.status === 'READY_TO_START' && !isOwner.value) {
+    return '방장이 스터디를 시작하면 커리큘럼과 Todo가 열립니다.'
+  }
+  return primaryEntry.value?.summary ?? ''
+})
 const inviteLink = computed(() => {
   if (!group.value?.inviteCode) return ''
   return `${window.location.origin}/groups/${groupId.value}/join?inviteCode=${encodeURIComponent(group.value.inviteCode)}`
@@ -169,6 +181,10 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
 }
 
 async function handleStartStudy(): Promise<void> {
+  if (!canStartStudy.value) {
+    return
+  }
+
   isStartingStudy.value = true
   startStudyError.value = ''
   showStartModal.value = true
@@ -217,7 +233,7 @@ function getDayLabel(dayStr: string): string {
     <template v-else-if="group && primaryEntry">
       <!-- 스터디 시작하기 배너 -->
       <section
-        v-if="allOnboardingDone && isOwner"
+        v-if="allOnboardingDone && canStartStudy"
         class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -289,7 +305,7 @@ function getDayLabel(dayStr: string): string {
             <p class="text-sm font-semibold text-[var(--color-primary)]">그룹 홈</p>
             <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
             <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-              {{ primaryEntry.summary }}
+              {{ primaryEntrySummary }}
             </p>
           </div>
 
@@ -324,7 +340,7 @@ function getDayLabel(dayStr: string): string {
           </div>
 
           <RouterLink
-            v-else
+            v-else-if="canShowPrimaryEntryAction"
             :to="{ name: primaryEntry.routeName, params: { groupId } }"
             class="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
           >

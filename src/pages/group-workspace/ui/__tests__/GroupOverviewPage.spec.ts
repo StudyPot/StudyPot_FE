@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import type { GroupMember, StudyGroup } from '@/entities/group'
+import { useSessionStore } from '@/features/auth/session'
 import { groupWorkspaceContextKey } from '../../model/workspaceContext'
 import GroupOverviewPage from '../GroupOverviewPage.vue'
 
@@ -32,6 +33,28 @@ const activeMembers: GroupMember[] = [
     onboardingStatus: 'SUBMITTED',
   },
 ]
+
+const readyGroup: StudyGroup = {
+  ...activeGroup,
+  status: 'READY_TO_START',
+}
+
+const currentUser = {
+  id: '018f7a4e-0000-7000-9000-000000000001',
+  email: 'hyunwoo@example.com',
+  nickname: '현우',
+}
+
+const readyMember: GroupMember = {
+  ...activeMembers[0]!,
+  permission: 'MEMBER',
+  status: 'ACTIVE',
+}
+
+const readyOwner: GroupMember = {
+  ...readyMember,
+  permission: 'OWNER',
+}
 
 function createTestRouter() {
   return createRouter({
@@ -110,6 +133,65 @@ describe('GroupOverviewPage', () => {
     expect(wrapper.text()).toContain('이번 주 Todo')
     expect(wrapper.text()).toContain('지금 진행해야 할 과제와 학습 흐름을 확인합니다.')
     expect(wrapper.find(`a[href="/groups/${activeGroup.id}/todo"]`).exists()).toBe(true)
+  })
+
+  it('hides the study start action from non-owner members in ready-to-start groups', async () => {
+    const router = createTestRouter()
+    await router.push(`/groups/${readyGroup.id}`)
+    await router.isReady()
+    const pinia = createPinia()
+    const sessionStore = useSessionStore(pinia)
+    sessionStore.user = currentUser
+    sessionStore.status = 'authenticated'
+
+    const wrapper = mount(GroupOverviewPage, {
+      global: {
+        plugins: [pinia, router],
+        provide: {
+          [groupWorkspaceContextKey as symbol]: {
+            groupId: computed(() => readyGroup.id),
+            group: ref(readyGroup),
+            isGroupLoading: ref(false),
+            groupErrorMessage: ref(''),
+            reloadGroup: vi.fn(async () => {}),
+            members: ref([readyMember]),
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('스터디 시작하기')
+    expect(wrapper.find('button').text()).toBe('코드 복사')
+  })
+
+  it('renders the study start button for the owner in ready-to-start groups', async () => {
+    const router = createTestRouter()
+    await router.push(`/groups/${readyGroup.id}`)
+    await router.isReady()
+    const pinia = createPinia()
+    const sessionStore = useSessionStore(pinia)
+    sessionStore.user = currentUser
+    sessionStore.status = 'authenticated'
+
+    const wrapper = mount(GroupOverviewPage, {
+      global: {
+        plugins: [pinia, router],
+        provide: {
+          [groupWorkspaceContextKey as symbol]: {
+            groupId: computed(() => readyGroup.id),
+            group: ref(readyGroup),
+            isGroupLoading: ref(false),
+            groupErrorMessage: ref(''),
+            reloadGroup: vi.fn(async () => {}),
+            members: ref([readyOwner]),
+          },
+        },
+      },
+    })
+
+    const startButton = wrapper.findAll('button').find((button) => button.text() === '🚀 스터디 시작하기')
+
+    expect(startButton?.exists()).toBe(true)
   })
 
   it('copies the invite code from the group home', async () => {

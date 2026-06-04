@@ -35,8 +35,8 @@ const listPrimaryEntries: Record<StudyGroupStatus, GroupEntryAction> = {
   },
   READY_TO_START: {
     routeName: 'group-overview',
-    label: '스터디 시작하기',
-    summary: '모든 멤버가 온보딩을 완료했습니다. 스터디를 시작하세요.',
+    label: '그룹 홈',
+    summary: '방장이 시작하기 전까지 그룹 홈에서 상태를 확인합니다.',
   },
   ACTIVE: {
     routeName: 'group-todo',
