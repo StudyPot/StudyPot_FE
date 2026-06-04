@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
-import { inject, nextTick, onUnmounted, ref } from 'vue'
+import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 import {
   listAiConversationMessages,
@@ -23,9 +23,9 @@ if (!workspaceContext) {
 
 const { groupId } = workspaceContext
 
-type PageState = 'idle' | 'opening' | 'chat' | 'error'
+type PageState = 'opening' | 'chat' | 'error'
 
-const pageState = ref<PageState>('idle')
+const pageState = ref<PageState>('opening')
 const openError = ref('')
 const conversation = ref<AiConversation | null>(null)
 const messages = ref<AiConversationMessage[]>([])
@@ -170,6 +170,10 @@ onUnmounted(() => {
   closeStream()
 })
 
+onMounted(() => {
+  void handleOpenConversation()
+})
+
 function renderMarkdown(content: string): string {
   const html = marked.parse(content, { async: false }) as string
   return DOMPurify.sanitize(html)
@@ -178,32 +182,11 @@ function renderMarkdown(content: string): string {
 
 <template>
   <div class="grid gap-5">
-    <!-- idle -->
-    <section
-      v-if="pageState === 'idle'"
-      class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
-    >
-      <p class="text-sm font-semibold text-[var(--color-primary)]">AI 팀장</p>
-      <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">AI 팀장과 대화하기</h2>
-      <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-        현재 학습 흐름, 과제 우선순위, 다음 주 계획 등을 AI 팀장에게 물어보세요.
-        새 대화 세션이 시작됩니다.
-      </p>
-
-      <button
-        type="button"
-        class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-        @click="handleOpenConversation"
-      >
-        대화 시작
-      </button>
-    </section>
-
     <!-- opening -->
     <ScreenState
-      v-else-if="pageState === 'opening'"
+      v-if="pageState === 'opening'"
       variant="loading"
-      title="대화 세션을 여는 중입니다."
+      title="대화를 불러오는 중입니다."
       description="잠시만 기다려 주세요."
     />
 
