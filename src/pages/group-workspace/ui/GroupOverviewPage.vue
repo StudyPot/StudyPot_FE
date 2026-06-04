@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   getGroupOverviewPrimaryEntry,
@@ -34,10 +35,34 @@ const isOwner = computed(() =>
     (m) => m.userId === sessionStore.user?.id && m.permission === 'OWNER',
   ),
 )
+const router = useRouter()
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
 const isStartingStudy = ref(false)
 const startStudyError = ref('')
+const showStartModal = ref(false)
+const startProgress = ref(0)
+
+let progressTimer: ReturnType<typeof setInterval> | null = null
+let timeoutTimer: ReturnType<typeof setTimeout> | null = null
+
+function startProgressAnimation(): void {
+  startProgress.value = 0
+  progressTimer = setInterval(() => {
+    startProgress.value = Math.min(startProgress.value + 10, 99)
+  }, 3000)
+  timeoutTimer = setTimeout(() => {
+    clearProgressTimers()
+    startProgress.value = 99
+  }, 30000)
+}
+
+function clearProgressTimers(): void {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null }
+  if (timeoutTimer) { clearTimeout(timeoutTimer); timeoutTimer = null }
+}
+
+onUnmounted(() => { clearProgressTimers() })
 
 watch(
   () => group.value,
@@ -146,10 +171,19 @@ async function copyToClipboard(value: string, successMessage: string): Promise<v
 async function handleStartStudy(): Promise<void> {
   isStartingStudy.value = true
   startStudyError.value = ''
+  showStartModal.value = true
+  startProgressAnimation()
+
   try {
     await startStudy(groupId.value)
-    await reloadGroup()
+    clearProgressTimers()
+    startProgress.value = 100
+    await new Promise<void>((resolve) => setTimeout(resolve, 600))
+    showStartModal.value = false
+    await router.push({ name: 'group-todo', params: { groupId: groupId.value } })
   } catch (error) {
+    clearProgressTimers()
+    showStartModal.value = false
     startStudyError.value = error instanceof ApiError ? error.message : '스터디 시작에 실패했습니다.'
   } finally {
     isStartingStudy.value = false
@@ -415,4 +449,72 @@ function getDayLabel(dayStr: string): string {
       </section>
     </template>
   </div>
+
+  <!-- 스터디 시작 프로그레스 모달 -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showStartModal"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="start-modal-title"
+      >
+        <!-- 배경 오버레이 -->
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+        <!-- 모달 카드 -->
+        <div class="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl text-center mx-4">
+          <!-- AI 아이콘 -->
+          <div
+            class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-card)] text-3xl"
+            aria-hidden="true"
+          >
+            🤖
+          </div>
+
+          <h2 id="start-modal-title" class="text-xl font-bold text-[var(--color-ink)]">
+            스터디 생성 중
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+            AI가 커리큘럼을 만들고 있어요.<br>잠시만 기다려 주세요.
+          </p>
+
+          <!-- 프로그레스 바 -->
+          <div class="mt-7">
+            <div class="mb-2 flex items-center justify-between text-xs font-semibold">
+              <span class="text-[var(--color-muted)]">진행률</span>
+              <span class="text-[var(--color-primary-deep)]">{{ startProgress }}%</span>
+            </div>
+            <div class="h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-card)]">
+              <div
+                class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-700 ease-out"
+                :style="{ width: `${startProgress}%` }"
+              />
+            </div>
+          </div>
+
+          <p
+            v-if="startProgress >= 99 && startProgress < 100"
+            class="mt-4 text-xs text-[var(--color-muted)]"
+          >
+            조금 더 걸리고 있어요...
+          </p>
+          <p
+            v-else-if="startProgress === 100"
+            class="mt-4 text-xs font-semibold text-[var(--color-primary)]"
+          >
+            완료! 이동합니다...
+          </p>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
