@@ -52,9 +52,12 @@ type CsrfBootstrapResponse = {
 let refreshingPromise: Promise<void> | null = null
 
 async function refreshAccessToken(): Promise<void> {
+  const headers = new Headers()
+  await appendCsrfHeader(headers, 'POST')
   const response = await fetch(resolveApiUrl('/auth/refresh'), {
     method: 'POST',
     credentials: 'include',
+    headers,
   })
   if (!response.ok) {
     throw new ApiError(response.status, await parseResponseBody<ApiErrorPayload>(response))

@@ -20,6 +20,23 @@ const isLoading = ref(true)
 const errorMessage = ref('')
 const startingGroupId = ref<string | null>(null)
 const startError = ref<Record<string, string>>({})
+const showStartModal = ref(false)
+const startProgress = ref(0)
+let progressTimer: ReturnType<typeof setInterval> | null = null
+
+function startProgressAnimation(): void {
+  startProgress.value = 0
+  progressTimer = setInterval(() => {
+    startProgress.value = Math.min(startProgress.value + 10, 99)
+  }, 3000)
+}
+
+function clearProgressAnimation(): void {
+  if (progressTimer) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
+}
 
 const hasGroups = computed(() => groups.value.length > 0)
 
@@ -48,10 +65,18 @@ function getPrimaryEntry(status: StudyGroupStatus): GroupEntryAction {
 async function handleStartStudy(groupId: string): Promise<void> {
   startingGroupId.value = groupId
   delete startError.value[groupId]
+  showStartModal.value = true
+  startProgressAnimation()
   try {
     await startStudy(groupId)
+    clearProgressAnimation()
+    startProgress.value = 100
+    await new Promise<void>((resolve) => setTimeout(resolve, 600))
+    showStartModal.value = false
     await loadGroups()
   } catch (error) {
+    clearProgressAnimation()
+    showStartModal.value = false
     startError.value[groupId] =
       error instanceof ApiError ? error.message : '스터디 시작에 실패했습니다.'
   } finally {
@@ -237,4 +262,54 @@ function formatDate(value: string): string {
       </article>
     </section>
   </main>
+
+  <Teleport to="body">
+  <Transition
+    enter-active-class="transition-opacity duration-200 ease-out"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition-opacity duration-150 ease-in"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-if="showStartModal"
+      class="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="groups-start-modal-title"
+    >
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div class="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl text-center mx-4">
+        <div
+          class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-card)] text-3xl"
+          aria-hidden="true"
+        >
+          🤖
+        </div>
+        <h2 id="groups-start-modal-title" class="text-xl font-bold text-[var(--color-ink)]">
+          스터디 생성 중
+        </h2>
+        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+          AI가 커리큘럼을 만들고 있어요.<br>잠시만 기다려 주세요.
+        </p>
+        <div class="mt-7">
+          <div class="mb-2 flex items-center justify-between text-xs font-semibold">
+            <span class="text-[var(--color-muted)]">진행률</span>
+            <span class="text-[var(--color-primary-deep)]">{{ startProgress }}%</span>
+          </div>
+          <div class="h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-card)]">
+            <div
+              class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-700 ease-out"
+              :style="{ width: `${startProgress}%` }"
+            />
+          </div>
+        </div>
+        <p v-if="startProgress === 100" class="mt-4 text-xs font-semibold text-[var(--color-primary)]">
+          완료! 잠시 후 이동합니다...
+        </p>
+      </div>
+    </div>
+  </Transition>
+  </Teleport>
 </template>

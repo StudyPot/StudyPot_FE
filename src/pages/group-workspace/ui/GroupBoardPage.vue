@@ -475,7 +475,6 @@ function formatDate(value: string): string {
                 <span>{{ formatDate(post.createdAt) }}</span>
                 <span v-if="post.commentCount > 0">댓글 {{ post.commentCount }}</span>
               </div>
-              <p class="mt-1 truncate text-xs text-[var(--color-muted)]">{{ post.contentPreview }}</p>
             </div>
           </li>
         </ul>

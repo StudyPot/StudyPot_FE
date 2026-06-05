@@ -11,7 +11,6 @@ import {
 import { startStudy } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
-import { useSessionStore } from '@/features/auth/session'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -28,13 +27,8 @@ if (!workspaceContext) {
 }
 
 const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, members } = workspaceContext
-const sessionStore = useSessionStore()
 
-const isOwner = computed(() =>
-  members.value.some(
-    (m) => m.userId === sessionStore.user?.id && m.permission === 'OWNER',
-  ),
-)
+const isReadyToStart = computed(() => group.value?.status === 'READY_TO_START')
 const router = useRouter()
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
@@ -87,14 +81,6 @@ const primaryEntry = computed<GroupEntryAction | null>(() =>
 const inviteLink = computed(() => {
   if (!group.value?.inviteCode) return ''
   return `${window.location.origin}/groups/${groupId.value}/join?inviteCode=${encodeURIComponent(group.value.inviteCode)}`
-})
-
-const allOnboardingDone = computed(() => {
-  if (!group.value) return false
-  if (group.value.status === 'READY_TO_START') return true
-  if (group.value.status !== 'ONBOARDING') return false
-  const active = members.value.filter((m) => m.status !== 'LEFT')
-  return active.length > 0 && active.every((m) => m.onboardingStatus === 'SUBMITTED')
 })
 
 const onboardingProgress = computed(() => {
@@ -217,7 +203,7 @@ function getDayLabel(dayStr: string): string {
     <template v-else-if="group && primaryEntry">
       <!-- 스터디 시작하기 배너 -->
       <section
-        v-if="allOnboardingDone && isOwner"
+        v-if="isReadyToStart"
         class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

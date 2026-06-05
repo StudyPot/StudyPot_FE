@@ -205,6 +205,11 @@ function validateForm(): boolean {
     errors.endsAt = '종료일을 선택해주세요.'
   } else if (form.startsAt && form.endsAt < form.startsAt) {
     errors.endsAt = '종료일은 시작일 이후여야 합니다.'
+  } else if (form.startsAt && form.endsAt) {
+    const diffDays = (new Date(form.endsAt).getTime() - new Date(form.startsAt).getTime()) / (1000 * 60 * 60 * 24)
+    if (diffDays > 365) {
+      errors.endsAt = '스터디 기간은 1년(365일)을 초과할 수 없습니다.'
+    }
   }
 
   fieldErrors.value = errors

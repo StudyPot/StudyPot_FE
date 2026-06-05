@@ -174,8 +174,30 @@ onMounted(() => {
   void handleOpenConversation()
 })
 
+const INTERNAL_FIELDS = ['observedDbEvidence', 'recommendedNextAction']
+
+function stripInternalFields(content: string): string {
+  const trimmed = content.trim()
+
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>
+      INTERNAL_FIELDS.forEach((key) => delete parsed[key])
+      const remaining = Object.values(parsed).filter((v) => typeof v === 'string').join('\n\n')
+      return remaining || trimmed
+    } catch {
+      // JSON 파싱 실패 시 아래 regex 방식으로 폴백
+    }
+  }
+
+  return INTERNAL_FIELDS.reduce((text, field) => {
+    // "fieldName": "..." 또는 "fieldName": { ... } 패턴 제거
+    return text.replace(new RegExp(`"${field}"\\s*:\\s*(?:"[^"]*"|\\{[^}]*\\}),?\\s*`, 'g'), '')
+  }, content)
+}
+
 function renderMarkdown(content: string): string {
-  const html = marked.parse(content, { async: false }) as string
+  const html = marked.parse(stripInternalFields(content), { async: false }) as string
   return DOMPurify.sanitize(html)
 }
 </script>

@@ -268,8 +268,9 @@ function scrollTabs(direction: 'left' | 'right'): void {
     />
 
     <template v-else-if="pageState === 'loaded'">
-      <!-- ── 주차 탭 네비게이션 ────────────────────────────────── -->
+      <!-- ── 주차 탭 네비게이션 (weeks 데이터가 있을 때만 표시) ── -->
       <section
+        v-if="weekSummaries.length > 0"
         class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
       >
         <div class="border-b border-[var(--color-line)] px-4 py-3">
@@ -280,7 +281,6 @@ function scrollTabs(direction: 'left' | 'right'): void {
         </div>
 
         <div class="relative flex items-center">
-          <!-- 좌측 스크롤 버튼 -->
           <button
             type="button"
             class="absolute left-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-r from-white to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
@@ -290,7 +290,6 @@ function scrollTabs(direction: 'left' | 'right'): void {
             ‹
           </button>
 
-          <!-- 주차 탭 목록 -->
           <div
             ref="tabsRef"
             class="flex gap-0 overflow-x-auto scroll-smooth px-8"
@@ -346,7 +345,6 @@ function scrollTabs(direction: 'left' | 'right'): void {
             </button>
           </div>
 
-          <!-- 우측 스크롤 버튼 -->
           <button
             type="button"
             class="absolute right-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-l from-white to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
@@ -356,6 +354,15 @@ function scrollTabs(direction: 'left' | 'right'): void {
             ›
           </button>
         </div>
+      </section>
+
+      <!-- weeks 없을 때 커리큘럼 제목만 표시 -->
+      <section
+        v-else-if="curriculum"
+        class="rounded-lg border border-[var(--color-line)] bg-white/85 px-4 py-3 shadow-[var(--shadow-soft)]"
+      >
+        <p class="text-xs font-semibold text-[var(--color-primary)]">커리큘럼</p>
+        <h2 class="mt-0.5 text-sm font-bold text-[var(--color-ink)]">{{ curriculum.title }}</h2>
       </section>
 
       <!-- ── 주차 상세 로딩 ────────────────────────────────────── -->
