@@ -1,7 +1,10 @@
 import { apiClient } from '@/shared/api'
 import type {
+  CurrentLearningActivity,
   Curriculum,
   CurriculumWeek,
+  DoneTaskRequest,
+  IncompleteTaskRequest,
   MemberWeekProgress,
   TaskCompletionRequest,
   TaskCompletionResponse,
@@ -23,8 +26,8 @@ export function getCurrentWeek(groupId: string): Promise<CurriculumWeek> {
   return apiClient<CurriculumWeek>(`/groups/${groupId}/weeks/current`)
 }
 
-export function getWeek(weekId: string): Promise<CurriculumWeek> {
-  return apiClient<CurriculumWeek>(`/weeks/${weekId}`)
+export function getCurrentLearningActivity(groupId: string): Promise<CurrentLearningActivity> {
+  return apiClient<CurrentLearningActivity>(`/groups/${groupId}/learning-activity/me`)
 }
 
 export function listWeeklyTasks(weekId: string): Promise<WeeklyTask[]> {
@@ -52,5 +55,31 @@ export function completeTask(
   return apiClient<TaskCompletionResponse>(`/tasks/${taskId}/completion/me`, {
     method: 'POST',
     body: request,
+  })
+}
+
+export function markTaskDone(
+  taskId: string,
+  request: DoneTaskRequest = {},
+): Promise<TaskCompletionResponse> {
+  return apiClient<TaskCompletionResponse>(`/tasks/${taskId}/completion/me/done`, {
+    method: 'POST',
+    body: request,
+  })
+}
+
+export function markTaskIncomplete(
+  taskId: string,
+  request: IncompleteTaskRequest,
+): Promise<TaskCompletionResponse> {
+  return apiClient<TaskCompletionResponse>(`/tasks/${taskId}/completion/me/incomplete`, {
+    method: 'POST',
+    body: request,
+  })
+}
+
+export function skipTask(taskId: string): Promise<TaskCompletionResponse> {
+  return apiClient<TaskCompletionResponse>(`/tasks/${taskId}/completion/me/skip`, {
+    method: 'POST',
   })
 }

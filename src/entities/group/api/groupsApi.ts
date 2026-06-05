@@ -3,11 +3,16 @@ import type {
   CreateGroupRequest,
   DetailKeywordSuggestionsResponse,
   GroupMember,
+  GroupMemberCurrentWeekSummary,
+  GroupMemberOnboardingSummary,
   GroupMemberPermission,
+  GroupMemberRetrospectiveSummary,
   GroupMemberStatus,
+  GroupMemberTaskCompletionSummary,
   JoinGroupRequest,
   StudyGroup,
   SuggestDetailKeywordsRequest,
+  UpdateGroupMemberProfileRequest,
 } from '../model/types'
 
 export type MyGroupMemberProfile = {
@@ -17,6 +22,10 @@ export type MyGroupMemberProfile = {
   permission: GroupMemberPermission
   status: GroupMemberStatus
   displayName: string | null
+  onboarding: GroupMemberOnboardingSummary
+  currentWeek: GroupMemberCurrentWeekSummary | null
+  taskCompletion: GroupMemberTaskCompletionSummary
+  retrospective: GroupMemberRetrospectiveSummary
 }
 
 export function listGroups(): Promise<StudyGroup[]> {
@@ -66,9 +75,13 @@ export function getMyGroupMemberProfile(groupId: string): Promise<MyGroupMemberP
   return apiClient<MyGroupMemberProfile>(`/groups/${groupId}/members/me/profile`)
 }
 
-export function startStudy(groupId: string): Promise<{ status: string }> {
-  return apiClient<{ status: string }>(`/groups/${groupId}/start`, {
-    method: 'POST',
+export function updateMyGroupMemberProfile(
+  groupId: string,
+  request: UpdateGroupMemberProfileRequest,
+): Promise<MyGroupMemberProfile> {
+  return apiClient<MyGroupMemberProfile>(`/groups/${groupId}/members/me/profile`, {
+    method: 'PATCH',
+    body: request,
   })
 }
 

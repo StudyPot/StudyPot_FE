@@ -84,9 +84,54 @@ export type TaskCompletionRequest = {
   evidenceUrl?: string
 }
 
+export type DoneTaskRequest = {
+  completionNote?: string
+  evidenceUrl?: string
+}
+
+export type IncompleteTaskRequest = {
+  incompleteReason: string
+}
+
 export type TaskCompletionResponse = {
   id: string
+  taskId?: string
   status: TaskCompletionStatus
   completedAt?: string | null
+  reasonSubmittedAt?: string | null
+  completionNote?: string | null
   incompleteReason?: string | null
+  evidenceUrl?: string | null
+}
+
+export type TaskCompletionSummary = {
+  totalCount: number
+  doneCount: number
+  incompleteCount: number
+  skippedCount: number
+}
+
+export type CurrentLearningActivityTaskCompletion = {
+  id: string | null
+  taskId: string
+  status: TaskCompletionStatus
+  completedAt: string | null
+  reasonSubmittedAt: string | null
+  completionNote: string | null
+  incompleteReason: string | null
+  evidenceUrl: string | null
+}
+
+export type CurrentLearningActivityTask = {
+  task: WeeklyTask
+  completion: CurrentLearningActivityTaskCompletion
+}
+
+export type CurrentLearningActivity = {
+  groupId: string
+  currentWeek: CurriculumWeek
+  progress: MemberWeekProgress | null
+  progressStatus: MemberWeekProgressStatus
+  taskCompletion: TaskCompletionSummary
+  tasks: CurrentLearningActivityTask[]
 }
