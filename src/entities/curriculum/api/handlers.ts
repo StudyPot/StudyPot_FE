@@ -3,10 +3,13 @@ import { HttpResponse, http } from 'msw'
 import { mockMswData } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
 import type {
+  CurrentLearningActivity,
   Curriculum,
   CurriculumWeek,
   CurriculumStatus,
   CurriculumWeekStatus,
+  DoneTaskRequest,
+  IncompleteTaskRequest,
   MemberWeekProgress,
   TaskCompletionRequest,
   TaskCompletionResponse,
@@ -66,13 +69,99 @@ export const curriculumHandlers = [
   }),
   http.post(`${apiBaseUrl}/tasks/:taskId/completion/me`, async ({ params, request }) => {
     const body = (await request.json()) as TaskCompletionRequest
+    const taskId = String(params.taskId)
 
     return HttpResponse.json({
-      id: `completion-${String(params.taskId)}`,
+      id: `completion-${taskId}`,
+      taskId,
       status: body.status,
       completedAt: body.status === 'DONE' ? new Date().toISOString() : null,
+      reasonSubmittedAt: body.status === 'INCOMPLETE' ? new Date().toISOString() : null,
+      completionNote: body.completionNote ?? null,
       incompleteReason: body.incompleteReason ?? null,
+      evidenceUrl: body.evidenceUrl ?? null,
     } satisfies TaskCompletionResponse)
+  }),
+
+  http.post(`${apiBaseUrl}/tasks/:taskId/completion/me/done`, async ({ params, request }) => {
+    const body = (await request.json()) as DoneTaskRequest
+    const taskId = String(params.taskId)
+
+    return HttpResponse.json({
+      id: `completion-${taskId}`,
+      taskId,
+      status: 'DONE',
+      completedAt: new Date().toISOString(),
+      reasonSubmittedAt: null,
+      completionNote: body.completionNote ?? null,
+      incompleteReason: null,
+      evidenceUrl: body.evidenceUrl ?? null,
+    } satisfies TaskCompletionResponse)
+  }),
+
+  http.post(`${apiBaseUrl}/tasks/:taskId/completion/me/incomplete`, async ({ params, request }) => {
+    const body = (await request.json()) as IncompleteTaskRequest
+    const taskId = String(params.taskId)
+
+    return HttpResponse.json({
+      id: `completion-${taskId}`,
+      taskId,
+      status: 'INCOMPLETE',
+      completedAt: null,
+      reasonSubmittedAt: new Date().toISOString(),
+      completionNote: null,
+      incompleteReason: body.incompleteReason,
+      evidenceUrl: null,
+    } satisfies TaskCompletionResponse)
+  }),
+
+  http.post(`${apiBaseUrl}/tasks/:taskId/completion/me/skip`, ({ params }) => {
+    const taskId = String(params.taskId)
+
+    return HttpResponse.json({
+      id: `completion-${taskId}`,
+      taskId,
+      status: 'SKIPPED',
+      completedAt: null,
+      reasonSubmittedAt: null,
+      completionNote: null,
+      incompleteReason: null,
+      evidenceUrl: null,
+    } satisfies TaskCompletionResponse)
+  }),
+
+  http.get(`${apiBaseUrl}/groups/:groupId/learning-activity/me`, ({ params }) => {
+    const groupId = String(params.groupId)
+    const currentWeek = toCurrentWeek(groupId)
+    const tasks = toWeeklyTasks(currentWeek.id)
+
+    const activity: CurrentLearningActivity = {
+      groupId,
+      currentWeek,
+      progress: toWeekProgress(currentWeek.id, 'IN_PROGRESS'),
+      progressStatus: 'IN_PROGRESS',
+      taskCompletion: {
+        totalCount: tasks.length,
+        doneCount: tasks.filter((t) => t.completion?.status === 'DONE').length,
+        incompleteCount: tasks.filter((t) => t.completion?.status === 'INCOMPLETE').length,
+        skippedCount: tasks.filter((t) => t.completion?.status === 'SKIPPED').length,
+      },
+      tasks: tasks.map((task) => ({
+        task,
+        completion: {
+          id: task.completion?.id ?? null,
+          taskId: task.id,
+          status: task.completion?.status ?? 'TODO',
+          completedAt: task.completion?.completedAt ?? null,
+          reasonSubmittedAt: null,
+          completionNote: null,
+          incompleteReason: task.completion?.incompleteReason ?? null,
+          evidenceUrl: null,
+        },
+      })),
+    }
+
+    return HttpResponse.json(activity)
   }),
 ]
 

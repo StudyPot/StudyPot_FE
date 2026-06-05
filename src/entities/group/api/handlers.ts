@@ -63,6 +63,14 @@ export const groupHandlers = [
       groupId: String(params.groupId),
     })
   }),
+  http.patch(`${apiBaseUrl}/groups/:groupId/members/me/profile`, async ({ params, request }) => {
+    const body = (await request.json()) as { displayName: string }
+    return HttpResponse.json({
+      ...mockMswData.groups.myMemberProfile,
+      groupId: String(params.groupId),
+      displayName: body.displayName,
+    })
+  }),
   http.post(`${apiBaseUrl}/groups/:groupId/start`, async ({ params }) => {
     // AI 커리큘럼 생성 시간 시뮬레이션 (프로그레스바 테스트용: 약 8초)
     await new Promise<void>((resolve) => setTimeout(resolve, 8000))

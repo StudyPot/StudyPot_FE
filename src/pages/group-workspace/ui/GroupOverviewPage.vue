@@ -6,9 +6,9 @@ import { useRouter } from 'vue-router'
 import {
   getGroupOverviewPrimaryEntry,
   getGroupStatusLabel,
-  startStudy,
   type GroupEntryAction,
 } from '@/entities/group'
+import { startStudy } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
 import { useSessionStore } from '@/features/auth/session'

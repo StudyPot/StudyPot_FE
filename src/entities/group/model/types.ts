@@ -51,3 +51,33 @@ export type GroupMember = {
   email?: string | null
   onboardingStatus?: 'DRAFT' | 'SUBMITTED' | null
 }
+
+export type UpdateGroupMemberProfileRequest = {
+  displayName: string
+}
+
+export type GroupMemberOnboardingSummary = {
+  submitted: boolean
+  skillLevel?: number | null
+  submittedAt?: string | null
+}
+
+export type GroupMemberCurrentWeekSummary = {
+  weekId: string
+  weekNumber: number
+  sprintGoal?: string | null
+  startsAt?: string | null
+  endsAt?: string | null
+  progressStatus: string
+}
+
+export type GroupMemberTaskCompletionSummary = {
+  totalCount: number
+  doneCount: number
+  incompleteCount: number
+  skippedCount: number
+}
+
+export type GroupMemberRetrospectiveSummary = {
+  feedbackReady: boolean
+}
