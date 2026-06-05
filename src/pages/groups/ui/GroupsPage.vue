@@ -11,7 +11,7 @@ import {
 } from '@/entities/group'
 import { startStudy } from '@/entities/curriculum'
 import { LogoutButton } from '@/features/auth/logout'
-import { LogoutAllButton } from '@/features/auth/logout-all'
+import { NotificationBell } from '@/features/notification'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 
@@ -129,8 +129,8 @@ function formatDate(value: string): string {
         >
           새로고침
         </button>
+        <NotificationBell />
         <LogoutButton />
-        <LogoutAllButton />
       </div>
     </header>
 

@@ -135,11 +135,6 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
 }
 
-async function copyInviteCode(): Promise<void> {
-  if (!group.value?.inviteCode) return
-  await copyToClipboard(group.value.inviteCode, '초대 코드를 복사했습니다.')
-}
-
 async function copyInviteLink(): Promise<void> {
   if (!inviteLink.value) return
   await copyToClipboard(inviteLink.value, '초대 링크를 복사했습니다.')
@@ -342,13 +337,6 @@ function getDayLabel(dayStr: string): string {
         </dl>
 
         <div class="mt-5 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
-            @click="copyInviteCode"
-          >
-            코드 복사
-          </button>
           <button
             type="button"
             class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
