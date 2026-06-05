@@ -4,7 +4,6 @@ export {
   getMyGroupMemberProfile,
   joinGroup,
   listGroups,
-  startStudy,
   suggestDetailKeywords,
   updateMyGroupMemberProfile,
 } from './api/groupsApi'
