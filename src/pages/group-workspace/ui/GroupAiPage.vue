@@ -225,7 +225,7 @@ function renderMarkdown(content: string): string {
     <!-- chat -->
     <section
       v-else-if="pageState === 'chat'"
-      class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
+      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
     >
       <div class="border-b border-[var(--color-line)] px-5 py-4">
         <p class="text-sm font-semibold text-[var(--color-primary)]">AI 팀장</p>
@@ -310,7 +310,7 @@ function renderMarkdown(content: string): string {
       <p
         v-if="sendError"
         role="alert"
-        class="mx-5 text-sm font-semibold text-red-700"
+        class="mx-5 text-sm font-semibold text-[var(--color-danger)]"
       >
         {{ sendError }}
       </p>
@@ -323,7 +323,7 @@ function renderMarkdown(content: string): string {
             rows="2"
             placeholder="메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)"
             :disabled="isSending"
-            class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
+            class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
             @keydown="handleKeydown"
           />
           <button

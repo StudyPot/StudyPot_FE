@@ -205,7 +205,7 @@ function formatNumber(value: number): string {
 
 <template>
   <div class="grid gap-5">
-    <section class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]">
+    <section class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]">
       <!-- 탭 헤더 -->
       <div class="flex border-b border-[var(--color-line)] px-5 pt-5">
         <p class="mb-4 text-sm font-semibold text-[var(--color-primary)]">알림</p>
@@ -259,7 +259,7 @@ function formatNumber(value: number): string {
             <button
               type="button"
               :disabled="isMarkingAllRead || !myNotifications.some(isUnread)"
-              class="inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
+              class="inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
               @click="handleMarkAllRead"
             >
               {{ isMarkingAllRead ? '처리 중…' : '전체 읽음' }}
@@ -274,7 +274,7 @@ function formatNumber(value: number): string {
                 'flex items-start gap-3 rounded-md border p-3 text-sm transition',
                 isUnread(notification)
                   ? 'border-[rgba(54,92,255,0.22)] bg-[var(--color-card)]'
-                  : 'border-[var(--color-line)] bg-white',
+                  : 'border-[var(--color-line-strong)] bg-[var(--color-active)]',
               ]"
             >
               <div
@@ -302,7 +302,7 @@ function formatNumber(value: number): string {
                 v-if="isUnread(notification)"
                 type="button"
                 :disabled="markingReadId === notification.id"
-                class="shrink-0 inline-flex h-7 items-center rounded border border-[var(--color-line)] bg-white px-2 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                class="shrink-0 inline-flex h-7 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-2 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
                 @click="handleMarkRead(notification.id)"
               >
                 읽음
@@ -343,7 +343,7 @@ function formatNumber(value: number): string {
             <li
               v-for="notification in groupNotifications"
               :key="notification.id"
-              class="rounded-md border border-[var(--color-line)] bg-white p-3 text-sm"
+              class="rounded-md border border-[var(--color-line)] bg-[var(--color-card)] p-3 text-sm"
             >
               <div class="flex flex-wrap items-center gap-2">
                 <span class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-muted)]">
@@ -355,7 +355,7 @@ function formatNumber(value: number): string {
                     notification.status === 'READ'
                       ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
                       : notification.status === 'FAILED'
-                        ? 'bg-red-50 text-red-700'
+                        ? 'bg-red-50 text-[var(--color-danger)]'
                         : 'bg-[var(--color-card)] text-[var(--color-primary-deep)]',
                   ]"
                 >
@@ -438,7 +438,7 @@ function formatNumber(value: number): string {
                         usage.status === 'SUCCESS'
                           ? 'bg-green-100 text-green-700'
                           : usage.status === 'FAILED'
-                            ? 'bg-red-50 text-red-700'
+                            ? 'bg-red-50 text-[var(--color-danger)]'
                             : 'bg-amber-50 text-amber-700',
                       ]"
                     >

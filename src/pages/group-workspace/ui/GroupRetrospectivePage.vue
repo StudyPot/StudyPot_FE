@@ -127,7 +127,7 @@ const STATUS_LABEL: Record<string, string> = {
 
     <section
       v-else-if="pageState === 'none'"
-      class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
     >
       <p class="text-sm font-semibold text-[var(--color-primary)]">회고</p>
       <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">아직 회고가 없습니다</h2>
@@ -135,7 +135,7 @@ const STATUS_LABEL: Record<string, string> = {
         주차가 종료되면 회고를 요청할 수 있습니다.
       </p>
 
-      <p v-if="requestError" role="alert" class="mt-4 text-sm font-semibold text-red-700">
+      <p v-if="requestError" role="alert" class="mt-4 text-sm font-semibold text-[var(--color-danger)]">
         {{ requestError }}
       </p>
 
@@ -153,7 +153,7 @@ const STATUS_LABEL: Record<string, string> = {
     <template v-else-if="pageState === 'retrospective' && retrospective">
       <!-- 상태 헤더 -->
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -170,7 +170,7 @@ const STATUS_LABEL: Record<string, string> = {
             </p>
             <p
               v-else-if="retrospective.status === 'FAILED'"
-              class="mt-3 text-sm leading-6 text-red-700"
+              class="mt-3 text-sm leading-6 text-[var(--color-danger)]"
             >
               회고 생성에 실패했습니다. 다시 요청하거나 잠시 후 시도해 주세요.
             </p>
@@ -180,7 +180,7 @@ const STATUS_LABEL: Record<string, string> = {
             v-if="retrospective.status === 'FAILED' && currentWeekId"
             type="button"
             :disabled="isRequesting"
-            class="shrink-0 inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
+            class="shrink-0 inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
             @click="handleRequest"
           >
             {{ isRequesting ? '요청 중…' : '다시 요청' }}
@@ -191,7 +191,7 @@ const STATUS_LABEL: Record<string, string> = {
       <!-- AI 피드백 -->
       <section
         v-if="retrospective.status === 'COMPLETED' && retrospective.aiFeedback"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <h3 class="text-base font-bold text-[var(--color-ink)]">AI 피드백</h3>
 
@@ -229,7 +229,7 @@ const STATUS_LABEL: Record<string, string> = {
       <!-- 다음 주 조정 -->
       <section
         v-if="retrospective.status === 'COMPLETED' && retrospective.nextWeekAdjustment"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <h3 class="text-base font-bold text-[var(--color-ink)]">다음 주 조정 제안</h3>
 

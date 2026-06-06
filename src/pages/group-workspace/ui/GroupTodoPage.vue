@@ -271,7 +271,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
       <!-- ── 주차 탭 네비게이션 (weeks 데이터가 있을 때만 표시) ── -->
       <section
         v-if="weekSummaries.length > 0"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
       >
         <div class="border-b border-[var(--color-line)] px-4 py-3">
           <p class="text-xs font-semibold text-[var(--color-primary)]">커리큘럼</p>
@@ -359,7 +359,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
       <!-- weeks 없을 때 커리큘럼 제목만 표시 -->
       <section
         v-else-if="curriculum"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 px-4 py-3 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-3 shadow-[var(--shadow-soft)]"
       >
         <p class="text-xs font-semibold text-[var(--color-primary)]">커리큘럼</p>
         <h2 class="mt-0.5 text-sm font-bold text-[var(--color-ink)]">{{ curriculum.title }}</h2>
@@ -405,7 +405,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
 
         <!-- ── 주차 정보 카드 ─────────────────────────────────── -->
         <section
-          class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
         >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0 flex-1">
@@ -465,7 +465,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     'inline-flex h-7 items-center rounded border px-2.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
                     progress.status === opt
                       ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                      : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                      : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
                   ]"
                   @click="handleUpdateProgress(opt)"
                 >
@@ -496,7 +496,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
 
         <!-- ── 태스크 목록 ─────────────────────────────────────── -->
         <section
-          class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
         >
           <h3 class="text-sm font-bold text-[var(--color-ink)]">
             {{ selectedWeek.weekNumber }}주차 과제 ({{ tasks.length }}개)
@@ -510,7 +510,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                 'rounded-lg border p-4 transition-all duration-300',
                 getCompletionStatus(task) === 'DONE'
                   ? 'border-gray-200 bg-gray-50'
-                  : 'border-[var(--color-line)] bg-white',
+                  : 'border-[var(--color-line-strong)] bg-[var(--color-active)]',
                 justCompletedIds.has(task.id) ? 'scale-[0.99]' : '',
               ]"
             >
@@ -526,7 +526,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     </span>
                     <span
                       v-if="task.required"
-                      class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700"
+                      class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-[var(--color-danger)]"
                     >
                       필수
                     </span>
@@ -536,7 +536,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                         getCompletionStatus(task) === 'DONE'
                           ? 'bg-green-100 text-green-700'
                           : getCompletionStatus(task) === 'INCOMPLETE'
-                            ? 'bg-red-50 text-red-700'
+                            ? 'bg-red-50 text-[var(--color-danger)]'
                             : getCompletionStatus(task) === 'SKIPPED'
                               ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
                               : 'bg-[var(--color-card)] text-[var(--color-muted)]',
@@ -587,7 +587,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                         ? action.status === 'DONE'
                           ? 'border-green-400 bg-green-100 text-green-700'
                           : 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                        : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                        : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
                       action.status === 'DONE' && getCompletionStatus(task) !== 'DONE'
                         ? 'hover:border-green-400 hover:bg-green-50 hover:text-green-700'
                         : '',
@@ -606,7 +606,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                 </div>
               </div>
 
-              <p v-if="taskError[task.id]" role="alert" class="mt-2 text-xs font-semibold text-red-700">
+              <p v-if="taskError[task.id]" role="alert" class="mt-2 text-xs font-semibold text-[var(--color-danger)]">
                 {{ taskError[task.id] }}
               </p>
             </li>

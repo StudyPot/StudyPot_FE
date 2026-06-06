@@ -96,7 +96,7 @@ function formatDate(value: string): string {
 
     <section
       v-else-if="pageState === 'none'"
-      class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
     >
       <p class="text-sm font-semibold text-[var(--color-primary)]">커리큘럼</p>
       <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">아직 커리큘럼이 없습니다</h2>
@@ -104,7 +104,7 @@ function formatDate(value: string): string {
         온보딩이 완료되면 스터디를 시작해 커리큘럼을 생성할 수 있습니다.
       </p>
 
-      <p v-if="startError" role="alert" class="mt-4 text-sm font-semibold text-red-700">
+      <p v-if="startError" role="alert" class="mt-4 text-sm font-semibold text-[var(--color-danger)]">
         {{ startError }}
       </p>
 
@@ -120,7 +120,7 @@ function formatDate(value: string): string {
 
     <template v-else-if="pageState === 'curriculum' && curriculum">
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-semibold text-[var(--color-primary)]">커리큘럼</p>
         <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">{{ curriculum.title }}</h2>
@@ -147,7 +147,7 @@ function formatDate(value: string): string {
 
       <section
         v-if="curriculum.weeks && curriculum.weeks.length > 0"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <h3 class="text-base font-bold text-[var(--color-ink)]">주차 목록</h3>
 
@@ -155,7 +155,7 @@ function formatDate(value: string): string {
           <li
             v-for="week in curriculum.weeks"
             :key="week.id"
-            class="flex items-center justify-between rounded-md border border-[var(--color-line)] bg-white px-4 py-3 text-sm"
+            class="flex items-center justify-between rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3 text-sm"
           >
             <div class="min-w-0">
               <span class="font-semibold text-[var(--color-muted)]">{{ week.weekNumber }}주차</span>
@@ -167,8 +167,8 @@ function formatDate(value: string): string {
                 week.status === 'IN_PROGRESS'
                   ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
                   : week.status === 'COMPLETED'
-                    ? 'border-[var(--color-line)] bg-white text-[var(--color-muted)]'
-                    : 'border-[var(--color-line)] bg-white text-[var(--color-muted)]',
+                    ? 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)]'
+                    : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)]',
               ]"
             >
               {{ WEEK_STATUS_LABEL[week.status] }}

@@ -62,7 +62,7 @@ function formatDateTime(value?: string | null): string {
     <!-- 벨 버튼 -->
     <button
       type="button"
-      class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+      class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
       aria-label="알림"
       @click="toggle"
     >
@@ -104,7 +104,7 @@ function formatDateTime(value?: string | null): string {
     <!-- 알림 드롭다운 -->
     <div
       v-if="isOpen"
-      class="absolute right-0 top-full z-20 mt-2 w-80 overflow-hidden rounded-lg border border-[var(--color-line)] bg-white shadow-lg sm:w-96"
+      class="absolute right-0 top-full z-20 mt-2 w-80 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-lg sm:w-96"
     >
       <!-- 드롭다운 헤더 -->
       <div class="flex items-center justify-between border-b border-[var(--color-line)] px-4 py-3">
@@ -126,7 +126,7 @@ function formatDateTime(value?: string | null): string {
         <button
           type="button"
           :disabled="isMarkingAll || store.unreadCount === 0"
-          class="inline-flex h-7 items-center rounded border border-[var(--color-line)] bg-white px-2 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-40"
+          class="inline-flex h-7 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-40"
           @click="handleMarkAllRead"
         >
           {{ isMarkingAll ? '처리 중…' : '전체 읽음' }}
@@ -143,7 +143,7 @@ function formatDateTime(value?: string | null): string {
           :key="notification.id"
           :class="[
             'flex items-start gap-3 px-4 py-3 text-sm transition',
-            isUnread(notification) ? 'bg-[var(--color-card)]' : 'bg-white',
+            isUnread(notification) ? 'bg-[var(--color-card)]' : 'bg-[var(--color-card)]',
           ]"
         >
           <!-- 읽지 않음 표시 점 -->
@@ -172,7 +172,7 @@ function formatDateTime(value?: string | null): string {
             v-if="isUnread(notification)"
             type="button"
             :disabled="markingId === notification.id"
-            class="mt-0.5 shrink-0 inline-flex h-6 items-center rounded border border-[var(--color-line)] bg-white px-1.5 text-[10px] font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none disabled:opacity-50"
+            class="mt-0.5 shrink-0 inline-flex h-6 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-1.5 text-[10px] font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none disabled:opacity-50"
             @click="handleMarkRead(notification.id)"
           >
             읽음
