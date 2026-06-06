@@ -9,7 +9,6 @@ import {
   GroupAiPage,
   GroupBoardPage,
   GroupCurriculumPage,
-  GroupFeaturePlaceholderPage,
   GroupMyPage,
   GroupOnboardingPage,
   GroupOverviewPage,
