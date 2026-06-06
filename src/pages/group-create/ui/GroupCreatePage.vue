@@ -241,7 +241,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
-        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
       >
         그룹 목록
       </RouterLink>
@@ -254,7 +254,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
 
     <form class="mt-8 grid gap-6" @submit.prevent="submitGroup">
       <section
-        class="grid gap-5 rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="grid gap-5 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <label class="grid gap-2">
           <span class="text-sm font-semibold text-[var(--color-ink)]">그룹 이름</span>
@@ -263,10 +263,10 @@ function toCreateGroupRequest(): CreateGroupRequest {
             name="name"
             type="text"
             maxlength="120"
-            class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             placeholder="Backend Interview Study"
           />
-          <span v-if="fieldErrors.name" class="text-xs font-semibold text-red-700">
+          <span v-if="fieldErrors.name" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ fieldErrors.name }}
           </span>
         </label>
@@ -278,10 +278,10 @@ function toCreateGroupRequest(): CreateGroupRequest {
             name="topic"
             type="text"
             maxlength="120"
-            class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             placeholder="Spring Boot"
           />
-          <span v-if="fieldErrors.topic" class="text-xs font-semibold text-red-700">
+          <span v-if="fieldErrors.topic" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ fieldErrors.topic }}
           </span>
         </label>
@@ -295,7 +295,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             </div>
             <button
               type="button"
-              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="isSuggestingKeywords"
               @click="requestKeywordSuggestions"
             >
@@ -303,7 +303,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             </button>
           </div>
 
-          <p v-if="suggestionErrorMessage" role="alert" class="text-xs font-semibold text-red-700">
+          <p v-if="suggestionErrorMessage" role="alert" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ suggestionErrorMessage }}
           </p>
 
@@ -317,7 +317,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
                 'inline-flex h-8 items-center rounded-md border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
                 form.selectedKeywords.includes(keyword)
                   ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                  : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                  : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
               ]"
               :aria-pressed="form.selectedKeywords.includes(keyword)"
               @click="toggleKeyword(keyword)"
@@ -334,7 +334,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
                   type="text"
                   maxlength="30"
                   placeholder="키워드 입력"
-                  class="h-8 w-28 rounded-md border border-[var(--color-primary)] bg-white px-2 text-xs text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+                  class="h-8 w-28 rounded-md border border-[var(--color-primary)] bg-[var(--color-card)] px-2 text-xs text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
                   @keydown.enter.prevent="confirmCustomKeyword"
                   @keydown.escape="cancelCustomInput"
                 />
@@ -347,7 +347,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
                 </button>
                 <button
                   type="button"
-                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-line)] bg-white px-2.5 text-xs font-semibold text-[var(--color-muted)] transition hover:text-[var(--color-ink)] focus:outline-none"
+                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 text-xs font-semibold text-[var(--color-muted)] transition hover:text-[var(--color-ink)] focus:outline-none"
                   @click="cancelCustomInput"
                 >
                   취소
@@ -359,7 +359,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             <button
               v-else
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-white text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
               aria-label="키워드 직접 추가"
               @click="openCustomInput"
             >
@@ -367,7 +367,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             </button>
           </div>
 
-          <span v-if="fieldErrors.selectedKeywords" class="text-xs font-semibold text-red-700">
+          <span v-if="fieldErrors.selectedKeywords" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ fieldErrors.selectedKeywords }}
           </span>
         </div>
@@ -380,9 +380,9 @@ function toCreateGroupRequest(): CreateGroupRequest {
               name="maxMembers"
               type="number"
               min="1"
-              class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
-            <span v-if="fieldErrors.maxMembers" class="text-xs font-semibold text-red-700">
+            <span v-if="fieldErrors.maxMembers" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.maxMembers }}
             </span>
           </label>
@@ -394,9 +394,9 @@ function toCreateGroupRequest(): CreateGroupRequest {
               name="startsAt"
               type="date"
               :min="today"
-              class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
-            <span v-if="fieldErrors.startsAt" class="text-xs font-semibold text-red-700">
+            <span v-if="fieldErrors.startsAt" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.startsAt }}
             </span>
           </label>
@@ -408,9 +408,9 @@ function toCreateGroupRequest(): CreateGroupRequest {
               name="endsAt"
               type="date"
               :min="form.startsAt || today"
-              class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
-            <span v-if="fieldErrors.endsAt" class="text-xs font-semibold text-red-700">
+            <span v-if="fieldErrors.endsAt" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.endsAt }}
             </span>
           </label>
@@ -422,7 +422,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             v-model="form.description"
             name="description"
             rows="4"
-            class="rounded-md border border-[var(--color-line)] bg-white px-3 py-3 text-sm leading-6 text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 text-sm leading-6 text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             placeholder="스터디 운영 방식이나 기대하는 참여 방식을 적어주세요."
           />
         </label>
@@ -431,7 +431,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
       <p
         v-if="errorMessage"
         role="alert"
-        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
       >
         {{ errorMessage }}
       </p>
@@ -439,7 +439,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
       <div class="flex flex-wrap justify-end gap-3">
         <RouterLink
           :to="{ name: 'groups' }"
-          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
         >
           취소
         </RouterLink>
@@ -460,7 +460,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
       v-if="showProgressModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
     >
-      <div class="w-full max-w-sm rounded-xl border border-[var(--color-line)] bg-white p-8 shadow-xl">
+      <div class="w-full max-w-sm rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] p-8 shadow-xl">
         <p class="text-sm font-semibold text-[var(--color-primary)]">AI 스터디 생성 중</p>
         <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">커리큘럼을 구성하고 있어요</h2>
         <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
@@ -489,7 +489,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
       v-if="showSuccessModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
     >
-      <div class="w-full max-w-sm rounded-xl border border-[var(--color-line)] bg-white p-8 shadow-xl">
+      <div class="w-full max-w-sm rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] p-8 shadow-xl">
         <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl">
           ✓
         </div>

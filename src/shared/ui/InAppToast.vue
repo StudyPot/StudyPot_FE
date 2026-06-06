@@ -24,7 +24,7 @@ const store = useInAppNotificationStore()
         <div
           v-for="toast in store.toasts"
           :key="toast.id"
-          class="flex w-80 items-start gap-3 rounded-xl border border-[var(--color-line)] bg-white px-4 py-3 shadow-lg"
+          class="flex w-80 items-start gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3 shadow-lg"
           role="alert"
         >
           <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm text-white">

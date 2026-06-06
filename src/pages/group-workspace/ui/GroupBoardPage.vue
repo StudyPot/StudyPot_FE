@@ -401,7 +401,7 @@ function formatDate(value: string): string {
     <!-- 게시판 탭 -->
     <div
       v-if="boards.length > 0"
-      class="flex flex-wrap gap-1 rounded-lg border border-[var(--color-line)] bg-white/85 px-4 py-2 shadow-[var(--shadow-soft)]"
+      class="flex flex-wrap gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-2 shadow-[var(--shadow-soft)]"
     >
       <button
         v-for="board in boards"
@@ -422,7 +422,7 @@ function formatDate(value: string): string {
     <!-- 목록 -->
     <template v-if="viewMode === 'list'">
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
       >
         <div
           class="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-4"
@@ -488,7 +488,7 @@ function formatDate(value: string): string {
     <!-- 상세 -->
     <template v-else-if="viewMode === 'detail'">
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
       >
         <div class="border-b border-[var(--color-line)] px-5 py-4">
           <button
@@ -529,7 +529,7 @@ function formatDate(value: string): string {
             <li
               v-for="comment in comments"
               :key="comment.id"
-              class="rounded-md border border-[var(--color-line)] bg-white px-3 py-2 text-sm"
+              class="rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm"
             >
               <p class="font-semibold text-[var(--color-ink)]">
                 {{ comment.author.displayName }}
@@ -548,7 +548,7 @@ function formatDate(value: string): string {
               v-model="newCommentText"
               rows="2"
               placeholder="댓글을 입력하세요"
-              class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+              class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
             />
             <button
               type="button"
@@ -566,7 +566,7 @@ function formatDate(value: string): string {
     <!-- 글쓰기 -->
     <template v-else-if="viewMode === 'create'">
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <button
           type="button"
@@ -586,7 +586,7 @@ function formatDate(value: string): string {
               type="text"
               maxlength="200"
               placeholder="제목을 입력하세요"
-              class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             />
           </label>
 
@@ -597,7 +597,7 @@ function formatDate(value: string): string {
                 v-model="newPostForm.content"
                 rows="18"
                 placeholder="내용을 입력하세요"
-                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line)] bg-white px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
                 @input="syncPreview"
                 @compositionupdate="syncPreview"
               />
@@ -611,7 +611,7 @@ function formatDate(value: string): string {
                 >
               </div>
               <div
-                class="min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line)] bg-white px-4 py-3"
+                class="min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3"
               >
                 <article
                   v-if="markdownPreviewHtml"
@@ -623,14 +623,14 @@ function formatDate(value: string): string {
             </section>
           </div>
 
-          <p v-if="createError" role="alert" class="text-sm font-semibold text-red-700">
+          <p v-if="createError" role="alert" class="text-sm font-semibold text-[var(--color-danger)]">
             {{ createError }}
           </p>
 
           <div class="flex justify-end gap-3">
             <button
               type="button"
-              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
               @click="viewMode = 'list'"
             >
               취소

@@ -273,7 +273,7 @@ function shortId(value: string): string {
 <template>
   <div class="grid gap-5">
     <section
-      class="rounded-lg border border-[var(--color-line)] bg-white/85 shadow-[var(--shadow-soft)]"
+      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
     >
       <div class="px-5 pt-5">
         <p class="text-sm font-semibold text-[var(--color-primary)]">규칙</p>
@@ -320,7 +320,7 @@ function shortId(value: string): string {
           <div class="mb-5">
             <button
               type="button"
-              class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+              class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
               @click="showSaveForm = !showSaveForm"
             >
               {{ showSaveForm ? '닫기' : '+ 규칙 추가' }}
@@ -338,7 +338,7 @@ function shortId(value: string): string {
                 <select
                   id="ruleType"
                   v-model="saveForm.ruleType"
-                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
                 >
                   <option
                     v-for="(label, type) in RULE_TYPE_LABEL"
@@ -358,11 +358,11 @@ function shortId(value: string): string {
                   id="ruleDesc"
                   v-model="saveForm.description"
                   rows="2"
-                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
                 />
               </div>
 
-              <p v-if="saveError" role="alert" class="text-sm font-semibold text-red-700">
+              <p v-if="saveError" role="alert" class="text-sm font-semibold text-[var(--color-danger)]">
                 {{ saveError }}
               </p>
 
@@ -381,7 +381,7 @@ function shortId(value: string): string {
             <li
               v-for="rule in rules"
               :key="rule.id"
-              class="rounded-md border border-[var(--color-line)] bg-white p-4"
+              class="rounded-md border border-[var(--color-line)] bg-[var(--color-card)] p-4"
             >
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
@@ -415,7 +415,7 @@ function shortId(value: string): string {
                     v-if="rule.active"
                     type="button"
                     :disabled="pendingRuleId === rule.id"
-                    class="inline-flex h-8 items-center rounded border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-amber-400 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-amber-400 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
                     @click="handleDeactivate(rule)"
                   >
                     비활성화
@@ -424,7 +424,7 @@ function shortId(value: string): string {
                   <button
                     type="button"
                     :disabled="pendingRuleId === rule.id"
-                    class="inline-flex h-8 items-center rounded border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-red-400 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-red-400 hover:text-[var(--color-danger)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
                     @click="handleDelete(rule)"
                   >
                     삭제
@@ -432,7 +432,7 @@ function shortId(value: string): string {
                 </div>
               </div>
 
-              <p v-if="actionError[rule.id]" role="alert" class="mt-2 text-xs font-semibold text-red-700">
+              <p v-if="actionError[rule.id]" role="alert" class="mt-2 text-xs font-semibold text-[var(--color-danger)]">
                 {{ actionError[rule.id] }}
               </p>
             </li>
@@ -464,7 +464,7 @@ function shortId(value: string): string {
             <li
               v-for="violation in violations"
               :key="violation.id"
-              class="rounded-md border border-[var(--color-line)] bg-white p-4"
+              class="rounded-md border border-[var(--color-line)] bg-[var(--color-card)] p-4"
             >
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
@@ -476,7 +476,7 @@ function shortId(value: string): string {
                       :class="[
                         'rounded px-2 py-0.5 text-xs font-semibold',
                         violation.status === 'OPEN'
-                          ? 'bg-red-50 text-red-700'
+                          ? 'bg-red-50 text-[var(--color-danger)]'
                           : violation.status === 'RESOLVED'
                             ? 'bg-green-100 text-green-700'
                             : 'bg-[var(--color-card)] text-[var(--color-muted)]',
@@ -505,7 +505,7 @@ function shortId(value: string): string {
                 <button
                   v-if="violation.status === 'OPEN'"
                   type="button"
-                  class="shrink-0 inline-flex h-8 items-center rounded border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+                  class="shrink-0 inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
                   @click="toggleViolationExpand(violation.id)"
                 >
                   {{ expandedViolationId === violation.id ? '닫기' : '처리' }}
@@ -529,7 +529,7 @@ function shortId(value: string): string {
                     v-model="violationNote[violation.id]"
                     rows="2"
                     :maxlength="NOTE_MAX_LENGTH"
-                    class="mt-1.5 w-full rounded border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.14)]"
+                    class="mt-1.5 w-full rounded border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-1.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.14)]"
                   />
                 </div>
 
@@ -545,7 +545,7 @@ function shortId(value: string): string {
                   <button
                     type="button"
                     :disabled="pendingViolationId === violation.id"
-                    class="inline-flex h-8 items-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
                     @click="handleWaive(violation)"
                   >
                     면제
@@ -555,7 +555,7 @@ function shortId(value: string): string {
                 <p
                   v-if="violationActionError[violation.id]"
                   role="alert"
-                  class="text-xs font-semibold text-red-700"
+                  class="text-xs font-semibold text-[var(--color-danger)]"
                 >
                   {{ violationActionError[violation.id] }}
                 </p>

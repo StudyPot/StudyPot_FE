@@ -28,7 +28,7 @@ function startGoogleLogin(): void {
 
 <template>
   <main class="flex min-h-screen items-center justify-center px-6 py-10">
-    <section class="w-full max-w-sm rounded-lg border border-[var(--color-line)] bg-white p-6">
+    <section class="w-full max-w-sm rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-6">
       <p
         v-if="noticeMessage"
         role="status"

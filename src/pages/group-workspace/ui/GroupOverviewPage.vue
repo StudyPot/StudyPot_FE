@@ -140,6 +140,11 @@ async function copyInviteLink(): Promise<void> {
   await copyToClipboard(inviteLink.value, '초대 링크를 복사했습니다.')
 }
 
+async function copyInviteCode(): Promise<void> {
+  if (!group.value?.inviteCode) return
+  await copyToClipboard(group.value.inviteCode, '초대 코드를 복사했습니다.')
+}
+
 async function copyToClipboard(value: string, successMessage: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(value)
@@ -207,7 +212,7 @@ function getDayLabel(dayStr: string): string {
             <p class="mt-1 text-sm text-[var(--color-muted)]">
               이제 스터디를 시작할 수 있습니다. AI가 커리큘럼을 생성합니다.
             </p>
-            <p v-if="startStudyError" role="alert" class="mt-2 text-sm font-semibold text-red-700">
+            <p v-if="startStudyError" role="alert" class="mt-2 text-sm font-semibold text-[var(--color-danger)]">
               {{ startStudyError }}
             </p>
           </div>
@@ -225,7 +230,7 @@ function getDayLabel(dayStr: string): string {
       <!-- 온보딩 진행 현황 -->
       <section
         v-else-if="group.status === 'ONBOARDING' && onboardingProgress"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-semibold text-[var(--color-primary)]">온보딩 현황</p>
         <div class="mt-3 flex items-center gap-4">
@@ -263,7 +268,7 @@ function getDayLabel(dayStr: string): string {
 
       <!-- 그룹 홈 메인 -->
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="min-w-0">
@@ -339,7 +344,14 @@ function getDayLabel(dayStr: string): string {
         <div class="mt-5 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+            @click="copyInviteCode"
+          >
+            코드 복사
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
             @click="copyInviteLink"
           >
             링크 복사
@@ -353,7 +365,7 @@ function getDayLabel(dayStr: string): string {
           <span
             v-for="keyword in group.detailKeywords"
             :key="keyword"
-            class="rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
+            class="rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
           >
             {{ keyword }}
           </span>
@@ -363,7 +375,7 @@ function getDayLabel(dayStr: string): string {
       <!-- 활동 대시보드 (잔디) -->
       <section
         v-if="group.status === 'ACTIVE' && heatmapData.length > 0"
-        class="rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
         <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">최근 4주 학습 활동</h3>
@@ -415,7 +427,7 @@ function getDayLabel(dayStr: string): string {
           v-for="link in quickLinks"
           :key="link.routeName"
           :to="{ name: link.routeName, params: { groupId } }"
-          class="rounded-lg border border-[var(--color-line)] bg-white p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
         >
           <span class="text-base font-bold text-[var(--color-ink)]">{{ link.title }}</span>
           <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">{{ link.caption }}</span>
@@ -445,7 +457,7 @@ function getDayLabel(dayStr: string): string {
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
         <!-- 모달 카드 -->
-        <div class="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl text-center mx-4">
+        <div class="relative w-full max-w-sm rounded-2xl bg-[var(--color-card)] p-8 shadow-2xl text-center mx-4">
           <!-- AI 아이콘 -->
           <div
             class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-card)] text-3xl"

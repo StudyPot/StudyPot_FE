@@ -23,17 +23,17 @@ const defaultEyebrows: Record<ScreenStateVariant, string> = {
 }
 
 const toneClasses: Record<ScreenStateVariant, string> = {
-  loading: 'border-[rgba(54,92,255,0.22)] bg-white/85',
-  empty: 'border-[var(--color-line)] bg-white/85',
-  error: 'border-red-200 bg-red-50/90',
-  forbidden: 'border-amber-200 bg-amber-50/90',
+  loading: 'border-[rgba(54,92,255,0.22)] bg-[var(--color-card)]',
+  empty: 'border-[var(--color-line)] bg-[var(--color-card)]',
+  error: 'border-[rgba(237,66,69,0.25)] bg-[rgba(237,66,69,0.1)]',
+  forbidden: 'border-[rgba(250,166,26,0.25)] bg-[rgba(250,166,26,0.1)]',
 }
 
 const markerClasses: Record<ScreenStateVariant, string> = {
   loading: 'border-[var(--color-primary)] border-t-transparent',
-  empty: 'border-[var(--color-line)] bg-[var(--color-card)]',
-  error: 'border-red-300 bg-red-100',
-  forbidden: 'border-amber-300 bg-amber-100',
+  empty: 'border-[var(--color-line)] bg-[var(--color-active)]',
+  error: 'border-[var(--color-danger)] bg-[rgba(237,66,69,0.2)]',
+  forbidden: 'border-[rgba(250,166,26,0.5)] bg-[rgba(250,166,26,0.15)]',
 }
 
 const eyebrowText = computed(() => props.eyebrow ?? defaultEyebrows[props.variant])

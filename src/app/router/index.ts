@@ -9,7 +9,6 @@ import {
   GroupAiPage,
   GroupBoardPage,
   GroupCurriculumPage,
-  GroupFeaturePlaceholderPage,
   GroupMyPage,
   GroupOnboardingPage,
   GroupOverviewPage,
@@ -18,7 +17,6 @@ import {
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
 import { GroupsPage } from '@/pages/groups'
-import { LoginPage } from '../../pages/login'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -28,9 +26,10 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    // Kept for logout redirects and session-restore failure; AppShell renders the login UI
     path: '/login',
     name: 'login',
-    component: LoginPage,
+    component: { template: '<div />' },
   },
   {
     path: '/auth/callback',
@@ -45,60 +44,44 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/failure',
     name: 'auth-failure',
-    redirect: {
+    redirect: (to) => ({
       name: 'login',
-      query: {
-        error: 'oauth',
-      },
-    },
+      query: { error: 'oauth', ...to.query },
+    }),
   },
   {
     path: '/groups',
     name: 'groups',
     component: GroupsPage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/new',
     name: 'group-create',
     component: GroupCreatePage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/join',
     name: 'group-join',
     component: GroupJoinPage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/:groupId/join',
     name: 'group-join-with-id',
     component: GroupJoinPage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/:groupId',
     component: GroupWorkspacePage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
         name: 'group-overview',
         component: GroupOverviewPage,
-        meta: {
-          workspaceTitle: '그룹 홈',
-          workspaceSummary: '그룹의 주요 학습 흐름으로 이동합니다.',
-        },
       },
       {
         path: 'onboarding',
@@ -156,12 +139,10 @@ router.beforeEach(async (to) => {
     return true
   }
 
-  // 리프레시 토큰 만료 또는 인증 실패 → 로그인으로
+  // Session restore failed; redirect to login route (AppShell will show the login UI)
   return {
     name: 'login',
-    query: {
-      redirect: to.fullPath,
-    },
+    query: { redirect: to.fullPath },
   }
 })
 

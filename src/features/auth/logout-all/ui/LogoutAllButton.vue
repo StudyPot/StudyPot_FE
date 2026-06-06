@@ -42,7 +42,7 @@ async function logoutEverySession(): Promise<void> {
   <div class="grid gap-2">
     <button
       type="button"
-      class="inline-flex h-10 items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+      class="inline-flex h-10 items-center justify-center rounded-md border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.12)] px-4 text-sm font-semibold text-[var(--color-danger)] transition hover:bg-[rgba(237,66,69,0.2)] focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] disabled:cursor-not-allowed disabled:opacity-60"
       :disabled="isLoggingOut"
       @click="logoutEverySession"
     >
