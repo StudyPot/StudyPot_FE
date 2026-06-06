@@ -163,7 +163,7 @@ function extractGroupId(value: string): string | null {
       <p
         v-if="errorMessage"
         role="alert"
-        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
+        class="rounded-lg border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.1)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
       >
         {{ errorMessage }}
       </p>

@@ -256,7 +256,7 @@ function getDayLabel(dayStr: string): string {
             :class="[
               'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
               member.onboardingStatus === 'SUBMITTED'
-                ? 'bg-green-100 text-green-700'
+                ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                 : 'bg-[var(--color-card)] text-[var(--color-muted)]',
             ]"
           >

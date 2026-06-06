@@ -355,7 +355,7 @@ function formatNumber(value: number): string {
                     notification.status === 'READ'
                       ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
                       : notification.status === 'FAILED'
-                        ? 'bg-red-50 text-[var(--color-danger)]'
+                        ? 'bg-[rgba(237,66,69,0.15)] text-[var(--color-danger)]'
                         : 'bg-[var(--color-card)] text-[var(--color-primary-deep)]',
                   ]"
                 >
@@ -436,10 +436,10 @@ function formatNumber(value: number): string {
                       :class="[
                         'rounded px-1.5 py-0.5 text-xs font-semibold',
                         usage.status === 'SUCCESS'
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                           : usage.status === 'FAILED'
-                            ? 'bg-red-50 text-[var(--color-danger)]'
-                            : 'bg-amber-50 text-amber-700',
+                            ? 'bg-[rgba(237,66,69,0.15)] text-[var(--color-danger)]'
+                            : 'bg-[rgba(224,149,58,0.15)] text-[#fbbf24]',
                       ]"
                     >
                       {{ LLM_STATUS_LABEL[usage.status] }}

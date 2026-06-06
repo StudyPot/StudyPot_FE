@@ -393,7 +393,7 @@ function shortId(value: string): string {
                       :class="[
                         'rounded px-2 py-0.5 text-xs font-semibold',
                         rule.active
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                           : 'bg-[var(--color-card)] text-[var(--color-muted)]',
                       ]"
                     >
@@ -415,7 +415,7 @@ function shortId(value: string): string {
                     v-if="rule.active"
                     type="button"
                     :disabled="pendingRuleId === rule.id"
-                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-amber-400 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[#fbbf24] hover:text-[#fbbf24] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
                     @click="handleDeactivate(rule)"
                   >
                     비활성화
@@ -476,9 +476,9 @@ function shortId(value: string): string {
                       :class="[
                         'rounded px-2 py-0.5 text-xs font-semibold',
                         violation.status === 'OPEN'
-                          ? 'bg-red-50 text-[var(--color-danger)]'
+                          ? 'bg-[rgba(237,66,69,0.15)] text-[var(--color-danger)]'
                           : violation.status === 'RESOLVED'
-                            ? 'bg-green-100 text-green-700'
+                            ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                             : 'bg-[var(--color-card)] text-[var(--color-muted)]',
                       ]"
                     >

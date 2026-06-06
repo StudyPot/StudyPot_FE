@@ -30,10 +30,10 @@ const TASK_TYPE_LABEL: Record<string, string> = {
 }
 
 const TASK_TYPE_COLOR: Record<string, string> = {
-  READING: 'bg-blue-50 text-blue-700 border-blue-200',
-  PRACTICE: 'bg-green-50 text-green-700 border-green-200',
-  ASSIGNMENT: 'bg-amber-50 text-amber-700 border-amber-200',
-  PROJECT: 'bg-purple-50 text-purple-700 border-purple-200',
+  READING: 'bg-[rgba(88,101,242,0.15)] text-[#a5b4fc] border-[rgba(88,101,242,0.3)]',
+  PRACTICE: 'bg-[rgba(35,165,90,0.15)] text-[#4ade80] border-[rgba(35,165,90,0.3)]',
+  ASSIGNMENT: 'bg-[rgba(224,149,58,0.15)] text-[#fbbf24] border-[rgba(224,149,58,0.3)]',
+  PROJECT: 'bg-[rgba(139,92,246,0.15)] text-[#c4b5fd] border-[rgba(139,92,246,0.3)]',
   CUSTOM: 'bg-[var(--color-card)] text-[var(--color-muted)] border-[var(--color-line)]',
 }
 
@@ -283,7 +283,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
         <div class="relative flex items-center">
           <button
             type="button"
-            class="absolute left-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-r from-white to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
+            class="absolute left-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-r from-[var(--color-card)] to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
             aria-label="이전 주차"
             @click="scrollTabs('left')"
           >
@@ -325,7 +325,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     week.status === 'IN_PROGRESS'
                       ? 'bg-[var(--color-primary)] text-white'
                       : week.status === 'COMPLETED'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                         : 'bg-[var(--color-card)] text-[var(--color-muted)]',
                   ]"
                 >
@@ -347,7 +347,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
 
           <button
             type="button"
-            class="absolute right-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-l from-white to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
+            class="absolute right-0 z-10 flex h-full w-8 items-center justify-center bg-gradient-to-l from-[var(--color-card)] to-transparent text-[var(--color-muted)] hover:text-[var(--color-ink)] focus:outline-none"
             aria-label="다음 주차"
             @click="scrollTabs('right')"
           >
@@ -419,7 +419,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     selectedWeek.status === 'IN_PROGRESS'
                       ? 'bg-[var(--color-primary)] text-white'
                       : selectedWeek.status === 'COMPLETED'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                         : 'bg-[var(--color-card)] text-[var(--color-muted)]',
                   ]"
                 >
@@ -509,7 +509,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
               :class="[
                 'rounded-lg border p-4 transition-all duration-300',
                 getCompletionStatus(task) === 'DONE'
-                  ? 'border-gray-200 bg-gray-50'
+                  ? 'border-[var(--color-line)] bg-[var(--color-panel)]'
                   : 'border-[var(--color-line-strong)] bg-[var(--color-active)]',
                 justCompletedIds.has(task.id) ? 'scale-[0.99]' : '',
               ]"
@@ -526,7 +526,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     </span>
                     <span
                       v-if="task.required"
-                      class="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-[var(--color-danger)]"
+                      class="rounded border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.15)] px-2 py-0.5 text-xs font-semibold text-[var(--color-danger)]"
                     >
                       필수
                     </span>
@@ -534,9 +534,9 @@ function scrollTabs(direction: 'left' | 'right'): void {
                       :class="[
                         'rounded px-2 py-0.5 text-xs font-semibold',
                         getCompletionStatus(task) === 'DONE'
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                           : getCompletionStatus(task) === 'INCOMPLETE'
-                            ? 'bg-red-50 text-[var(--color-danger)]'
+                            ? 'bg-[rgba(237,66,69,0.15)] text-[var(--color-danger)]'
                             : getCompletionStatus(task) === 'SKIPPED'
                               ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
                               : 'bg-[var(--color-card)] text-[var(--color-muted)]',
@@ -556,7 +556,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     :class="[
                       'mt-2 font-semibold transition-colors duration-300',
                       getCompletionStatus(task) === 'DONE'
-                        ? 'text-gray-400 line-through'
+                        ? 'text-[var(--color-muted-deep)] line-through'
                         : 'text-[var(--color-ink)]',
                     ]"
                   >
@@ -585,11 +585,11 @@ function scrollTabs(direction: 'left' | 'right'): void {
                       'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
                       getCompletionStatus(task) === action.status
                         ? action.status === 'DONE'
-                          ? 'border-green-400 bg-green-100 text-green-700'
+                          ? 'border-[var(--color-success)] bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
                           : 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
                         : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
                       action.status === 'DONE' && getCompletionStatus(task) !== 'DONE'
-                        ? 'hover:border-green-400 hover:bg-green-50 hover:text-green-700'
+                        ? 'hover:border-[var(--color-success)] hover:bg-[rgba(35,165,90,0.15)] hover:text-[var(--color-success)]'
                         : '',
                     ]"
                     @click="handleCompleteTask(task.id, action.status)"

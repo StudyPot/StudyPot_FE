@@ -431,7 +431,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
       <p
         v-if="errorMessage"
         role="alert"
-        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
+        class="rounded-lg border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.1)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
       >
         {{ errorMessage }}
       </p>
@@ -490,7 +490,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
     >
       <div class="w-full max-w-sm rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] p-8 shadow-xl">
-        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(35,165,90,0.2)] text-2xl">
           ✓
         </div>
         <h2 class="mt-4 text-xl font-bold text-[var(--color-ink)]">그룹이 생성되었습니다!</h2>
