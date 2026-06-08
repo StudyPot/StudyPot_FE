@@ -27,9 +27,22 @@ export function sendAiConversationMessage(
   })
 }
 
-export function listAiConversationMessages(conversationId: string): Promise<AiConversationMessage[]> {
-  return apiClient<CursorPageResponse<AiConversationMessage>>(`/ai-conversations/${conversationId}/messages`)
-    .then((page) => page.items)
+export type ListAiMessagesParams = {
+  cursor?: string
+  pageSize?: number
+}
+
+export function listAiConversationMessages(
+  conversationId: string,
+  params: ListAiMessagesParams = {},
+): Promise<CursorPageResponse<AiConversationMessage>> {
+  const searchParams = new URLSearchParams()
+  if (params.cursor) searchParams.set('cursor', params.cursor)
+  if (params.pageSize != null) searchParams.set('pageSize', String(params.pageSize))
+  const query = searchParams.toString()
+  return apiClient<CursorPageResponse<AiConversationMessage>>(
+    `/ai-conversations/${conversationId}/messages${query ? `?${query}` : ''}`,
+  )
 }
 
 export function subscribeToAiConversationStream(conversationId: string): EventSource {

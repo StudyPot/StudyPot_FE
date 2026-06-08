@@ -33,8 +33,12 @@ const inputText = ref('')
 const isSending = ref(false)
 const sendError = ref('')
 const messagesEndRef = ref<HTMLElement | null>(null)
+const messagesContainerRef = ref<HTMLElement | null>(null)
 const eventSource = ref<EventSource | null>(null)
 const isSseActive = ref(false)
+const nextCursor = ref<string | null>(null)
+const hasMoreMessages = ref(false)
+const isLoadingMore = ref(false)
 
 function subscribeToStream(conversationId: string): void {
   closeStream()
@@ -82,6 +86,33 @@ function addUniqueMessage(message: AiConversationMessage): void {
   }
 }
 
+async function loadMoreMessages(): Promise<void> {
+  if (!conversation.value || !nextCursor.value || isLoadingMore.value) return
+
+  isLoadingMore.value = true
+  const container = messagesContainerRef.value
+  const prevScrollHeight = container?.scrollHeight ?? 0
+
+  try {
+    const page = await listAiConversationMessages(conversation.value.id, {
+      cursor: nextCursor.value,
+    })
+    messages.value = [...page.items, ...messages.value]
+    nextCursor.value = page.pageInfo.nextCursor
+    hasMoreMessages.value = page.pageInfo.hasNext
+
+    // 이전 메시지를 위로 추가한 후 스크롤 위치 유지
+    await nextTick()
+    if (container) {
+      container.scrollTop = container.scrollHeight - prevScrollHeight
+    }
+  } catch {
+    // ignore
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
 async function handleOpenConversation(): Promise<void> {
   pageState.value = 'opening'
   openError.value = ''
@@ -91,7 +122,10 @@ async function handleOpenConversation(): Promise<void> {
       conversationType: 'TEAM_LEAD_CHAT',
     })
     try {
-      messages.value = await listAiConversationMessages(conversation.value.id)
+      const page = await listAiConversationMessages(conversation.value.id)
+      messages.value = page.items
+      nextCursor.value = page.pageInfo.nextCursor
+      hasMoreMessages.value = page.pageInfo.hasNext
       await scrollToBottom()
     } catch {
       // 히스토리 로드 실패 시 빈 상태로 시작
@@ -232,7 +266,19 @@ function renderMarkdown(content: string): string {
       </div>
 
       <!-- 메시지 목록 -->
-      <div class="flex max-h-[480px] flex-col gap-4 overflow-y-auto px-5 py-4">
+      <div ref="messagesContainerRef" class="flex max-h-120 flex-col gap-4 overflow-y-auto px-5 py-4">
+        <!-- 이전 메시지 불러오기 -->
+        <div v-if="hasMoreMessages" class="flex justify-center">
+          <button
+            type="button"
+            :disabled="isLoadingMore"
+            class="rounded-full border border-(--color-line) bg-(--color-card) px-4 py-1.5 text-xs font-medium text-(--color-muted) transition hover:border-(--color-primary) hover:text-(--color-primary) disabled:opacity-50"
+            @click="loadMoreMessages"
+          >
+            {{ isLoadingMore ? '불러오는 중...' : '이전 메시지 불러오기' }}
+          </button>
+        </div>
+
         <p
           v-if="messages.length === 0"
           class="text-center text-sm text-[var(--color-muted)]"
