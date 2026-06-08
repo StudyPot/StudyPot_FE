@@ -7,11 +7,11 @@ import {
   listAiConversationMessages,
   openAiConversation,
   sendAiConversationMessage,
+  subscribeToAiConversationStream,
   type AiConversation,
   type AiConversationMessage,
 } from '@/entities/ai'
 import { ApiError } from '@/shared/api'
-import { apiBaseUrl } from '@/shared/config/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -38,8 +38,7 @@ const isSseActive = ref(false)
 
 function subscribeToStream(conversationId: string): void {
   closeStream()
-  const url = `${apiBaseUrl.replace(/\/$/, '')}/ai-conversations/${conversationId}/stream`
-  const es = new EventSource(url, { withCredentials: true })
+  const es = subscribeToAiConversationStream(conversationId)
 
   es.addEventListener('connected', () => {
     isSseActive.value = true
