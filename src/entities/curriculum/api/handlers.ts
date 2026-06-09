@@ -51,6 +51,15 @@ export const curriculumHandlers = [
     return HttpResponse.json(toCurrentWeek(params.groupId))
   }),
   http.get(`${apiBaseUrl}/weeks/:weekId`, ({ params }) => {
+    const weekId = String(params.weekId)
+    const weeks = (mockMswData.curriculum as unknown as Record<string, unknown[]>).weeks as LegacyWeek[]
+    const found = weeks?.find((w) => w.id === weekId)
+    if (!found) {
+      return HttpResponse.json(
+        { title: 'Not Found', detail: '존재하지 않는 주차입니다.', status: 404 },
+        { status: 404 },
+      )
+    }
     return HttpResponse.json(toWeekById(params.weekId))
   }),
   http.get(`${apiBaseUrl}/weeks/:weekId/tasks`, ({ params }) => {

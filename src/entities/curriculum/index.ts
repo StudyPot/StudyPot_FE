@@ -4,6 +4,7 @@ export {
   getCurrentWeek,
   getCurriculum,
   getMyWeekProgress,
+  getWeek,
   listWeeklyTasks,
   markTaskDone,
   markTaskIncomplete,

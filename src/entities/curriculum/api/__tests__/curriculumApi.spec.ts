@@ -4,6 +4,7 @@ import {
   completeTask,
   getCurriculum,
   getCurrentWeek,
+  getWeek,
   startStudy,
 } from '../curriculumApi'
 import type { Curriculum, CurriculumWeek, TaskCompletionResponse } from '../../model/types'
@@ -115,6 +116,41 @@ describe('curriculumApi', () => {
       )
 
       await expect(getCurrentWeek(groupId)).rejects.toMatchObject({
+        name: 'ApiError',
+        status: 404,
+      })
+    })
+  })
+
+  describe('getWeek', () => {
+    it('calls GET /api/v1/weeks/{weekId} and returns the week detail', async () => {
+      const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify(currentWeek), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      await expect(getWeek(weekId)).resolves.toEqual(currentWeek)
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/v1/weeks/${weekId}`,
+        expect.objectContaining({ credentials: 'include' }),
+      )
+    })
+
+    it('propagates ApiError on 404 when week does not exist', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn<typeof fetch>().mockResolvedValue(
+          new Response(
+            JSON.stringify({ title: 'Not Found', detail: '존재하지 않는 주차입니다.', status: 404 }),
+            { status: 404, headers: { 'Content-Type': 'application/json' } },
+          ),
+        ),
+      )
+
+      await expect(getWeek('non-existent-week-id')).rejects.toMatchObject({
         name: 'ApiError',
         status: 404,
       })
