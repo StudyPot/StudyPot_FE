@@ -142,6 +142,15 @@ describe('GroupsPage', () => {
           }),
         ),
       )
+      // loadBookmarkIds (onMounted 에서 동시 호출)
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
       .mockImplementationOnce(() =>
         Promise.resolve(
           new Response(JSON.stringify([groups[1]]), {
@@ -202,6 +211,15 @@ describe('GroupsPage', () => {
       .mockImplementationOnce(() =>
         Promise.resolve(
           new Response(JSON.stringify(groups), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+      // loadBookmarkIds (onMounted 에서 동시 호출)
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify([]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           }),

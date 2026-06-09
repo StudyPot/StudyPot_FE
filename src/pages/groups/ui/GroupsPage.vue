@@ -12,6 +12,7 @@ import {
   type StudyGroup,
   type StudyGroupStatus,
 } from '@/entities/group'
+import { listBookmarks, toggleBookmark } from '@/entities/bookmark'
 import { startStudy } from '@/entities/curriculum'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
@@ -44,6 +45,9 @@ const showStartModal = ref(false)
 const startProgress = ref(0)
 let progressTimer: ReturnType<typeof setInterval> | null = null
 
+const bookmarkedGroupIds = ref(new Set<string>())
+const togglingBookmarkIds = ref(new Set<string>())
+
 // 검색·필터·정렬 상태
 const searchQuery = ref('')
 const activeStatus = ref<StatusFilterOption>('ALL')
@@ -65,7 +69,36 @@ function buildParams(): ListGroupsParams {
 
 onMounted(() => {
   void loadGroups()
+  void loadBookmarkIds()
 })
+
+async function loadBookmarkIds(): Promise<void> {
+  try {
+    const list = await listBookmarks()
+    bookmarkedGroupIds.value = new Set(list.map((b) => b.groupId))
+  } catch {
+    // bookmark 로딩 실패는 그룹 목록 표시에 영향을 주지 않음
+  }
+}
+
+async function handleToggleBookmark(groupId: string): Promise<void> {
+  if (togglingBookmarkIds.value.has(groupId)) return
+  togglingBookmarkIds.value.add(groupId)
+  try {
+    const result = await toggleBookmark(groupId)
+    const next = new Set(bookmarkedGroupIds.value)
+    if (result.bookmarked) {
+      next.add(groupId)
+    } else {
+      next.delete(groupId)
+    }
+    bookmarkedGroupIds.value = next
+  } catch {
+    // 토글 실패 시 상태 변경 없음
+  } finally {
+    togglingBookmarkIds.value.delete(groupId)
+  }
+}
 
 // 필터·정렬 변경 시 자동 재조회
 watch([activeStatus, activeSortIndex], () => {
@@ -283,11 +316,24 @@ function formatDate(value: string): string {
             <p class="text-xs font-semibold text-[var(--color-primary)]">{{ group.topic }}</p>
             <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">{{ group.name }}</h3>
           </div>
-          <span
-            class="shrink-0 rounded-full bg-[var(--color-active)] px-2.5 py-1 text-xs font-semibold text-[var(--color-muted)]"
-          >
-            {{ getGroupStatusLabel(group.status) }}
-          </span>
+          <div class="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              :aria-label="bookmarkedGroupIds.has(group.id) ? `${group.name} 찜 해제` : `${group.name} 찜하기`"
+              :aria-pressed="bookmarkedGroupIds.has(group.id)"
+              :disabled="togglingBookmarkIds.has(group.id)"
+              class="flex h-7 w-7 items-center justify-center rounded text-base transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              :class="bookmarkedGroupIds.has(group.id) ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted)]'"
+              @click="handleToggleBookmark(group.id)"
+            >
+              {{ bookmarkedGroupIds.has(group.id) ? '★' : '☆' }}
+            </button>
+            <span
+              class="rounded-full bg-[var(--color-active)] px-2.5 py-1 text-xs font-semibold text-[var(--color-muted)]"
+            >
+              {{ getGroupStatusLabel(group.status) }}
+            </span>
+          </div>
         </div>
 
         <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">

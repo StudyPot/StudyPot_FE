@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 import { useSessionStore } from '@/features/auth/session'
 import { AuthCallbackPage } from '@/pages/auth-callback'
+import { BookmarksPage } from '@/pages/bookmarks'
 import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
@@ -49,6 +50,12 @@ const routes: RouteRecordRaw[] = [
       name: 'login',
       query: { error: 'oauth', ...to.query },
     }),
+  },
+  {
+    path: '/bookmarks',
+    name: 'bookmarks',
+    component: BookmarksPage,
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups',

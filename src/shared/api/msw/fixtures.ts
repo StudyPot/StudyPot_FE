@@ -1,5 +1,6 @@
 import aiTeamLeaderData from './data/ai-team-leader.json'
 import authData from './data/auth.json'
+import bookmarksData from './data/bookmarks.json'
 import curriculumData from './data/curriculum.json'
 import groupsData from './data/groups.json'
 import notificationsData from './data/notifications.json'
@@ -14,6 +15,7 @@ export const mockUser = userData.currentUser
 export const mockMswData = {
   aiTeamLeader: aiTeamLeaderData,
   auth: authData,
+  bookmarks: bookmarksData,
   curriculum: curriculumData,
   groups: groupsData,
   notifications: notificationsData,
