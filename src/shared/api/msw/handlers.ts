@@ -7,6 +7,7 @@ import { notificationHandlers } from '@/entities/notification/api/handlers'
 import { onboardingHandlers } from '@/entities/onboarding/api/handlers'
 import { operationHandlers } from '@/entities/operation/api/handlers'
 import { retrospectiveHandlers } from '@/entities/retrospective/api/handlers'
+import { reviewHandlers } from '@/entities/review/api/handlers'
 import { ruleHandlers } from '@/entities/rule/api/handlers'
 import { googleLoginHandlers } from '@/features/auth/google-login/api/handlers'
 import { logoutHandlers } from '@/features/auth/logout/api/handlers'
@@ -23,6 +24,7 @@ export const handlers = [
   ...onboardingHandlers,
   ...curriculumHandlers,
   ...retrospectiveHandlers,
+  ...reviewHandlers,
   ...aiHandlers,
   ...notificationHandlers,
   ...ruleHandlers,

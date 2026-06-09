@@ -5,6 +5,7 @@ import groupsData from './data/groups.json'
 import notificationsData from './data/notifications.json'
 import onboardingData from './data/onboarding.json'
 import retrospectiveData from './data/retrospective.json'
+import reviewsData from './data/reviews.json'
 import rulesData from './data/rules.json'
 import userData from './data/user.json'
 
@@ -18,6 +19,7 @@ export const mockMswData = {
   notifications: notificationsData,
   onboarding: onboardingData,
   retrospective: retrospectiveData,
+  reviews: reviewsData,
   rules: rulesData,
   user: userData,
 }

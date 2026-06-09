@@ -13,6 +13,7 @@ import {
   GroupOnboardingPage,
   GroupOverviewPage,
   GroupRetrospectivePage,
+  GroupReviewPage,
   GroupTodoPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
@@ -102,6 +103,11 @@ const routes: RouteRecordRaw[] = [
         path: 'retrospective',
         name: 'group-retrospective',
         component: GroupRetrospectivePage,
+      },
+      {
+        path: 'review',
+        name: 'group-review',
+        component: GroupReviewPage,
       },
       {
         path: 'ai',
