@@ -16,6 +16,16 @@ export type StudyGroup = {
   endsAt: string
 }
 
+export type GroupSortField = 'name' | 'startsAt' | 'endsAt' | 'createdAt'
+export type SortOrder = 'asc' | 'desc'
+
+export type ListGroupsParams = {
+  q?: string
+  status?: StudyGroupStatus
+  sort?: GroupSortField
+  order?: SortOrder
+}
+
 export type CreateGroupRequest = {
   name: string
   topic: string

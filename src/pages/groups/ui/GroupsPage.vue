@@ -1,17 +1,39 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import {
   getGroupListPrimaryEntry,
   getGroupStatusLabel,
   listGroups,
   type GroupEntryAction,
+  type GroupSortField,
+  type ListGroupsParams,
+  type SortOrder,
   type StudyGroup,
   type StudyGroupStatus,
 } from '@/entities/group'
 import { startStudy } from '@/entities/curriculum'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
+
+type StatusFilterOption = StudyGroupStatus | 'ALL'
+type SortOption = { field: GroupSortField; order: SortOrder; label: string }
+
+const STATUS_FILTERS: { value: StatusFilterOption; label: string }[] = [
+  { value: 'ALL', label: '전체' },
+  { value: 'ONBOARDING', label: '온보딩' },
+  { value: 'READY_TO_START', label: '시작 대기' },
+  { value: 'ACTIVE', label: '진행 중' },
+  { value: 'COMPLETED', label: '완료' },
+]
+
+const SORT_OPTIONS: SortOption[] = [
+  { field: 'startsAt', order: 'desc', label: '최신 시작순' },
+  { field: 'startsAt', order: 'asc', label: '오래된 시작순' },
+  { field: 'endsAt', order: 'asc', label: '종료 임박순' },
+  { field: 'name', order: 'asc', label: '이름 오름차순' },
+  { field: 'name', order: 'desc', label: '이름 내림차순' },
+]
 
 const groups = ref<StudyGroup[]>([])
 const isLoading = ref(true)
@@ -21,6 +43,67 @@ const startError = ref<Record<string, string>>({})
 const showStartModal = ref(false)
 const startProgress = ref(0)
 let progressTimer: ReturnType<typeof setInterval> | null = null
+
+// 검색·필터·정렬 상태
+const searchQuery = ref('')
+const activeStatus = ref<StatusFilterOption>('ALL')
+const activeSortIndex = ref(0)
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+const hasGroups = computed(() => groups.value.length > 0)
+const activeSort = computed(() => SORT_OPTIONS[activeSortIndex.value])
+
+function buildParams(): ListGroupsParams {
+  const params: ListGroupsParams = {}
+  if (searchQuery.value.trim()) params.q = searchQuery.value.trim()
+  if (activeStatus.value !== 'ALL') params.status = activeStatus.value
+  params.sort = activeSort.value.field
+  params.order = activeSort.value.order
+  return params
+}
+
+onMounted(() => {
+  void loadGroups()
+})
+
+// 필터·정렬 변경 시 자동 재조회
+watch([activeStatus, activeSortIndex], () => {
+  void loadGroups()
+})
+
+// 검색어 디바운스 (300 ms)
+watch(searchQuery, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    void loadGroups()
+  }, 300)
+})
+
+async function loadGroups(): Promise<void> {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    groups.value = await listGroups(buildParams())
+  } catch (error) {
+    errorMessage.value =
+      error instanceof ApiError ? error.message : '그룹 목록을 불러오지 못했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function resetFilters(): void {
+  if (searchTimer) { clearTimeout(searchTimer); searchTimer = null }
+  searchQuery.value = ''
+  activeStatus.value = 'ALL'
+  activeSortIndex.value = 0
+  void loadGroups()
+}
+
+function getPrimaryEntry(status: StudyGroupStatus): GroupEntryAction {
+  return getGroupListPrimaryEntry(status)
+}
 
 function startProgressAnimation(): void {
   startProgress.value = 0
@@ -34,29 +117,6 @@ function clearProgressAnimation(): void {
     clearInterval(progressTimer)
     progressTimer = null
   }
-}
-
-const hasGroups = computed(() => groups.value.length > 0)
-
-onMounted(() => {
-  void loadGroups()
-})
-
-async function loadGroups(): Promise<void> {
-  isLoading.value = true
-  errorMessage.value = ''
-  try {
-    groups.value = await listGroups()
-  } catch (error) {
-    errorMessage.value =
-      error instanceof ApiError ? error.message : '그룹 목록을 불러오지 못했습니다.'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-function getPrimaryEntry(status: StudyGroupStatus): GroupEntryAction {
-  return getGroupListPrimaryEntry(status)
 }
 
 async function handleStartStudy(groupId: string): Promise<void> {
@@ -92,7 +152,7 @@ function formatDate(value: string): string {
 
 <template>
   <div class="grid gap-4">
-    <!-- Header row -->
+    <!-- 헤더 -->
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-lg font-bold text-[var(--color-ink)]">참여 중인 스터디</h2>
@@ -112,6 +172,57 @@ function formatDate(value: string): string {
       </button>
     </div>
 
+    <!-- 검색 + 정렬 -->
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="relative flex-1 min-w-48">
+        <svg
+          class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-muted)]"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" stroke-linecap="round" />
+        </svg>
+        <input
+          v-model="searchQuery"
+          type="search"
+          name="q"
+          placeholder="그룹 이름 또는 주제로 검색"
+          class="h-9 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] pl-8 pr-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+          aria-label="그룹 검색"
+        />
+      </div>
+
+      <select
+        v-model="activeSortIndex"
+        class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+        aria-label="정렬 기준"
+        name="sort"
+      >
+        <option v-for="(opt, idx) in SORT_OPTIONS" :key="idx" :value="idx">
+          {{ opt.label }}
+        </option>
+      </select>
+    </div>
+
+    <!-- 상태 필터 탭 -->
+    <div class="flex flex-wrap gap-1.5" role="group" aria-label="상태 필터">
+      <button
+        v-for="filter in STATUS_FILTERS"
+        :key="filter.value"
+        type="button"
+        :class="[
+          'inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
+          activeStatus === filter.value
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'bg-[var(--color-active)] text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]',
+        ]"
+        :aria-pressed="activeStatus === filter.value"
+        @click="activeStatus = filter.value"
+      >
+        {{ filter.label }}
+      </button>
+    </div>
+
     <ScreenState
       v-if="isLoading"
       variant="loading"
@@ -128,6 +239,17 @@ function formatDate(value: string): string {
       @action="loadGroups"
     />
 
+    <!-- 필터 결과 없음 -->
+    <ScreenState
+      v-else-if="!hasGroups && (searchQuery || activeStatus !== 'ALL')"
+      variant="empty"
+      title="검색 결과가 없습니다."
+      description="다른 검색어나 필터를 사용해보세요."
+      action-label="필터 초기화"
+      @action="resetFilters"
+    />
+
+    <!-- 그룹 자체가 없음 -->
     <ScreenState
       v-else-if="!hasGroups"
       variant="empty"

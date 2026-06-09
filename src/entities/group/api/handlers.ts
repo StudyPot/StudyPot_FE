@@ -4,7 +4,39 @@ import { mockMswData } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
 
 export const groupHandlers = [
-  http.get(`${apiBaseUrl}/groups`, () => HttpResponse.json(mockMswData.groups.groupList)),
+  http.get(`${apiBaseUrl}/groups`, ({ request }) => {
+    const url = new URL(request.url)
+    const q = url.searchParams.get('q')?.toLowerCase() ?? ''
+    const status = url.searchParams.get('status') ?? ''
+    const sort = url.searchParams.get('sort') ?? ''
+    const order = url.searchParams.get('order') ?? 'asc'
+
+    let result = [...mockMswData.groups.groupList]
+
+    if (q) {
+      result = result.filter(
+        (g) => g.name.toLowerCase().includes(q) || g.topic.toLowerCase().includes(q),
+      )
+    }
+
+    if (status) {
+      result = result.filter((g) => g.status === status)
+    }
+
+    if (sort === 'name') {
+      result.sort((a, b) => a.name.localeCompare(b.name))
+    } else if (sort === 'startsAt') {
+      result.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    } else if (sort === 'endsAt') {
+      result.sort((a, b) => a.endsAt.localeCompare(b.endsAt))
+    }
+
+    if (sort && order === 'desc') {
+      result.reverse()
+    }
+
+    return HttpResponse.json(result)
+  }),
   http.get(`${apiBaseUrl}/groups/:groupId`, ({ params }) => {
     const groupId = String(params.groupId)
     const group = mockMswData.groups.groupList.find((item) => item.id === groupId)

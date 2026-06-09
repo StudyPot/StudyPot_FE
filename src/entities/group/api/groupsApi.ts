@@ -10,6 +10,7 @@ import type {
   GroupMemberStatus,
   GroupMemberTaskCompletionSummary,
   JoinGroupRequest,
+  ListGroupsParams,
   StudyGroup,
   SuggestDetailKeywordsRequest,
   UpdateGroupMemberProfileRequest,
@@ -29,8 +30,14 @@ export type MyGroupMemberProfile = {
   retrospective: GroupMemberRetrospectiveSummary
 }
 
-export function listGroups(): Promise<StudyGroup[]> {
-  return apiClient<StudyGroup[]>('/groups')
+export function listGroups(params?: ListGroupsParams): Promise<StudyGroup[]> {
+  const qs = new URLSearchParams()
+  if (params?.q?.trim()) qs.set('q', params.q.trim())
+  if (params?.status) qs.set('status', params.status)
+  if (params?.sort) qs.set('sort', params.sort)
+  if (params?.order) qs.set('order', params.order)
+  const query = qs.toString()
+  return apiClient<StudyGroup[]>(query ? `/groups?${query}` : '/groups')
 }
 
 export async function getGroup(groupId: string): Promise<StudyGroup> {

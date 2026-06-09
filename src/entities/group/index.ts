@@ -18,6 +18,8 @@ export {
 export type { GroupEntryAction, GroupEntryRouteName } from './model/entry'
 export type {
   CreateGroupRequest,
+  GroupSortField,
+  ListGroupsParams,
   DetailKeywordSuggestionsResponse,
   GroupMember,
   GroupMemberCurrentWeekSummary,
@@ -30,6 +32,7 @@ export type {
   StudyGroup,
   StudyGroupStatus,
   SuggestDetailKeywordsRequest,
+  SortOrder,
   UpdateGroupMemberProfileRequest,
   UpdateGroupRequest,
 } from './model/types'
