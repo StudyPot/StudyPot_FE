@@ -4,15 +4,18 @@ import { computed, inject, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
+  deleteGroup,
   getGroupOverviewPrimaryEntry,
   getGroupStatusLabel,
   type GroupEntryAction,
+  type StudyGroup,
 } from '@/entities/group'
 import { startStudy } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
+import GroupEditModal from './GroupEditModal.vue'
 
 type QuickLink = {
   routeName: string
@@ -36,6 +39,41 @@ const isStartingStudy = ref(false)
 const startStudyError = ref('')
 const showStartModal = ref(false)
 const startProgress = ref(0)
+
+const showEditModal = ref(false)
+const showDeleteDialog = ref(false)
+const isDeleting = ref(false)
+const deleteError = ref('')
+
+const isOwner = computed(
+  () => members.value.length > 0 && members.value[0].permission === 'OWNER',
+)
+
+function handleGroupUpdated(updated: StudyGroup): void {
+  group.value = updated
+  showEditModal.value = false
+}
+
+async function handleDeleteGroup(): Promise<void> {
+  deleteError.value = ''
+  isDeleting.value = true
+  try {
+    await deleteGroup(groupId.value)
+    await router.replace({ name: 'groups' })
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 404) {
+        deleteError.value = '그룹을 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.'
+      } else {
+        deleteError.value = error.message
+      }
+    } else {
+      deleteError.value = '그룹 삭제에 실패했습니다. 다시 시도해주세요.'
+    }
+  } finally {
+    isDeleting.value = false
+  }
+}
 
 let progressTimer: ReturnType<typeof setInterval> | null = null
 let timeoutTimer: ReturnType<typeof setTimeout> | null = null
@@ -279,6 +317,32 @@ function getDayLabel(dayStr: string): string {
             </p>
           </div>
 
+          <!-- 오너 전용 관리 버튼 -->
+          <div v-if="isOwner" class="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+              @click="showEditModal = true"
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              편집
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[rgba(237,66,69,0.4)] bg-[rgba(237,66,69,0.06)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[rgba(237,66,69,0.12)] focus:outline-none focus:ring-4 focus:ring-[rgba(237,66,69,0.14)]"
+              @click="showDeleteDialog = true"
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              삭제
+            </button>
+          </div>
+
           <div
             v-if="group.status === 'ONBOARDING' && onboardingSubmitted"
             class="flex shrink-0 items-center gap-3"
@@ -435,6 +499,79 @@ function getDayLabel(dayStr: string): string {
       </section>
     </template>
   </div>
+
+  <!-- 그룹 편집 모달 -->
+  <Teleport to="body">
+    <GroupEditModal
+      v-if="showEditModal && group"
+      :group="group"
+      @close="showEditModal = false"
+      @updated="handleGroupUpdated"
+    />
+  </Teleport>
+
+  <!-- 그룹 삭제 확인 다이얼로그 -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-150 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showDeleteDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+      >
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showDeleteDialog = false" />
+        <div class="relative w-full max-w-sm rounded-xl bg-[var(--color-card)] p-6 shadow-2xl">
+          <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2 id="delete-dialog-title" class="mt-4 text-lg font-bold text-[var(--color-ink)]">
+            그룹을 삭제하시겠습니까?
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+            이 작업은 되돌릴 수 없습니다. 그룹과 관련된 모든 데이터가 영구적으로 삭제됩니다.
+          </p>
+
+          <p
+            v-if="deleteError"
+            role="alert"
+            class="mt-3 rounded-lg border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.08)] px-3 py-2.5 text-sm font-semibold text-[var(--color-danger)]"
+          >
+            {{ deleteError }}
+          </p>
+
+          <div class="mt-5 flex gap-3">
+            <button
+              type="button"
+              class="flex-1 inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+              :disabled="isDeleting"
+              @click="showDeleteDialog = false"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              class="flex-1 inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-danger)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="isDeleting"
+              @click="handleDeleteGroup"
+            >
+              {{ isDeleting ? '삭제 중…' : '삭제' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 
   <!-- 스터디 시작 프로그레스 모달 -->
   <Teleport to="body">

@@ -1,10 +1,12 @@
 export {
   createGroup,
+  deleteGroup,
   getGroup,
   getMyGroupMemberProfile,
   joinGroup,
   listGroups,
   suggestDetailKeywords,
+  updateGroup,
   updateMyGroupMemberProfile,
 } from './api/groupsApi'
 export type { MyGroupMemberProfile } from './api/groupsApi'
@@ -29,4 +31,5 @@ export type {
   StudyGroupStatus,
   SuggestDetailKeywordsRequest,
   UpdateGroupMemberProfileRequest,
+  UpdateGroupRequest,
 } from './model/types'

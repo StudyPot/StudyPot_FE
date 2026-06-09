@@ -13,6 +13,7 @@ import type {
   StudyGroup,
   SuggestDetailKeywordsRequest,
   UpdateGroupMemberProfileRequest,
+  UpdateGroupRequest,
 } from '../model/types'
 
 export type MyGroupMemberProfile = {
@@ -52,6 +53,19 @@ export function createGroup(request: CreateGroupRequest): Promise<StudyGroup> {
   return apiClient<StudyGroup>('/groups', {
     method: 'POST',
     body: request,
+  })
+}
+
+export function updateGroup(groupId: string, request: UpdateGroupRequest): Promise<StudyGroup> {
+  return apiClient<StudyGroup>(`/groups/${groupId}`, {
+    method: 'PATCH',
+    body: request,
+  })
+}
+
+export function deleteGroup(groupId: string): Promise<void> {
+  return apiClient<void>(`/groups/${groupId}`, {
+    method: 'DELETE',
   })
 }
 

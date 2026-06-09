@@ -52,6 +52,16 @@ export type GroupMember = {
   onboardingStatus?: 'DRAFT' | 'SUBMITTED' | null
 }
 
+export type UpdateGroupRequest = {
+  name: string
+  topic: string
+  detailKeywords: string[]
+  maxMembers: number
+  startsAt: string
+  endsAt: string
+  description?: string
+}
+
 export type UpdateGroupMemberProfileRequest = {
   displayName: string
 }
