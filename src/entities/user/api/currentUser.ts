@@ -11,3 +11,4 @@ export function updateCurrentUser(request: UpdateUserRequest): Promise<User> {
     body: request,
   })
 }
+

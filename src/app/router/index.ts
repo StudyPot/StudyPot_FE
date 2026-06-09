@@ -20,6 +20,7 @@ import {
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
 import { GroupsPage } from '@/pages/groups'
+import { ProfilePage } from '@/pages/profile'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -51,6 +52,12 @@ const routes: RouteRecordRaw[] = [
       name: 'login',
       query: { error: 'oauth', ...to.query },
     }),
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
+    meta: { requiresAuth: true },
   },
   {
     path: '/bookmarks',
