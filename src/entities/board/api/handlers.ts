@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw'
 
 import boardData from '@/shared/api/msw/data/board.json'
+import { mockUser } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
 import type { GroupBoard, BoardPostSummary, BoardPost, BoardComment } from '../model/types'
 
@@ -13,20 +14,36 @@ const commentsByPost: Record<string, BoardComment[]> = boardData.comments as Rec
   BoardComment[]
 >
 
+const currentUserId = (mockUser as { id: string }).id
+
 export const boardHandlers = [
   http.get(`${apiBaseUrl}/groups/:groupId/boards`, ({ params }) => {
     const groupId = String(params.groupId)
     return HttpResponse.json(boards.filter((b) => b.groupId === groupId))
   }),
 
-  http.get(`${apiBaseUrl}/groups/:groupId/boards/:boardId/posts`, ({ params }) => {
+  http.get(`${apiBaseUrl}/groups/:groupId/boards/:boardId/posts`, ({ params, request }) => {
     const { groupId, boardId } = params
-    const filtered = posts
-      .filter((p) => p.groupId === String(groupId) && p.boardId === String(boardId))
-      .sort((a, b) => {
-        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      })
+    const url = new URL(request.url)
+    const sort = url.searchParams.get('sort') ?? 'createdAt'
+    const order = url.searchParams.get('order') ?? 'desc'
+
+    let filtered = posts.filter(
+      (p) => p.groupId === String(groupId) && p.boardId === String(boardId),
+    )
+
+    filtered = filtered.slice().sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+
+      if (sort === 'commentCount') {
+        const diff = a.commentCount - b.commentCount
+        return order === 'asc' ? diff : -diff
+      }
+
+      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return order === 'asc' ? diff : -diff
+    })
+
     return HttpResponse.json({ items: filtered, pageInfo: { nextCursor: null, hasNext: false } })
   }),
 
@@ -39,7 +56,11 @@ export const boardHandlers = [
         id: `board-${Date.now()}`,
         groupId: String(groupId),
         boardId: String(boardId),
-        author: { memberId: 'member-001', userId: 'user-001', displayName: 'user1' },
+        author: {
+          memberId: 'member-001',
+          userId: currentUserId,
+          displayName: (mockUser as { nickname: string }).nickname,
+        },
         title: String(body.title ?? ''),
         content: String(body.content ?? ''),
         pinned: Boolean(body.pinned ?? false),
@@ -71,8 +92,17 @@ export const boardHandlers = [
         { status: 404 },
       )
     }
+
+    const post = posts[index]!
+    if (post.author.userId !== currentUserId) {
+      return HttpResponse.json(
+        { title: 'Forbidden', detail: '게시글을 수정할 권한이 없습니다.', status: 403 },
+        { status: 403 },
+      )
+    }
+
     const body = (await request.json()) as Record<string, unknown>
-    const updated = { ...posts[index]! }
+    const updated = { ...post }
     if (body.title !== undefined) updated.title = String(body.title)
     if (body.content !== undefined) {
       updated.content = String(body.content)
@@ -87,7 +117,21 @@ export const boardHandlers = [
 
   http.delete(`${apiBaseUrl}/groups/:groupId/posts/:postId`, ({ params }) => {
     const index = posts.findIndex((p) => p.id === params.postId)
-    if (index !== -1) posts.splice(index, 1)
+    if (index === -1) {
+      return HttpResponse.json(
+        { title: 'Not Found', detail: 'post not found', status: 404 },
+        { status: 404 },
+      )
+    }
+
+    if (posts[index]!.author.userId !== currentUserId) {
+      return HttpResponse.json(
+        { title: 'Forbidden', detail: '게시글을 삭제할 권한이 없습니다.', status: 403 },
+        { status: 403 },
+      )
+    }
+
+    posts.splice(index, 1)
     return new HttpResponse(null, { status: 204 })
   }),
 
@@ -105,7 +149,11 @@ export const boardHandlers = [
         id: `c-${Date.now()}`,
         groupId: String(groupId),
         postId: String(postId),
-        author: { memberId: 'member-001', userId: 'user-001', displayName: 'user1' },
+        author: {
+          memberId: 'member-001',
+          userId: currentUserId,
+          displayName: (mockUser as { nickname: string }).nickname,
+        },
         content: String(body.content ?? ''),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -123,6 +171,14 @@ export const boardHandlers = [
       const index = comments.findIndex((c) => c.id === params.commentId)
       if (index !== -1) {
         const existing = comments[index]!
+
+        if (existing.author.userId !== currentUserId) {
+          return HttpResponse.json(
+            { title: 'Forbidden', detail: '댓글을 수정할 권한이 없습니다.', status: 403 },
+            { status: 403 },
+          )
+        }
+
         comments[index] = {
           ...existing,
           content: String(body.content ?? existing.content),
@@ -141,6 +197,12 @@ export const boardHandlers = [
     for (const comments of Object.values(commentsByPost)) {
       const index = comments.findIndex((c) => c.id === params.commentId)
       if (index !== -1) {
+        if (comments[index]!.author.userId !== currentUserId) {
+          return HttpResponse.json(
+            { title: 'Forbidden', detail: '댓글을 삭제할 권한이 없습니다.', status: 403 },
+            { status: 403 },
+          )
+        }
         comments.splice(index, 1)
         break
       }

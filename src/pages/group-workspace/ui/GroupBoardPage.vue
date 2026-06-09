@@ -6,10 +6,16 @@ import {
   listBoardPosts,
   getBoardPost,
   createBoardPost,
+  updateBoardPost,
+  deleteBoardPost,
   listPostComments,
   createPostComment,
+  updatePostComment,
+  deletePostComment,
 } from '@/entities/board/api/boardApi'
+import type { BoardSortField } from '@/entities/board/api/boardApi'
 import type { GroupBoard, BoardPostSummary, BoardPost, BoardComment } from '@/entities/board/model/types'
+import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -18,8 +24,9 @@ const workspaceContext = inject(groupWorkspaceContextKey)
 if (!workspaceContext) throw new Error('GroupBoardPage must be inside GroupWorkspacePage.')
 
 const { groupId } = workspaceContext
+const sessionStore = useSessionStore()
 
-type ViewMode = 'list' | 'detail' | 'create'
+type ViewMode = 'list' | 'detail' | 'create' | 'edit'
 
 const viewMode = ref<ViewMode>('list')
 const isLoadingBoards = ref(false)
@@ -33,16 +40,68 @@ const comments = ref<BoardComment[]>([])
 const isLoadingComments = ref(false)
 const newCommentText = ref('')
 const isSubmittingComment = ref(false)
+const isDeletingPost = ref(false)
+
+const sortField = ref<BoardSortField>('createdAt')
+const sortOrder = ref<'asc' | 'desc'>('desc')
 
 const newPostForm = ref({ title: '', content: '', pinned: false })
 const isCreating = ref(false)
 const createError = ref('')
 
+const editPostForm = ref({ title: '', content: '', pinned: false })
+const isUpdatingPost = ref(false)
+const editPostError = ref('')
+
+const editingCommentId = ref<string | null>(null)
+const editingCommentText = ref('')
+const isSavingComment = ref(false)
+const isDeletingCommentId = ref<string | null>(null)
+
 const previewContent = ref('')
 const markdownPreviewHtml = computed(() => renderMarkdown(previewContent.value))
+const editPreviewContent = ref('')
+const editMarkdownPreviewHtml = computed(() => renderMarkdown(editPreviewContent.value))
+
+const currentUserId = computed(() => sessionStore.user?.id ?? null)
+
+const boardTypeLabel: Record<string, string> = {
+  NOTICE: '공지',
+  QUESTION: '질문',
+  RESOURCE: '자료',
+  RETROSPECTIVE: '회고',
+}
+
+const boardMap = computed<Record<string, GroupBoard>>(() => {
+  const map: Record<string, GroupBoard> = {}
+  for (const board of boards.value) {
+    map[board.id] = board
+  }
+  return map
+})
+
+function getBoardBadgeLabel(boardId: string): string {
+  const board = boardMap.value[boardId]
+  if (!board) return ''
+  return boardTypeLabel[board.boardType] ?? board.name
+}
+
+function isMyPost(post: BoardPostSummary | BoardPost | null): boolean {
+  if (!post || !currentUserId.value) return false
+  return post.author.userId === currentUserId.value
+}
+
+function isMyComment(comment: BoardComment): boolean {
+  if (!currentUserId.value) return false
+  return comment.author.userId === currentUserId.value
+}
 
 function syncPreview(event: Event): void {
   previewContent.value = (event.target as HTMLTextAreaElement).value
+}
+
+function syncEditPreview(event: Event): void {
+  editPreviewContent.value = (event.target as HTMLTextAreaElement).value
 }
 
 onMounted(() => {
@@ -76,13 +135,22 @@ async function loadPosts(): Promise<void> {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const result = await listBoardPosts(groupId.value, selectedBoard.value.id)
+    const result = await listBoardPosts(groupId.value, selectedBoard.value.id, {
+      sort: sortField.value,
+      order: sortOrder.value,
+    })
     posts.value = result.items
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : '게시글을 불러오지 못했습니다.'
   } finally {
     isLoading.value = false
   }
+}
+
+async function changeSort(field: BoardSortField, order: 'asc' | 'desc'): Promise<void> {
+  sortField.value = field
+  sortOrder.value = order
+  await loadPosts()
 }
 
 async function openPost(summary: BoardPostSummary): Promise<void> {
@@ -104,6 +172,58 @@ async function openPost(summary: BoardPostSummary): Promise<void> {
   }
 }
 
+function openEditPost(): void {
+  if (!selectedPost.value) return
+  editPostForm.value = {
+    title: selectedPost.value.title,
+    content: selectedPost.value.content,
+    pinned: selectedPost.value.pinned,
+  }
+  editPreviewContent.value = selectedPost.value.content
+  editPostError.value = ''
+  viewMode.value = 'edit'
+}
+
+async function submitEditPost(): Promise<void> {
+  if (!selectedPost.value) return
+  if (!editPostForm.value.title.trim() || !editPostForm.value.content.trim()) {
+    editPostError.value = '제목과 내용을 입력해주세요.'
+    return
+  }
+  isUpdatingPost.value = true
+  editPostError.value = ''
+  try {
+    const updated = await updateBoardPost(groupId.value, selectedPost.value.id, {
+      title: editPostForm.value.title.trim(),
+      content: editPostForm.value.content.trim(),
+      pinned: editPostForm.value.pinned,
+    })
+    selectedPost.value = updated
+    viewMode.value = 'detail'
+    await loadPosts()
+  } catch (error) {
+    editPostError.value = error instanceof ApiError ? error.message : '게시글 수정에 실패했습니다.'
+  } finally {
+    isUpdatingPost.value = false
+  }
+}
+
+async function deletePost(): Promise<void> {
+  if (!selectedPost.value) return
+  if (!window.confirm('게시글을 삭제하시겠습니까?')) return
+  isDeletingPost.value = true
+  try {
+    await deleteBoardPost(groupId.value, selectedPost.value.id)
+    selectedPost.value = null
+    viewMode.value = 'list'
+    await loadPosts()
+  } catch (error) {
+    errorMessage.value = error instanceof ApiError ? error.message : '게시글 삭제에 실패했습니다.'
+  } finally {
+    isDeletingPost.value = false
+  }
+}
+
 async function submitComment(): Promise<void> {
   if (!selectedPost.value || !newCommentText.value.trim()) return
   isSubmittingComment.value = true
@@ -119,6 +239,44 @@ async function submitComment(): Promise<void> {
     // ignore
   } finally {
     isSubmittingComment.value = false
+  }
+}
+
+function startEditComment(comment: BoardComment): void {
+  editingCommentId.value = comment.id
+  editingCommentText.value = comment.content
+}
+
+function cancelEditComment(): void {
+  editingCommentId.value = null
+  editingCommentText.value = ''
+}
+
+async function saveEditComment(commentId: string): Promise<void> {
+  if (!editingCommentText.value.trim()) return
+  isSavingComment.value = true
+  try {
+    const updated = await updatePostComment(groupId.value, commentId, editingCommentText.value.trim())
+    const index = comments.value.findIndex((c) => c.id === commentId)
+    if (index !== -1) comments.value[index] = updated
+    editingCommentId.value = null
+    editingCommentText.value = ''
+  } catch {
+    // ignore
+  } finally {
+    isSavingComment.value = false
+  }
+}
+
+async function deleteComment(commentId: string): Promise<void> {
+  isDeletingCommentId.value = commentId
+  try {
+    await deletePostComment(groupId.value, commentId)
+    comments.value = comments.value.filter((c) => c.id !== commentId)
+  } catch {
+    // ignore
+  } finally {
+    isDeletingCommentId.value = null
   }
 }
 
@@ -147,7 +305,8 @@ async function submitNewPost(): Promise<void> {
   }
 }
 
-function renderMarkdown(markdown: string): string {
+function renderMarkdown(markdown: string | null | undefined): string {
+  if (!markdown) return ''
   const source = markdown.replace(/\r\n?/g, '\n').trim()
   if (!source) return ''
 
@@ -425,7 +584,7 @@ function formatDate(value: string): string {
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
       >
         <div
-          class="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-4"
+          class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-line)] px-5 py-4"
         >
           <div>
             <p class="text-sm font-semibold text-[var(--color-primary)]">게시판</p>
@@ -433,14 +592,30 @@ function formatDate(value: string): string {
               {{ selectedBoard?.name ?? '그룹 게시판' }}
             </h2>
           </div>
-          <button
-            v-if="selectedBoard"
-            type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-            @click="viewMode = 'create'"
-          >
-            글 쓰기
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- 정렬 셀렉터 -->
+            <select
+              class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-2 text-xs text-[var(--color-ink)] focus:outline-none"
+              aria-label="정렬 기준"
+              :value="`${sortField}:${sortOrder}`"
+              @change="(e) => {
+                const [f, o] = (e.target as HTMLSelectElement).value.split(':')
+                void changeSort(f as BoardSortField, o as 'asc' | 'desc')
+              }"
+            >
+              <option value="createdAt:desc">최신순</option>
+              <option value="createdAt:asc">오래된순</option>
+              <option value="commentCount:desc">댓글 많은순</option>
+            </select>
+            <button
+              v-if="selectedBoard"
+              type="button"
+              class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+              @click="viewMode = 'create'"
+            >
+              글 쓰기
+            </button>
+          </div>
         </div>
 
         <ScreenState
@@ -454,20 +629,33 @@ function formatDate(value: string): string {
           variant="error"
           :title="errorMessage"
           action-label="다시 시도"
-          @action="loadBoards"
           class="p-8"
+          @action="loadBoards"
         />
 
         <ul v-else-if="posts.length > 0" class="divide-y divide-[var(--color-line)]">
           <li
             v-for="post in posts"
             :key="post.id"
-            class="flex cursor-pointer items-start gap-3 px-5 py-4 transition hover:bg-[var(--color-card)]"
+            class="flex cursor-pointer items-start gap-3 px-5 py-4 transition hover:bg-[var(--color-active)]"
             @click="openPost(post)"
           >
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
                 <span v-if="post.pinned" class="text-sm">📌</span>
+                <!-- 카테고리 뱃지 -->
+                <span
+                  class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
+                  :class="{
+                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': boardMap[post.boardId]?.boardType === 'NOTICE',
+                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': boardMap[post.boardId]?.boardType === 'QUESTION',
+                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': boardMap[post.boardId]?.boardType === 'RESOURCE',
+                    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': boardMap[post.boardId]?.boardType === 'RETROSPECTIVE',
+                    'bg-[var(--color-active)] text-[var(--color-muted)]': !boardMap[post.boardId]?.boardType,
+                  }"
+                >
+                  {{ getBoardBadgeLabel(post.boardId) }}
+                </span>
                 <span class="font-semibold text-[var(--color-ink)]">{{ post.title }}</span>
               </div>
               <div class="mt-1 flex flex-wrap gap-3 text-xs text-[var(--color-muted)]">
@@ -505,13 +693,50 @@ function formatDate(value: string): string {
             class="py-4"
           />
           <template v-else-if="selectedPost">
-            <div class="flex flex-wrap items-center gap-2">
-              <span v-if="selectedPost.pinned" class="text-sm">📌</span>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span v-if="selectedPost.pinned" class="text-sm">📌</span>
+                  <!-- 카테고리 뱃지 -->
+                  <span
+                    v-if="boardMap[selectedPost.boardId]"
+                    class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
+                    :class="{
+                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': boardMap[selectedPost.boardId]?.boardType === 'NOTICE',
+                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': boardMap[selectedPost.boardId]?.boardType === 'QUESTION',
+                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': boardMap[selectedPost.boardId]?.boardType === 'RESOURCE',
+                      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': boardMap[selectedPost.boardId]?.boardType === 'RETROSPECTIVE',
+                    }"
+                  >
+                    {{ getBoardBadgeLabel(selectedPost.boardId) }}
+                  </span>
+                </div>
+                <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedPost.title }}</h2>
+                <p class="mt-1 text-xs text-[var(--color-muted)]">
+                  {{ selectedPost.author.displayName }} · {{ formatDate(selectedPost.createdAt) }}
+                </p>
+              </div>
+              <!-- 작성자 권한 버튼 -->
+              <div v-if="isMyPost(selectedPost)" class="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-line-strong)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none"
+                  aria-label="게시글 수정"
+                  @click="openEditPost"
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  :disabled="isDeletingPost"
+                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-danger)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[var(--color-danger)] hover:text-white focus:outline-none disabled:opacity-50"
+                  aria-label="게시글 삭제"
+                  @click="deletePost"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
-            <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedPost.title }}</h2>
-            <p class="mt-1 text-xs text-[var(--color-muted)]">
-              {{ selectedPost.author.displayName }} · {{ formatDate(selectedPost.createdAt) }}
-            </p>
           </template>
         </div>
 
@@ -531,13 +756,61 @@ function formatDate(value: string): string {
               :key="comment.id"
               class="rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm"
             >
-              <p class="font-semibold text-[var(--color-ink)]">
-                {{ comment.author.displayName }}
-                <span class="ml-2 text-xs font-normal text-[var(--color-muted)]">{{
-                  formatDate(comment.createdAt)
-                }}</span>
-              </p>
-              <p class="mt-1 leading-6 text-[var(--color-muted)]">{{ comment.content }}</p>
+              <div class="flex items-start justify-between gap-2">
+                <p class="font-semibold text-[var(--color-ink)]">
+                  {{ comment.author.displayName }}
+                  <span class="ml-2 text-xs font-normal text-[var(--color-muted)]">{{
+                    formatDate(comment.createdAt)
+                  }}</span>
+                </p>
+                <!-- 댓글 작성자 권한 버튼 -->
+                <div v-if="isMyComment(comment)" class="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    class="text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
+                    :aria-label="`${comment.author.displayName} 댓글 수정`"
+                    @click="startEditComment(comment)"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isDeletingCommentId === comment.id"
+                    class="text-xs text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none disabled:opacity-50"
+                    :aria-label="`${comment.author.displayName} 댓글 삭제`"
+                    @click="deleteComment(comment.id)"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+
+              <!-- 댓글 인라인 수정 -->
+              <template v-if="editingCommentId === comment.id">
+                <textarea
+                  v-model="editingCommentText"
+                  rows="2"
+                  class="mt-2 w-full resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+                />
+                <div class="mt-1 flex gap-2">
+                  <button
+                    type="button"
+                    :disabled="isSavingComment"
+                    class="text-xs font-semibold text-[var(--color-primary)] hover:underline focus:outline-none disabled:opacity-50"
+                    @click="saveEditComment(comment.id)"
+                  >
+                    저장
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs text-[var(--color-muted)] hover:underline focus:outline-none"
+                    @click="cancelEditComment"
+                  >
+                    취소
+                  </button>
+                </div>
+              </template>
+              <p v-else class="mt-1 leading-6 text-[var(--color-muted)]">{{ comment.content }}</p>
             </li>
           </ul>
 
@@ -641,6 +914,89 @@ function formatDate(value: string): string {
               class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
             >
               {{ isCreating ? '등록 중…' : '등록' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <!-- 게시글 수정 -->
+    <template v-else-if="viewMode === 'edit'">
+      <section
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
+        <button
+          type="button"
+          class="mb-4 text-sm font-semibold text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
+          @click="viewMode = 'detail'"
+        >
+          ← 게시글로
+        </button>
+        <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">게시글 수정</h2>
+
+        <form class="mt-5 grid gap-4" @submit.prevent="submitEditPost">
+          <label class="grid gap-2">
+            <span class="text-sm font-semibold text-[var(--color-ink)]">제목</span>
+            <input
+              v-model="editPostForm.title"
+              type="text"
+              maxlength="200"
+              placeholder="제목을 입력하세요"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            />
+          </label>
+
+          <div class="grid gap-4 lg:grid-cols-2">
+            <label class="grid gap-2">
+              <span class="text-sm font-semibold text-[var(--color-ink)]">Markdown</span>
+              <textarea
+                v-model="editPostForm.content"
+                rows="18"
+                placeholder="내용을 입력하세요"
+                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+                @input="syncEditPreview"
+                @compositionupdate="syncEditPreview"
+              />
+            </label>
+
+            <section class="grid gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-[var(--color-ink)]">미리보기</span>
+                <span class="text-xs font-semibold text-[var(--color-muted)]"
+                  >{{ editPostForm.content.length }}자</span
+                >
+              </div>
+              <div
+                class="min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3"
+              >
+                <article
+                  v-if="editMarkdownPreviewHtml"
+                  class="markdown-body"
+                  v-html="editMarkdownPreviewHtml"
+                />
+                <p v-else class="text-sm text-[var(--color-muted)]">미리보기</p>
+              </div>
+            </section>
+          </div>
+
+          <p v-if="editPostError" role="alert" class="text-sm font-semibold text-[var(--color-danger)]">
+            {{ editPostError }}
+          </p>
+
+          <div class="flex justify-end gap-3">
+            <button
+              type="button"
+              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+              @click="viewMode = 'detail'"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              :disabled="isUpdatingPost"
+              class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+            >
+              {{ isUpdatingPost ? '저장 중…' : '저장' }}
             </button>
           </div>
         </form>

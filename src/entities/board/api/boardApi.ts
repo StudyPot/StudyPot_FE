@@ -9,9 +9,13 @@ import type {
   UpdatePostRequest,
 } from '../model/types'
 
+export type BoardSortField = 'createdAt' | 'commentCount'
+
 export type ListBoardPostsParams = {
   cursor?: string
   pageSize?: number
+  sort?: BoardSortField
+  order?: 'asc' | 'desc'
 }
 
 export type ListBoardCommentsParams = {
@@ -31,6 +35,8 @@ export function listBoardPosts(
   const searchParams = new URLSearchParams()
   if (params?.cursor) searchParams.set('cursor', params.cursor)
   if (params?.pageSize !== undefined) searchParams.set('pageSize', String(params.pageSize))
+  if (params?.sort) searchParams.set('sort', params.sort)
+  if (params?.order) searchParams.set('order', params.order)
   const query = searchParams.toString()
   return apiClient<CursorPageResponse<BoardPostSummary>>(
     `/groups/${groupId}/boards/${boardId}/posts${query ? `?${query}` : ''}`,

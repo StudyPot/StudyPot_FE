@@ -41,7 +41,7 @@
       "boardId": "board-id-001",
       "author": {
         "memberId": "member-001",
-        "userId": "user-001",
+        "userId": "018f7a4e-0000-7000-9000-000000000001",
         "displayName": "user1"
       },
       "title": "3주차 스터디 자료 공유",
@@ -92,7 +92,7 @@
       "boardId": "board-id-001",
       "author": {
         "memberId": "member-001",
-        "userId": "user-001",
+        "userId": "018f7a4e-0000-7000-9000-000000000001",
         "displayName": "user1"
       },
       "title": "이번 주 온라인 스터디 시간 변경 공지",
@@ -145,7 +145,7 @@
         "id": "c-001-3",
         "groupId": "018f7a4e-0000-7000-9000-000000000011",
         "postId": "board-001",
-        "author": { "memberId": "member-005", "userId": "user-005", "displayName": "jaewon" },
+        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "user1" },
         "content": "블로그도 추가해주셔서 이해하기 쉬웠어요.",
         "createdAt": "2026-05-19T12:00:00+09:00",
         "updatedAt": "2026-05-19T12:00:00+09:00"
@@ -156,7 +156,7 @@
         "id": "c-002-1",
         "groupId": "018f7a4e-0000-7000-9000-000000000011",
         "postId": "board-002",
-        "author": { "memberId": "member-001", "userId": "user-001", "displayName": "user1" },
+        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "user1" },
         "content": "REST API 서버에서는 stateless하게 운영되기 때문에 CSRF 위험이 낮아요.",
         "createdAt": "2026-05-20T15:00:00+09:00",
         "updatedAt": "2026-05-20T15:00:00+09:00"
