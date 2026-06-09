@@ -1,0 +1,39 @@
+{
+  "followingUserIds": ["user-002", "user-003"],
+  "following": [
+    {
+      "userId": "user-002",
+      "nickname": "박지은",
+      "email": "jieun@example.com",
+      "bio": "프론트엔드 개발자입니다.",
+      "mutual": true,
+      "followedAt": "2026-05-01T00:00:00+09:00"
+    },
+    {
+      "userId": "user-003",
+      "nickname": "이민우",
+      "email": "minwoo@example.com",
+      "bio": null,
+      "mutual": false,
+      "followedAt": "2026-05-10T00:00:00+09:00"
+    }
+  ],
+  "followers": [
+    {
+      "userId": "user-002",
+      "nickname": "박지은",
+      "email": "jieun@example.com",
+      "bio": "프론트엔드 개발자입니다.",
+      "mutual": true,
+      "followedAt": "2026-04-28T00:00:00+09:00"
+    },
+    {
+      "userId": "user-004",
+      "nickname": "김소현",
+      "email": "sohyeon@example.com",
+      "bio": "알고리즘 스터디 중입니다.",
+      "mutual": false,
+      "followedAt": "2026-05-15T00:00:00+09:00"
+    }
+  ]
+}

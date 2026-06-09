@@ -2,6 +2,7 @@ import aiTeamLeaderData from './data/ai-team-leader.json'
 import authData from './data/auth.json'
 import bookmarksData from './data/bookmarks.json'
 import curriculumData from './data/curriculum.json'
+import followsData from './data/follows.json'
 import groupsData from './data/groups.json'
 import notificationsData from './data/notifications.json'
 import onboardingData from './data/onboarding.json'
@@ -17,6 +18,7 @@ export const mockMswData = {
   auth: authData,
   bookmarks: bookmarksData,
   curriculum: curriculumData,
+  follows: followsData,
   groups: groupsData,
   notifications: notificationsData,
   onboarding: onboardingData,

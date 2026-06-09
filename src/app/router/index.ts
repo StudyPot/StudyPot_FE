@@ -4,6 +4,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { useSessionStore } from '@/features/auth/session'
 import { AuthCallbackPage } from '@/pages/auth-callback'
 import { BookmarksPage } from '@/pages/bookmarks'
+import { FollowPage } from '@/pages/follow'
 import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
@@ -55,6 +56,12 @@ const routes: RouteRecordRaw[] = [
     path: '/bookmarks',
     name: 'bookmarks',
     component: BookmarksPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/follow',
+    name: 'follow',
+    component: FollowPage,
     meta: { requiresAuth: true },
   },
   {

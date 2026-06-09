@@ -2,6 +2,7 @@ import { aiHandlers } from '@/entities/ai/api/handlers'
 import { boardHandlers } from '@/entities/board/api/handlers'
 import { bookmarkHandlers } from '@/entities/bookmark/api/handlers'
 import { curriculumHandlers } from '@/entities/curriculum/api/handlers'
+import { followHandlers } from '@/entities/follow/api/handlers'
 import { userHandlers } from '@/entities/user/api/handlers'
 import { groupHandlers } from '@/entities/group/api/handlers'
 import { notificationHandlers } from '@/entities/notification/api/handlers'
@@ -23,6 +24,7 @@ export const handlers = [
   ...userHandlers,
   ...groupHandlers,
   ...bookmarkHandlers,
+  ...followHandlers,
   ...onboardingHandlers,
   ...curriculumHandlers,
   ...retrospectiveHandlers,
