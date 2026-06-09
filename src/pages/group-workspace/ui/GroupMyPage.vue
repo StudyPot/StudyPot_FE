@@ -7,6 +7,8 @@ import {
   type AvailabilitySlot,
   type OnboardingResponse,
 } from '@/entities/onboarding'
+import { getCurrentUser, updateCurrentUser } from '@/entities/user/api/currentUser'
+import type { User } from '@/entities/user/model/types'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -42,9 +44,102 @@ const form = reactive({
   availabilitySlots: [] as AvailabilitySlot[],
 })
 
+// ── 사용자 프로필 ──────────────────────────────────────────
+type ProfileState = 'loading' | 'view' | 'edit'
+
+const profileState = ref<ProfileState>('loading')
+const profile = ref<User | null>(null)
+const profileForm = reactive({
+  nickname: '',
+  bio: '',
+  preferredTopics: [] as string[],
+})
+const topicInput = ref('')
+const isProfileSubmitting = ref(false)
+const profileError = ref('')
+const profileFieldError = ref('')
+
 onMounted(() => {
+  void loadProfile()
   void loadOnboarding()
 })
+
+async function loadProfile(): Promise<void> {
+  profileState.value = 'loading'
+  try {
+    profile.value = await getCurrentUser()
+    prefillProfileForm(profile.value)
+    profileState.value = 'view'
+  } catch {
+    profileState.value = 'view'
+  }
+}
+
+function prefillProfileForm(user: User): void {
+  profileForm.nickname = user.nickname
+  profileForm.bio = user.bio ?? ''
+  profileForm.preferredTopics = [...(user.preferredTopics ?? [])]
+}
+
+function startEditProfile(): void {
+  if (profile.value) prefillProfileForm(profile.value)
+  profileError.value = ''
+  profileFieldError.value = ''
+  profileState.value = 'edit'
+}
+
+function cancelEditProfile(): void {
+  profileState.value = 'view'
+}
+
+function addTopic(): void {
+  const topic = topicInput.value.trim()
+  if (topic && !profileForm.preferredTopics.includes(topic)) {
+    profileForm.preferredTopics.push(topic)
+  }
+  topicInput.value = ''
+}
+
+function removeTopic(index: number): void {
+  profileForm.preferredTopics.splice(index, 1)
+}
+
+async function handleProfileSubmit(): Promise<void> {
+  profileError.value = ''
+  profileFieldError.value = ''
+
+  if (!profileForm.nickname.trim()) {
+    profileFieldError.value = '닉네임은 필수 입력 값입니다.'
+    return
+  }
+
+  isProfileSubmitting.value = true
+
+  try {
+    const updated = await updateCurrentUser({
+      nickname: profileForm.nickname.trim(),
+      bio: profileForm.bio.trim() || undefined,
+      preferredTopics:
+        profileForm.preferredTopics.length > 0 ? profileForm.preferredTopics : undefined,
+    })
+    profile.value = updated
+    profileState.value = 'view'
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 400) {
+        const payload = error.payload as { errors?: Record<string, string> } | null
+        profileFieldError.value = payload?.errors?.nickname ?? '입력 값을 확인해 주세요.'
+      } else {
+        profileError.value = error.message
+      }
+    } else {
+      profileError.value = '프로필 저장 중 오류가 발생했습니다.'
+    }
+  } finally {
+    isProfileSubmitting.value = false
+  }
+}
+// ────────────────────────────────────────────────────────────
 
 async function loadOnboarding(): Promise<void> {
   pageState.value = 'loading'
@@ -123,6 +218,167 @@ function formatSubmittedAt(value: string): string {
 
 <template>
   <div class="grid gap-5">
+    <!-- ── 사용자 프로필 섹션 ── -->
+    <section
+      v-if="profileState !== 'loading'"
+      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-[var(--color-primary)]">마이페이지</p>
+          <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">내 프로필</h2>
+        </div>
+        <button
+          v-if="profileState === 'view'"
+          type="button"
+          class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+          @click="startEditProfile"
+        >
+          수정
+        </button>
+      </div>
+
+      <!-- 보기 -->
+      <template v-if="profileState === 'view' && profile">
+        <dl class="mt-5 grid gap-3 text-sm">
+          <div>
+            <dt class="text-[var(--color-muted)]">이메일</dt>
+            <dd class="mt-0.5 font-medium text-[var(--color-ink)]">{{ profile.email }}</dd>
+          </div>
+          <div>
+            <dt class="text-[var(--color-muted)]">닉네임</dt>
+            <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">{{ profile.nickname }}</dd>
+          </div>
+          <div v-if="profile.bio">
+            <dt class="text-[var(--color-muted)]">자기소개</dt>
+            <dd class="mt-0.5 leading-6 text-[var(--color-ink)]">{{ profile.bio }}</dd>
+          </div>
+          <div v-if="profile.preferredTopics && profile.preferredTopics.length > 0">
+            <dt class="text-[var(--color-muted)]">관심 주제</dt>
+            <dd class="mt-1.5 flex flex-wrap gap-2">
+              <span
+                v-for="topic in profile.preferredTopics"
+                :key="topic"
+                class="rounded-full border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-ink)]"
+              >
+                {{ topic }}
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </template>
+
+      <!-- 편집 폼 -->
+      <form
+        v-else-if="profileState === 'edit'"
+        class="mt-5 grid gap-4"
+        @submit.prevent="handleProfileSubmit"
+      >
+        <div>
+          <label for="profile-nickname" class="text-sm font-semibold text-[var(--color-ink)]">
+            닉네임 <span class="text-[var(--color-danger)]">*</span>
+          </label>
+          <input
+            id="profile-nickname"
+            v-model="profileForm.nickname"
+            name="nickname"
+            type="text"
+            maxlength="50"
+            class="mt-2 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+          />
+          <p
+            v-if="profileFieldError"
+            role="alert"
+            class="mt-1 text-xs font-semibold text-[var(--color-danger)]"
+          >
+            {{ profileFieldError }}
+          </p>
+        </div>
+
+        <div>
+          <label for="profile-bio" class="text-sm font-semibold text-[var(--color-ink)]">
+            자기소개 <span class="font-normal text-[var(--color-muted)]">(선택)</span>
+          </label>
+          <textarea
+            id="profile-bio"
+            v-model="profileForm.bio"
+            name="bio"
+            rows="3"
+            maxlength="200"
+            placeholder="간단한 자기소개를 입력해 주세요."
+            class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+          />
+        </div>
+
+        <div>
+          <p class="text-sm font-semibold text-[var(--color-ink)]">
+            관심 주제 <span class="font-normal text-[var(--color-muted)]">(선택)</span>
+          </p>
+          <div class="mt-2 flex gap-2">
+            <input
+              v-model="topicInput"
+              type="text"
+              name="topic-input"
+              placeholder="주제 입력 후 추가"
+              maxlength="30"
+              class="flex-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              @keydown.enter.prevent="addTopic"
+            />
+            <button
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              @click="addTopic"
+            >
+              추가
+            </button>
+          </div>
+          <div v-if="profileForm.preferredTopics.length > 0" class="mt-2 flex flex-wrap gap-2">
+            <span
+              v-for="(topic, i) in profileForm.preferredTopics"
+              :key="topic"
+              class="inline-flex items-center gap-1 rounded-full border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-ink)]"
+            >
+              {{ topic }}
+              <button
+                type="button"
+                :aria-label="`${topic} 제거`"
+                class="ml-0.5 text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none"
+                @click="removeTopic(i)"
+              >
+                ✕
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <p
+          v-if="profileError"
+          role="alert"
+          class="text-sm font-semibold text-[var(--color-danger)]"
+        >
+          {{ profileError }}
+        </p>
+
+        <div class="flex gap-3">
+          <button
+            type="button"
+            class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+            @click="cancelEditProfile"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            :disabled="isProfileSubmitting"
+            class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+          >
+            {{ isProfileSubmitting ? '저장 중…' : '저장' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── 온보딩 섹션 ── -->
     <ScreenState
       v-if="pageState === 'loading'"
       variant="loading"
@@ -146,7 +402,7 @@ function formatSubmittedAt(value: string): string {
     >
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-sm font-semibold text-[var(--color-primary)]">마이페이지</p>
+          <p class="text-sm font-semibold text-[var(--color-primary)]">온보딩</p>
           <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">나의 온보딩 정보</h2>
           <p v-if="onboarding.submittedAt" class="mt-1 text-sm text-[var(--color-muted)]">
             제출일: {{ formatSubmittedAt(onboarding.submittedAt) }}
@@ -195,7 +451,7 @@ function formatSubmittedAt(value: string): string {
       v-else-if="pageState === 'edit'"
       class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
     >
-      <p class="text-sm font-semibold text-[var(--color-primary)]">마이페이지</p>
+      <p class="text-sm font-semibold text-[var(--color-primary)]">온보딩</p>
       <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">나의 준비 정보</h2>
       <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
         스터디 참여에 필요한 숙련도와 가능한 시간을 입력하고 저장하세요.
