@@ -165,4 +165,121 @@ describe('apiClient', () => {
       message: 'name is required.',
     } satisfies Partial<ApiError>)
   })
+
+  it('retries the original request with a fresh token after 401 and successful refresh', async () => {
+    const resource = { id: 'group-1', name: 'StudyPot' }
+
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/problem+json' },
+          }),
+        ),
+      )
+      .mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 200 })))
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(resource), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiClient<typeof resource>('/groups/group-1')).resolves.toEqual(resource)
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/auth/refresh',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/v1/groups/group-1',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+  })
+
+  it('throws ApiError with status 401 when the token refresh endpoint itself fails', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/problem+json' },
+          }),
+        ),
+      )
+      .mockImplementationOnce(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/problem+json' },
+          }),
+        ),
+      )
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiClient('/groups/group-1')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 401,
+    })
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/auth/refresh',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('calls the refresh endpoint exactly once when concurrent requests all encounter 401', async () => {
+    const callCounts: Record<string, number> = {}
+
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const url = String(input)
+      callCounts[url] = (callCounts[url] ?? 0) + 1
+
+      if (url.includes('/auth/refresh')) {
+        return Promise.resolve(new Response(null, { status: 200 }))
+      }
+
+      if (callCounts[url] === 1) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/problem+json' },
+          }),
+        )
+      }
+
+      const id = url.includes('resource-a') ? 'a' : 'b'
+      return Promise.resolve(
+        new Response(JSON.stringify({ id }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const [resultA, resultB] = await Promise.all([
+      apiClient<{ id: string }>('/resource-a'),
+      apiClient<{ id: string }>('/resource-b'),
+    ])
+
+    expect(resultA).toEqual({ id: 'a' })
+    expect(resultB).toEqual({ id: 'b' })
+
+    const refreshCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/auth/refresh'),
+    )
+    expect(refreshCalls).toHaveLength(1)
+  })
 })

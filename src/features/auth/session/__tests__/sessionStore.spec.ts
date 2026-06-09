@@ -145,6 +145,79 @@ describe('useSessionStore', () => {
     expect(sessionStore.status).toBe('anonymous')
   })
 
+  it('returns the cached user immediately without a network call when already authenticated', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sessionStore = useSessionStore()
+    sessionStore.user = mockUser
+    sessionStore.status = 'authenticated'
+
+    const result = await sessionStore.restoreSession()
+
+    expect(result).toEqual(mockUser)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('clears the session without attempting a refresh on non-401 server errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Internal Server Error', status: 500 }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/problem+json' },
+        }),
+      ),
+    )
+
+    const sessionStore = useSessionStore()
+    const result = await sessionStore.restoreSession()
+
+    expect(result).toBeNull()
+    expect(sessionStore.user).toBeNull()
+    expect(sessionStore.status).toBe('anonymous')
+  })
+
+  it('clears the session and returns null when the automatic token refresh fails with 401', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+
+    // Call 1: getCurrentUser → 401
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    )
+    // Call 2: refreshAccessToken (auto-refresh in apiClient) → 401 → apiClient throws
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    )
+    // Call 3: refreshSession (refreshAndRestoreSession fallback) → 401
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ title: 'Unauthorized', status: 401 }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    )
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sessionStore = useSessionStore()
+    const result = await sessionStore.restoreSession()
+
+    expect(result).toBeNull()
+    expect(sessionStore.user).toBeNull()
+    expect(sessionStore.status).toBe('anonymous')
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/auth/refresh',
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
+    )
+  })
+
   it('keeps the current session when logout-all fails', async () => {
     vi.stubGlobal(
       'fetch',
