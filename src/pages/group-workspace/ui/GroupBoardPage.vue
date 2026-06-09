@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/*
+ * SSAFY Coach backend evidence (framework_back_hw_09_2@4abd8ecc94a9551896e1d7193ddf1f37973b662b):
+ * #01 board CRUD: src/main/java/com/studypot/aistudyleader/studygroup/board/controller/GroupBoardController.java,
+ *     src/main/java/com/studypot/aistudyleader/studygroup/board/service/GroupBoardService.java,
+ *     src/main/java/com/studypot/aistudyleader/studygroup/board/repository/GroupBoardJdbcSql.java.
+ * #10/#11 board list/detail: controller + service validate board lookup, post ownership, sorting,
+ *     cursor page metadata, 404 not-found, and comment counts through GroupBoardControllerTest.
+ */
 import { inject, onMounted, ref, computed } from 'vue'
 
 import {

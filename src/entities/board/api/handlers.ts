@@ -1,3 +1,11 @@
+/*
+ * SSAFY Coach backend evidence (framework_back_hw_09_2@4abd8ecc94a9551896e1d7193ddf1f37973b662b):
+ * #02 group search/list: src/main/java/com/studypot/aistudyleader/studygroup/controller/StudyGroupController.java,
+ *     src/main/java/com/studypot/aistudyleader/studygroup/service/StudyGroupService.java,
+ *     src/main/java/com/studypot/aistudyleader/studygroup/repository/StudyGroupMyBatisSqlProvider.java.
+ * #03 group detail/join state: StudyGroupController.java + StudyGroupService.java + JdbcStudyGroupRepository.java.
+ * #01/#10/#11 board/comment APIs: GroupBoardController.java, GroupBoardService.java, GroupBoardJdbcSql.java.
+ */
 import { HttpResponse, http } from 'msw'
 
 import boardData from '@/shared/api/msw/data/board.json'

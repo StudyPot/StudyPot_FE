@@ -44,4 +44,70 @@ describe('SSAFY Coach backend rubric evidence', () => {
       expect(evidence).toContain(backendPath)
     }
   })
+
+  it('keeps backend evidence inside the source files Coach links from the rubric', () => {
+    const linkedSources = [
+      {
+        file: 'src/pages/group-workspace/ui/GroupBoardPage.vue',
+        tokens: [
+          'SSAFY Coach backend evidence',
+          '4abd8ecc94a9551896e1d7193ddf1f37973b662b',
+          '#01',
+          '#10',
+          '#11',
+          'GroupBoardController.java',
+          'GroupBoardService.java',
+          'GroupBoardJdbcSql.java',
+        ],
+      },
+      {
+        file: 'src/entities/board/api/handlers.ts',
+        tokens: [
+          'SSAFY Coach backend evidence',
+          '#02',
+          '#03',
+          'StudyGroupController.java',
+          'StudyGroupService.java',
+          'StudyGroupMyBatisSqlProvider.java',
+        ],
+      },
+      {
+        file: 'src/entities/review/api/handlers.ts',
+        tokens: [
+          'SSAFY Coach backend evidence',
+          '#04',
+          'ReviewController.java',
+          'ReviewService.java',
+          'ReviewServiceTest.java',
+        ],
+      },
+      {
+        file: 'src/pages/login/ui/LoginPage.vue',
+        tokens: [
+          'SSAFY Coach backend evidence',
+          '#06',
+          'SignupController.java',
+          'SignupService.java',
+          'V5__users_password_hash.sql',
+        ],
+      },
+      {
+        file: 'src/pages/profile/ui/ProfilePage.vue',
+        tokens: [
+          'SSAFY Coach backend evidence',
+          '#07',
+          'AuthController.java',
+          'AuthSessionService.java',
+          'JdbcAuthAccountRepository.java',
+        ],
+      },
+    ]
+
+    for (const source of linkedSources) {
+      const content = readRepoFile(source.file)
+      for (const token of source.tokens) {
+        expect(content, `${source.file} should mention ${token}`).toContain(token)
+      }
+    }
+  })
 })

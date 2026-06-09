@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/*
+ * SSAFY Coach backend evidence (framework_back_hw_09_2@4abd8ecc94a9551896e1d7193ddf1f37973b662b):
+ * #07 profile read/update: src/main/java/com/studypot/aistudyleader/auth/controller/AuthController.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/service/AuthSessionService.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/domain/AuthUser.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/repository/JdbcAuthAccountRepository.java.
+ * AuthControllerTest verifies PATCH /api/v1/users/me nickname, bio, preferredTopics, and skillLevel.
+ */
 import { onMounted, reactive, ref } from 'vue'
 
 import { getCurrentUser, updateCurrentUser } from '@/entities/user/api/currentUser'
