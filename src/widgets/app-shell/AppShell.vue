@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { getGroup, listGroups, type StudyGroup, type StudyGroupStatus } from '@/entities/group'
@@ -20,6 +20,7 @@ const currentGroupId = computed(() => String(route.params.groupId ?? ''))
 const currentGroup = ref<StudyGroup | null>(null)
 const myOnboardingSubmitted = ref(false)
 const isLoggingOut = ref(false)
+const showUserMenu = ref(false)
 
 const loginNotice = computed(() => {
   if (route.query.error === 'oauth') return 'Google 로그인에 실패했습니다. 다시 시도해주세요.'
@@ -73,6 +74,11 @@ const userInitial = computed(() => sessionStore.user?.nickname?.slice(0, 1)?.toU
 
 onMounted(() => {
   if (sessionStore.isAuthenticated) void loadGroups()
+  document.addEventListener('click', closeUserMenu)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeUserMenu)
 })
 
 watch(() => sessionStore.isAuthenticated, (ok) => {
@@ -136,6 +142,15 @@ function getDotClass(status: StudyGroupStatus): string {
   if (phase === 'active') return 'bg-[var(--color-success)]'
   if (phase === 'before') return 'bg-[#e0953a]'
   return 'bg-[#383838]'
+}
+
+function toggleUserMenu(event: MouseEvent): void {
+  event.stopPropagation()
+  showUserMenu.value = !showUserMenu.value
+}
+
+function closeUserMenu(): void {
+  showUserMenu.value = false
 }
 
 async function handleLogout(): Promise<void> {
@@ -427,8 +442,44 @@ function startGoogleLogin(): void {
         </template>
       </nav>
 
+      <!-- User menu popup -->
+      <Transition
+        enter-active-class="transition-all duration-150 ease-out"
+        enter-from-class="opacity-0 translate-y-1"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition-all duration-100 ease-in"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-1"
+      >
+        <div
+          v-if="showUserMenu"
+          class="border-t border-[var(--color-line)] px-2 py-1"
+          @click.stop
+        >
+          <RouterLink
+            :to="{ name: 'profile' }"
+            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
+            @click="showUserMenu = false"
+          >
+            <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>내 프로필</span>
+          </RouterLink>
+        </div>
+      </Transition>
+
       <!-- User panel -->
-      <div class="flex h-[52px] shrink-0 items-center gap-2 bg-[var(--color-rail)] px-2">
+      <div
+        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 bg-[var(--color-rail)] px-2 transition-colors hover:bg-[var(--color-hover)]"
+        role="button"
+        tabindex="0"
+        @click="toggleUserMenu"
+        @keydown.enter="toggleUserMenu"
+        @keydown.space.prevent="toggleUserMenu"
+      >
         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">
           {{ userInitial }}
         </div>
@@ -445,7 +496,7 @@ function startGoogleLogin(): void {
           :disabled="isLoggingOut"
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded text-[var(--color-muted-deep)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-danger)] disabled:opacity-40"
           :title="isLoggingOut ? '로그아웃 중...' : '로그아웃'"
-          @click="handleLogout"
+          @click.stop="handleLogout"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
