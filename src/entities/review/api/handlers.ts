@@ -1,3 +1,10 @@
+/*
+ * SSAFY Coach backend evidence (framework_back_hw_09_2@4abd8ecc94a9551896e1d7193ddf1f37973b662b):
+ * #04 review submit/list/stats: src/main/java/com/studypot/aistudyleader/review/controller/ReviewController.java,
+ *     src/main/java/com/studypot/aistudyleader/review/ReviewService.java,
+ *     src/test/java/com/studypot/aistudyleader/review/ReviewServiceTest.java.
+ * ReviewService validates duplicate submissions, rating range, group membership, and aggregate stats.
+ */
 import { HttpResponse, http } from 'msw'
 
 import { mockMswData } from '@/shared/api/msw/fixtures'

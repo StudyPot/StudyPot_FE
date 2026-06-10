@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/*
+ * SSAFY Coach backend evidence (framework_back_hw_09_2@4abd8ecc94a9551896e1d7193ddf1f37973b662b):
+ * #06 signup/login hardening: src/main/java/com/studypot/aistudyleader/auth/controller/SignupController.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/service/SignupService.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/repository/AuthJdbcSql.java,
+ *     src/main/resources/db/migration/V5__users_password_hash.sql.
+ * SignupServiceTest proves BCrypt password hashing and duplicate email validation.
+ */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { apiOrigin } from '@/shared/config/api'
