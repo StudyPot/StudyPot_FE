@@ -1,4 +1,44 @@
 {
+  "groupOnboardings": [
+    {
+      "id": "018f7a4e-2000-7000-9000-000000000001",
+      "groupId": "018f7a4e-0000-7000-9000-000000000010",
+      "memberId": "018f7a4e-1000-7000-9000-000000000001",
+      "memberNickname": "user1",
+      "skillLevel": 3,
+      "additionalNote": "실전 위주의 과제를 많이 하고 싶어요. 테스트 코드도 함께 강화하고 싶습니다.",
+      "availabilitySlots": [
+        { "dayOfWeek": 2, "startTime": "20:00", "endTime": "22:30", "timezone": "Asia/Seoul" },
+        { "dayOfWeek": 6, "startTime": "10:00", "endTime": "13:00", "timezone": "Asia/Seoul" }
+      ],
+      "status": "SUBMITTED",
+      "submittedAt": "2026-05-08T14:02:00+09:00"
+    },
+    {
+      "id": "018f7a4e-2000-7000-9000-000000000002",
+      "groupId": "018f7a4e-0000-7000-9000-000000000010",
+      "memberId": "018f7a4e-1000-7000-9000-000000000002",
+      "memberNickname": "dev_lee",
+      "skillLevel": 4,
+      "additionalNote": null,
+      "availabilitySlots": [
+        { "dayOfWeek": 1, "startTime": "21:00", "endTime": "23:00", "timezone": "Asia/Seoul" }
+      ],
+      "status": "SUBMITTED",
+      "submittedAt": "2026-05-07T10:30:00+09:00"
+    },
+    {
+      "id": "018f7a4e-2000-7000-9000-000000000003",
+      "groupId": "018f7a4e-0000-7000-9000-000000000010",
+      "memberId": "018f7a4e-1000-7000-9000-000000000003",
+      "memberNickname": "kim_study",
+      "skillLevel": 1,
+      "additionalNote": null,
+      "availabilitySlots": [],
+      "status": "DRAFT",
+      "submittedAt": null
+    }
+  ],
   "myOnboarding": {
     "id": "018f7a4e-2000-7000-9000-000000000001",
     "groupId": "018f7a4e-0000-7000-9000-000000000010",

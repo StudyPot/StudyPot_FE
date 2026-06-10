@@ -4,6 +4,9 @@ import { mockMswData } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
 
 export const onboardingHandlers = [
+  http.get(`${apiBaseUrl}/groups/:groupId/onboarding`, () => {
+    return HttpResponse.json(mockMswData.onboarding.groupOnboardings)
+  }),
   http.get(`${apiBaseUrl}/groups/:groupId/onboarding/me`, () => {
     return HttpResponse.json(mockMswData.onboarding.myOnboarding)
   }),

@@ -34,7 +34,7 @@ const baseChannels: ChannelDef[] = [
   { routeName: 'group-todo',     label: 'Todo', type: 'todo' },
   { routeName: 'group-ai',       label: 'AI 팀장', type: 'ai' },
   { routeName: 'group-board',    label: '게시판', type: 'board' },
-  { routeName: 'group-my',       label: '마이페이지', type: 'person' },
+  { routeName: 'group-my',       label: '팀원', type: 'person' },
 ]
 
 const showOnboarding = computed(() => {

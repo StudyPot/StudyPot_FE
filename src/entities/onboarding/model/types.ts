@@ -23,3 +23,7 @@ export type OnboardingResponse = {
   status: OnboardingStatus
   submittedAt?: string | null
 }
+
+export type MemberOnboardingResponse = OnboardingResponse & {
+  memberNickname: string
+}
