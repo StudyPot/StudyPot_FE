@@ -18,6 +18,12 @@ import type {
 
 type ParamValue = string | readonly string[] | undefined
 
+type GroupActivityFixture = {
+  memberId: string
+  memberNickname: string
+  activityCounts: number[]
+}
+
 type LegacyCurriculum = Omit<Curriculum, 'status' | 'totalWeeks'> & {
   status: string
   totalWeeks?: number
@@ -137,6 +143,23 @@ export const curriculumHandlers = [
       incompleteReason: null,
       evidenceUrl: null,
     } satisfies TaskCompletionResponse)
+  }),
+
+  http.get(`${apiBaseUrl}/groups/:groupId/learning-activity`, () => {
+    const today = new Date()
+    const days = Array.from({ length: 28 }, (_, i) => {
+      const d = new Date(today)
+      d.setDate(today.getDate() - (27 - i))
+      return d.toISOString().slice(0, 10)
+    })
+    const fixtures = mockMswData.curriculum.groupActivity as GroupActivityFixture[]
+    return HttpResponse.json(
+      fixtures.map((m) => ({
+        memberId: m.memberId,
+        memberNickname: m.memberNickname,
+        dailyActivity: days.map((date, i) => ({ date, count: m.activityCounts[i] ?? 0 })),
+      })),
+    )
   }),
 
   http.get(`${apiBaseUrl}/groups/:groupId/learning-activity/me`, ({ params }) => {

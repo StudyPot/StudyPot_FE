@@ -135,3 +135,14 @@ export type CurrentLearningActivity = {
   taskCompletion: TaskCompletionSummary
   tasks: CurrentLearningActivityTask[]
 }
+
+export type DailyActivity = {
+  date: string
+  count: number
+}
+
+export type MemberActivityRow = {
+  memberId: string
+  memberNickname: string
+  dailyActivity: DailyActivity[]
+}

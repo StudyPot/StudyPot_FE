@@ -10,7 +10,7 @@ import {
   type GroupEntryAction,
   type StudyGroup,
 } from '@/entities/group'
-import { startStudy } from '@/entities/curriculum'
+import { getGroupMembersActivity, startStudy, type MemberActivityRow } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
@@ -128,29 +128,51 @@ const onboardingProgress = computed(() => {
   return { submitted, total: active.length }
 })
 
-// 잔디 계산: 최근 28일 × 멤버 행
-const heatmapDays = computed(() => {
-  const days: string[] = []
-  const today = new Date()
-  for (let i = 27; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
-    days.push(d.toISOString().slice(0, 10))
+const activityRows = ref<MemberActivityRow[]>([])
+
+watch(
+  () => group.value?.status,
+  (status) => {
+    if (status === 'ACTIVE') void loadGroupActivity()
+    else activityRows.value = []
+  },
+  { immediate: true },
+)
+
+async function loadGroupActivity(): Promise<void> {
+  try {
+    activityRows.value = await getGroupMembersActivity(groupId.value)
+  } catch {
+    activityRows.value = []
   }
-  return days
+}
+
+function activityLevel(count: number): number {
+  if (count === 0) return 0
+  if (count <= 2) return 1
+  if (count <= 5) return 2
+  return 3
+}
+
+// 잔디: 최근 28일
+const heatmapDays = computed(() => {
+  const today = new Date()
+  return Array.from({ length: 28 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - (27 - i))
+    return d.toISOString().slice(0, 10)
+  })
 })
 
-const heatmapData = computed(() => {
-  if (!members.value.length) return []
-  return members.value.map((member) => ({
-    name: member.nickname ?? member.displayName ?? '멤버',
-    // 실제 데이터 없으므로 가입일 기준 랜덤 시드로 시각화
+const heatmapData = computed(() =>
+  activityRows.value.map((row) => ({
+    name: row.memberNickname,
     activity: heatmapDays.value.map((day) => {
-      const seed = (member.userId?.charCodeAt(0) ?? 0) + day.charCodeAt(8)
-      return seed % 4
+      const found = row.dailyActivity.find((d) => d.date === day)
+      return activityLevel(found?.count ?? 0)
     }),
   }))
-})
+)
 
 const HEAT_COLORS = [
   'bg-[var(--color-card)]',

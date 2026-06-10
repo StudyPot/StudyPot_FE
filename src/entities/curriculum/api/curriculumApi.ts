@@ -5,6 +5,7 @@ import type {
   CurriculumWeek,
   DoneTaskRequest,
   IncompleteTaskRequest,
+  MemberActivityRow,
   MemberWeekProgress,
   TaskCompletionRequest,
   TaskCompletionResponse,
@@ -32,6 +33,10 @@ export function getWeek(weekId: string): Promise<CurriculumWeek> {
 
 export function getCurrentLearningActivity(groupId: string): Promise<CurrentLearningActivity> {
   return apiClient<CurrentLearningActivity>(`/groups/${groupId}/learning-activity/me`)
+}
+
+export function getGroupMembersActivity(groupId: string): Promise<MemberActivityRow[]> {
+  return apiClient<MemberActivityRow[]>(`/groups/${groupId}/learning-activity`)
 }
 
 export function listWeeklyTasks(weekId: string): Promise<WeeklyTask[]> {
