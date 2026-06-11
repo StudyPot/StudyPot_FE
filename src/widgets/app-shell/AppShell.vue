@@ -216,6 +216,17 @@ function startGoogleLogin(): void {
         </svg>
         Google로 계속하기
       </button>
+
+      <p class="mt-5 text-center text-sm text-[var(--color-muted)]">
+        계정이 없으신가요?
+        <button
+          type="button"
+          class="font-semibold text-[var(--color-primary)] hover:underline"
+          @click="startGoogleLogin"
+        >
+          회원가입
+        </button>
+      </p>
     </div>
   </div>
 
