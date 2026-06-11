@@ -114,6 +114,11 @@ async function goToOnboarding(): Promise<void> {
   })
 }
 
+async function goToGroupList(): Promise<void> {
+  showSuccessModal.value = false
+  await router.replace({ name: 'groups' })
+}
+
 async function requestKeywordSuggestions(): Promise<void> {
   suggestionErrorMessage.value = ''
 
@@ -500,13 +505,22 @@ function toCreateGroupRequest(): CreateGroupRequest {
           이제 온보딩 정보를 입력하면 스터디 준비가 완료됩니다.
         </p>
 
-        <button
-          type="button"
-          class="mt-6 inline-flex w-full h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-          @click="goToOnboarding"
-        >
-          온보딩 하러 가기
-        </button>
+        <div class="mt-6 grid gap-2">
+          <button
+            type="button"
+            class="inline-flex w-full h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+            @click="goToOnboarding"
+          >
+            온보딩 하러 가기
+          </button>
+          <button
+            type="button"
+            class="inline-flex w-full h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+            @click="goToGroupList"
+          >
+            그룹 목록으로
+          </button>
+        </div>
       </div>
     </div>
   </Teleport>

@@ -841,6 +841,17 @@ function formatDate(value: string): string {
             </button>
           </div>
         </div>
+
+        <!-- 하단 목록 복귀 CTA -->
+        <div class="border-t border-[var(--color-line)] px-5 py-4">
+          <button
+            type="button"
+            class="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+            @click="viewMode = 'list'"
+          >
+            ← 목록으로 돌아가기
+          </button>
+        </div>
       </section>
     </template>
 
