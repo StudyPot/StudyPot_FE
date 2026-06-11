@@ -154,9 +154,9 @@ function formatDate(value: string): string {
       class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
     >
       <p class="text-sm font-semibold text-[var(--color-primary)]">커리큘럼</p>
-      <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">아직 커리큘럼이 없습니다</h2>
+      <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">아직 커리큘럼이 없어요</h2>
       <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-        온보딩이 완료되면 스터디를 시작해 커리큘럼을 생성할 수 있습니다.
+        온보딩이 완료되면 스터디를 시작해 커리큘럼을 생성할 수 있어요.
       </p>
 
       <p v-if="startError" role="alert" class="mt-4 text-sm font-semibold text-[var(--color-danger)]">
@@ -255,7 +255,7 @@ function formatDate(value: string): string {
                 role="alert"
                 class="text-sm font-semibold text-[var(--color-danger)]"
               >
-                해당 주차 정보를 찾을 수 없습니다. (404)
+                해당 주차 정보를 찾을 수 없어요. (404)
               </p>
 
               <div v-else-if="weekDetailState === 'error'" class="flex items-center gap-3">
@@ -316,7 +316,7 @@ function formatDate(value: string): string {
                   </ul>
                 </div>
 
-                <p v-else class="mt-3 text-sm text-[var(--color-muted)]">등록된 과제가 없습니다.</p>
+                <p v-else class="mt-3 text-sm text-[var(--color-muted)]">등록된 과제가 없어요.</p>
               </template>
             </div>
           </li>

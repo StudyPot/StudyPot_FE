@@ -74,7 +74,7 @@ async function loadMembers(): Promise<void> {
         v-if="members.length === 0"
         class="mt-8 text-center text-sm text-[var(--color-muted)]"
       >
-        아직 온보딩 정보가 없습니다.
+        아직 온보딩 정보가 없어요.
       </p>
 
       <ul v-else class="mt-6 grid gap-4">
@@ -137,7 +137,7 @@ async function loadMembers(): Promise<void> {
 
           <!-- 미제출 안내 -->
           <p v-else class="mt-3 text-sm text-[var(--color-muted)]">
-            아직 온보딩을 제출하지 않았습니다.
+            아직 온보딩을 제출하지 않았어요.
           </p>
         </li>
       </ul>

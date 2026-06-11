@@ -51,7 +51,7 @@ async function submitJoin(): Promise<void> {
     })
   } catch (error) {
     errorMessage.value =
-      error instanceof ApiError ? error.message : '그룹에 참여하지 못했습니다. 다시 시도해주세요.'
+      error instanceof ApiError ? error.message : '그룹에 참여하지 못했어요. 다시 시도해 주세요.'
   } finally {
     isSubmitting.value = false
   }

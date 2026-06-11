@@ -130,9 +130,9 @@ const STATUS_LABEL: Record<string, string> = {
       class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
     >
       <p class="text-sm font-semibold text-[var(--color-primary)]">회고</p>
-      <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">아직 회고가 없습니다</h2>
+      <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">아직 회고가 없어요</h2>
       <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-        주차가 종료되면 회고를 요청할 수 있습니다.
+        주차가 종료되면 회고를 요청할 수 있어요.
       </p>
 
       <p v-if="requestError" role="alert" class="mt-4 text-sm font-semibold text-[var(--color-danger)]">

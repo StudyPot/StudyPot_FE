@@ -63,12 +63,12 @@ async function handleDeleteGroup(): Promise<void> {
   } catch (error) {
     if (error instanceof ApiError) {
       if (error.status === 404) {
-        deleteError.value = '그룹을 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.'
+        deleteError.value = '그룹을 찾을 수 없어요. 이미 삭제되었을 수 있어요.'
       } else {
         deleteError.value = error.message
       }
     } else {
-      deleteError.value = '그룹 삭제에 실패했습니다. 다시 시도해주세요.'
+      deleteError.value = '그룹 삭제에 실패했어요. 다시 시도해 주세요.'
     }
   } finally {
     isDeleting.value = false

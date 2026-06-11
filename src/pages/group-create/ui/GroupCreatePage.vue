@@ -80,7 +80,7 @@ async function submitGroup(): Promise<void> {
     clearProgress()
     showProgressModal.value = false
     errorMessage.value =
-      error instanceof ApiError ? error.message : '그룹을 생성하지 못했습니다. 다시 시도해주세요.'
+      error instanceof ApiError ? error.message : '그룹을 생성하지 못했어요. 다시 시도해 주세요.'
   } finally {
     isSubmitting.value = false
   }
@@ -137,11 +137,11 @@ async function requestKeywordSuggestions(): Promise<void> {
     suggestedKeywords.value = response.keywords.filter(Boolean)
 
     if (suggestedKeywords.value.length === 0) {
-      suggestionErrorMessage.value = '추가로 추천할 키워드가 없습니다.'
+      suggestionErrorMessage.value = '추가로 추천할 키워드가 없어요.'
     }
   } catch (error) {
     suggestionErrorMessage.value =
-      error instanceof ApiError ? error.message : '추천 키워드를 불러오지 못했습니다.'
+      error instanceof ApiError ? error.message : '추천 키워드를 불러오지 못했어요.'
   } finally {
     isSuggestingKeywords.value = false
   }

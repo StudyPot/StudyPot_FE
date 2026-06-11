@@ -676,7 +676,7 @@ function formatDate(value: string): string {
         </ul>
 
         <p v-else class="px-5 py-8 text-center text-sm text-[var(--color-muted)]">
-          게시글이 없습니다.
+          게시글이 없어요.
         </p>
       </section>
     </template>

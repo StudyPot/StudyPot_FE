@@ -139,8 +139,8 @@ function isFollowing(userId: string): boolean {
         <ScreenState
           v-if="followingList.length === 0"
           variant="empty"
-          title="팔로잉 중인 사용자가 없습니다."
-          description="다른 사용자를 팔로우하면 여기에 표시됩니다."
+          title="팔로잉 중인 사용자가 없어요."
+          description="다른 사용자를 팔로우하면 여기에 나타나요."
         />
         <ul v-else class="grid gap-3">
           <li
@@ -181,8 +181,8 @@ function isFollowing(userId: string): boolean {
         <ScreenState
           v-if="followerList.length === 0"
           variant="empty"
-          title="팔로워가 없습니다."
-          description="아직 나를 팔로우한 사용자가 없습니다."
+          title="팔로워가 없어요."
+          description="아직 나를 팔로우한 사용자가 없어요."
         />
         <ul v-else class="grid gap-3">
           <li

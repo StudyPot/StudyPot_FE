@@ -235,15 +235,15 @@ function updateViolation(updated: RuleViolation): void {
 function toErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
     if (error.status === 403) {
-      return '그룹장 권한이 필요합니다.'
+      return '그룹장 권한이 필요해요.'
     }
 
     if (error.status === 404) {
-      return '대상을 찾을 수 없습니다.'
+      return '대상을 찾을 수 없어요.'
     }
 
     if (error.status === 409) {
-      return '이미 처리된 항목입니다.'
+      return '이미 처리된 항목이에요.'
     }
 
     return error.message
@@ -438,7 +438,7 @@ function shortId(value: string): string {
             </li>
           </ul>
 
-          <p v-else class="text-sm text-[var(--color-muted)]">등록된 규칙이 없습니다.</p>
+          <p v-else class="text-sm text-[var(--color-muted)]">등록된 규칙이 없어요.</p>
         </template>
       </div>
 
@@ -563,7 +563,7 @@ function shortId(value: string): string {
             </li>
           </ul>
 
-          <p v-else class="text-sm text-[var(--color-muted)]">위반 기록이 없습니다.</p>
+          <p v-else class="text-sm text-[var(--color-muted)]">위반 기록이 없어요.</p>
         </template>
       </div>
     </section>

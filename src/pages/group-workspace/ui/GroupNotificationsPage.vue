@@ -310,7 +310,7 @@ function formatNumber(value: number): string {
             </li>
           </ul>
 
-          <p v-else class="mt-4 text-sm text-[var(--color-muted)]">알림이 없습니다.</p>
+          <p v-else class="mt-4 text-sm text-[var(--color-muted)]">알림이 없어요.</p>
         </template>
       </div>
 
@@ -370,7 +370,7 @@ function formatNumber(value: number): string {
             </li>
           </ul>
 
-          <p v-else class="text-sm text-[var(--color-muted)]">그룹 알림이 없습니다.</p>
+          <p v-else class="text-sm text-[var(--color-muted)]">그룹 알림이 없어요.</p>
         </template>
       </div>
 
@@ -453,7 +453,7 @@ function formatNumber(value: number): string {
             </table>
           </div>
 
-          <p v-else class="text-sm text-[var(--color-muted)]">LLM 사용 기록이 없습니다.</p>
+          <p v-else class="text-sm text-[var(--color-muted)]">LLM 사용 기록이 없어요.</p>
         </template>
       </div>
     </section>

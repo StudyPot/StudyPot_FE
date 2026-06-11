@@ -263,8 +263,8 @@ function scrollTabs(direction: 'left' | 'right'): void {
       v-else-if="pageState === 'none'"
       variant="empty"
       eyebrow="학습"
-      title="현재 진행 중인 커리큘럼이 없습니다."
-      description="스터디가 시작되면 커리큘럼과 이번 주 과제가 여기에 표시됩니다."
+      title="현재 진행 중인 커리큘럼이 없어요."
+      description="스터디가 시작되면 커리큘럼과 이번 주 과제가 여기에 나타나요."
     />
 
     <template v-else-if="pageState === 'loaded'">
@@ -613,7 +613,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
           </ul>
 
           <p v-else class="mt-4 text-sm text-[var(--color-muted)]">
-            이 주차에 등록된 과제가 없습니다.
+            이 주차에 등록된 과제가 없어요.
           </p>
         </section>
       </template>
@@ -622,8 +622,8 @@ function scrollTabs(direction: 'left' | 'right'): void {
       <ScreenState
         v-else-if="!isWeekLoading && weekSummaries.length === 0"
         variant="empty"
-        title="커리큘럼 주차가 없습니다."
-        description="스터디가 시작되면 주차별 과제가 표시됩니다."
+        title="커리큘럼 주차가 없어요."
+        description="스터디가 시작되면 주차별 과제가 나타나요."
       />
     </template>
   </div>

@@ -80,7 +80,7 @@ async function handleSubmit(): Promise<void> {
   submitError.value = ''
 
   if (!form.nickname.trim()) {
-    fieldError.value = '닉네임은 필수 입력 값입니다.'
+    fieldError.value = '닉네임을 입력해 주세요.'
     return
   }
 
@@ -98,7 +98,7 @@ async function handleSubmit(): Promise<void> {
       const payload = error.payload as { errors?: Record<string, string> } | null
       fieldError.value = payload?.errors?.nickname ?? '입력 값을 확인해 주세요.'
     } else {
-      submitError.value = error instanceof ApiError ? error.message : '저장 중 오류가 발생했습니다.'
+      submitError.value = error instanceof ApiError ? error.message : '저장 중 오류가 발생했어요.'
     }
   } finally {
     isSubmitting.value = false

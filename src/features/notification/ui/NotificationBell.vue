@@ -180,7 +180,7 @@ function formatDateTime(value?: string | null): string {
         </li>
 
         <li v-if="store.notifications.length === 0" class="px-4 py-8 text-center text-sm text-[var(--color-muted)]">
-          알림이 없습니다.
+          알림이 없어요.
         </li>
       </ul>
     </div>

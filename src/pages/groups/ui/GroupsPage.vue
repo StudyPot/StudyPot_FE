@@ -276,7 +276,7 @@ function formatDate(value: string): string {
     <ScreenState
       v-else-if="!hasGroups && (searchQuery || activeStatus !== 'ALL')"
       variant="empty"
-      title="검색 결과가 없습니다."
+      title="검색 결과가 없어요."
       description="다른 검색어나 필터를 사용해보세요."
       action-label="필터 초기화"
       @action="resetFilters"

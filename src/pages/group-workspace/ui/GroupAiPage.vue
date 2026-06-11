@@ -134,7 +134,7 @@ async function handleOpenConversation(): Promise<void> {
     pageState.value = 'chat'
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
-      openError.value = '대화 세션을 열 권한이 없습니다.'
+      openError.value = '대화 세션을 열 권한이 없어요.'
     } else {
       openError.value = error instanceof ApiError ? error.message : '대화 세션을 열지 못했습니다.'
     }
@@ -171,10 +171,10 @@ async function handleSendMessage(): Promise<void> {
     await scrollToBottom()
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
-      sendError.value = '메시지를 전송할 권한이 없습니다.'
+      sendError.value = '메시지를 전송할 권한이 없어요.'
     } else {
       sendError.value =
-        error instanceof ApiError ? error.message : '메시지 전송에 실패했습니다.'
+        error instanceof ApiError ? error.message : '메시지를 전송하지 못했어요.'
     }
   } finally {
     isSending.value = false

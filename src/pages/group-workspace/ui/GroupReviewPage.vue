@@ -357,7 +357,7 @@ function ratingLabel(rating: number): string {
         v-else
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-10 text-center text-sm text-[var(--color-muted)]"
       >
-        아직 작성된 리뷰가 없습니다.
+        아직 작성된 리뷰가 없어요.
       </p>
     </template>
   </div>
