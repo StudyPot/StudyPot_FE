@@ -314,7 +314,12 @@ function formatDate(value: string): string {
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="text-xs font-semibold text-[var(--color-primary)]">{{ group.topic }}</p>
-            <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">{{ group.name }}</h3>
+            <RouterLink
+              :to="{ name: 'group-overview', params: { groupId: group.id } }"
+              class="mt-1 block text-base font-bold text-[var(--color-ink)] hover:text-[var(--color-primary)] hover:underline underline-offset-2 focus:outline-none"
+            >
+              {{ group.name }}
+            </RouterLink>
           </div>
           <div class="flex shrink-0 items-center gap-1.5">
             <button
@@ -377,6 +382,12 @@ function formatDate(value: string): string {
             class="inline-flex h-8 items-center rounded px-3 text-xs font-semibold text-[var(--color-muted)] border border-[var(--color-line-strong)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
           >
             그룹 홈
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'group-board', params: { groupId: group.id } }"
+            class="inline-flex h-8 items-center rounded px-3 text-xs font-semibold text-[var(--color-muted)] border border-[var(--color-line-strong)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+          >
+            게시판
           </RouterLink>
 
           <button

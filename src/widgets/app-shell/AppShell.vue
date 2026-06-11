@@ -9,7 +9,7 @@ import { NotificationBell } from '@/features/notification'
 import { apiOrigin } from '@/shared/config/api'
 
 type StatusPhase = 'before' | 'active' | 'done'
-type ChannelDef = { routeName: string; label: string; type: 'home' | 'todo' | 'ai' | 'board' | 'person' | 'onboard' }
+type ChannelDef = { routeName: string; label: string; type: 'home' | 'todo' | 'ai' | 'board' | 'person' | 'onboard' | 'review' }
 
 const route = useRoute()
 const router = useRouter()
@@ -35,6 +35,7 @@ const baseChannels: ChannelDef[] = [
   { routeName: 'group-ai',       label: 'AI 팀장', type: 'ai' },
   { routeName: 'group-board',    label: '게시판', type: 'board' },
   { routeName: 'group-my',       label: '팀원', type: 'person' },
+  { routeName: 'group-review',   label: '리뷰', type: 'review' },
 ]
 
 const showOnboarding = computed(() => {
@@ -400,6 +401,10 @@ function startGoogleLogin(): void {
               <template v-else-if="ch.type === 'onboard'">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </template>
+              <!-- review -->
+              <template v-else-if="ch.type === 'review'">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </template>
             </svg>
 
