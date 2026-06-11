@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { getGroup, listGroups, type StudyGroup, type StudyGroupStatus } from '@/entities/group'
+import { getGroup, type StudyGroup, type StudyGroupStatus, useGroupListStore } from '@/entities/group'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
 import { NotificationBell } from '@/features/notification'
@@ -14,8 +14,8 @@ type ChannelDef = { routeName: string; label: string; type: 'home' | 'todo' | 'a
 const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
+const groupListStore = useGroupListStore()
 
-const groups = ref<StudyGroup[]>([])
 const currentGroupId = computed(() => String(route.params.groupId ?? ''))
 const currentGroup = ref<StudyGroup | null>(null)
 const myOnboardingSubmitted = ref(false)
@@ -73,7 +73,7 @@ const statusLabel: Record<StudyGroupStatus, string> = {
 const userInitial = computed(() => sessionStore.user?.nickname?.slice(0, 1)?.toUpperCase() ?? '?')
 
 onMounted(() => {
-  if (sessionStore.isAuthenticated) void loadGroups()
+  if (sessionStore.isAuthenticated) void groupListStore.loadGroups()
   document.addEventListener('click', closeUserMenu)
 })
 
@@ -82,15 +82,11 @@ onUnmounted(() => {
 })
 
 watch(() => sessionStore.isAuthenticated, (ok) => {
-  if (ok) void loadGroups()
-  else groups.value = []
+  if (ok) void groupListStore.loadGroups()
+  else groupListStore.clearGroups()
 })
 
 watch(currentGroupId, () => { void loadCurrentGroup() }, { immediate: true })
-
-async function loadGroups(): Promise<void> {
-  try { groups.value = await listGroups() } catch { groups.value = [] }
-}
 
 async function loadCurrentGroup(): Promise<void> {
   if (!currentGroupId.value) { currentGroup.value = null; return }
@@ -258,7 +254,7 @@ function startGoogleLogin(): void {
 
       <!-- Group server icons (status-aware) -->
       <RouterLink
-        v-for="group in groups"
+        v-for="group in groupListStore.groups"
         :key="group.id"
         :to="{ name: 'group-overview', params: { groupId: group.id } }"
         class="group relative flex shrink-0 items-center justify-center"

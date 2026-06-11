@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { createGroup, suggestDetailKeywords, type CreateGroupRequest } from '@/entities/group'
+import { createGroup, suggestDetailKeywords, type CreateGroupRequest, useGroupListStore } from '@/entities/group'
 import { ApiError } from '@/shared/api'
 
 type GroupCreateForm = {
@@ -16,6 +16,7 @@ type GroupCreateForm = {
 }
 
 const router = useRouter()
+const groupListStore = useGroupListStore()
 
 const form = reactive<GroupCreateForm>({
   name: '',
@@ -69,6 +70,7 @@ async function submitGroup(): Promise<void> {
   try {
     const group = await createGroup(toCreateGroupRequest())
     createdGroupId.value = group.id
+    void groupListStore.loadGroups()
     progressValue.value = 100
     clearProgress()
     await new Promise((r) => setTimeout(r, 400))

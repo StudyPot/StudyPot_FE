@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { joinGroup } from '@/entities/group'
+import { joinGroup, useGroupListStore } from '@/entities/group'
 import { ApiError } from '@/shared/api'
 
 type GroupJoinForm = {
@@ -17,6 +17,7 @@ const groupPathPattern = new RegExp(`/groups/(${uuidPatternText})(?:/|$)`, 'i')
 
 const route = useRoute()
 const router = useRouter()
+const groupListStore = useGroupListStore()
 
 const form = reactive<GroupJoinForm>({
   groupReference: getInitialGroupReference(),
@@ -41,6 +42,7 @@ async function submitJoin(): Promise<void> {
     const member = await joinGroup(groupId, {
       inviteCode: form.inviteCode.trim(),
     })
+    void groupListStore.loadGroups()
     await router.replace({
       name: 'group-onboarding',
       params: {
