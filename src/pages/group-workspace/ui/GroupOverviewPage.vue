@@ -618,12 +618,10 @@ function getDayLabel(dayStr: string): string {
 
         <!-- 모달 카드 -->
         <div class="relative w-full max-w-sm rounded-2xl bg-[var(--color-card)] p-8 shadow-2xl text-center mx-4">
-          <!-- AI 아이콘 -->
-          <div
-            class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-card)] text-3xl"
-            aria-hidden="true"
-          >
-            🤖
+          <div class="orbit-spinner mx-auto mb-5" aria-hidden="true">
+            <div v-for="i in 6" :key="i" class="orbit-arm" :style="`--i: ${i - 1}`">
+              <div class="orbit-dot" />
+            </div>
           </div>
 
           <h2 id="start-modal-title" class="text-xl font-bold text-[var(--color-ink)]">
@@ -664,3 +662,38 @@ function getDayLabel(dayStr: string): string {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.orbit-spinner {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.orbit-arm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 0;
+  transform-origin: 0 50%;
+  animation: orbit 1.4s linear infinite;
+  animation-delay: calc(var(--i) * -0.233s);
+}
+
+.orbit-dot {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  opacity: calc(0.2 + var(--i) * 0.16);
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

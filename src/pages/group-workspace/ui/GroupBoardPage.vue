@@ -7,7 +7,8 @@
  * #10/#11 board list/detail: controller + service validate board lookup, post ownership, sorting,
  *     cursor page metadata, 404 not-found, and comment counts through GroupBoardControllerTest.
  */
-import { inject, onMounted, ref, computed } from 'vue'
+import { inject, onMounted, ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   listBoards,
@@ -33,6 +34,8 @@ if (!workspaceContext) throw new Error('GroupBoardPage must be inside GroupWorks
 
 const { groupId } = workspaceContext
 const sessionStore = useSessionStore()
+const route = useRoute()
+const router = useRouter()
 
 type ViewMode = 'list' | 'detail' | 'create' | 'edit'
 
@@ -116,6 +119,32 @@ onMounted(() => {
   void loadBoards()
 })
 
+// postId 쿼리 파라미터로 딥링크 진입 시 해당 게시글을 자동으로 열기
+watch(
+  () => route.query.postId,
+  async (postId) => {
+    if (!postId || viewMode.value === 'detail') return
+    const id = String(postId)
+    viewMode.value = 'detail'
+    selectedPost.value = null
+    comments.value = []
+    isLoadingComments.value = true
+    try {
+      const [post, commentPage] = await Promise.all([
+        getBoardPost(groupId.value, id),
+        listPostComments(groupId.value, id),
+      ])
+      selectedPost.value = post
+      comments.value = commentPage.items
+    } catch {
+      viewMode.value = 'list'
+      void router.replace({ query: { ...route.query, postId: undefined } })
+    } finally {
+      isLoadingComments.value = false
+    }
+  },
+)
+
 async function loadBoards(): Promise<void> {
   isLoadingBoards.value = true
   errorMessage.value = ''
@@ -162,6 +191,7 @@ async function changeSort(field: BoardSortField, order: 'asc' | 'desc'): Promise
 }
 
 async function openPost(summary: BoardPostSummary): Promise<void> {
+  void router.replace({ query: { ...route.query, postId: summary.id } })
   viewMode.value = 'detail'
   selectedPost.value = null
   comments.value = []
@@ -178,6 +208,11 @@ async function openPost(summary: BoardPostSummary): Promise<void> {
   } finally {
     isLoadingComments.value = false
   }
+}
+
+function backToList(): void {
+  void router.replace({ query: { ...route.query, postId: undefined } })
+  viewMode.value = 'list'
 }
 
 function openEditPost(): void {
@@ -223,7 +258,7 @@ async function deletePost(): Promise<void> {
   try {
     await deleteBoardPost(groupId.value, selectedPost.value.id)
     selectedPost.value = null
-    viewMode.value = 'list'
+    backToList()
     await loadPosts()
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : '게시글 삭제에 실패했습니다.'
@@ -690,7 +725,7 @@ function formatDate(value: string): string {
           <button
             type="button"
             class="mb-3 text-sm font-semibold text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
-            @click="viewMode = 'list'"
+            @click="backToList"
           >
             ← 목록으로
           </button>
@@ -847,7 +882,7 @@ function formatDate(value: string): string {
           <button
             type="button"
             class="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
-            @click="viewMode = 'list'"
+            @click="backToList"
           >
             ← 목록으로 돌아가기
           </button>

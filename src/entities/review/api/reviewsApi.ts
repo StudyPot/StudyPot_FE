@@ -19,3 +19,4 @@ export function getMyReview(groupId: string): Promise<Review> {
 export function getReviewStats(groupId: string): Promise<ReviewStats> {
   return apiClient<ReviewStats>(`/groups/${groupId}/reviews/stats`)
 }
+

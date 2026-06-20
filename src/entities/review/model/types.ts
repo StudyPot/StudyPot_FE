@@ -18,3 +18,4 @@ export type CreateReviewRequest = {
   rating: number
   content?: string
 }
+
