@@ -176,10 +176,17 @@ async function handleSendMessage(): Promise<void> {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
-    void handleSendMessage()
+  if (event.key !== 'Enter' || event.shiftKey) {
+    return
   }
+  // 한글/일본어 IME 조합 중에 눌린 Enter는 글자를 '확정'하는 동작이다.
+  // 이때 전송하면 마지막 글자가 v-model에 반영되기 전이라 한 글자가 잘리고,
+  // 조합이 뒤늦게 커밋되어 입력창에 잔류한다. 조합 중에는 전송하지 않는다.
+  if (event.isComposing || event.keyCode === 229) {
+    return
+  }
+  event.preventDefault()
+  void handleSendMessage()
 }
 
 async function scrollToBottom(): Promise<void> {
