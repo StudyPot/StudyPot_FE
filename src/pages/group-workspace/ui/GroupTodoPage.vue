@@ -53,7 +53,6 @@ const PROGRESS_STATUS_LABEL: Record<MemberWeekProgressStatus, string> = {
 
 const COMPLETION_ACTIONS: { status: TaskCompletionStatus; label: string }[] = [
   { status: 'DONE', label: '완료' },
-  { status: 'INCOMPLETE', label: '미완료' },
   { status: 'SKIPPED', label: '스킵' },
 ]
 
@@ -525,8 +524,12 @@ function scrollTabs(direction: 'left' | 'right'): void {
               :class="[
                 'rounded-lg border p-4 transition-all duration-300',
                 getCompletionStatus(task) === 'DONE'
-                  ? 'border-[var(--color-line)] bg-[var(--color-panel)]'
-                  : 'border-[var(--color-line-strong)] bg-[var(--color-active)]',
+                  ? 'border-[rgba(35,165,90,0.3)] bg-[rgba(35,165,90,0.04)]'
+                  : getCompletionStatus(task) === 'INCOMPLETE'
+                    ? 'border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.04)]'
+                    : getCompletionStatus(task) === 'SKIPPED'
+                      ? 'border-[var(--color-line)] bg-[var(--color-panel)] opacity-60'
+                      : 'border-[var(--color-line-strong)] bg-[var(--color-active)]',
                 justCompletedIds.has(task.id) ? 'scale-[0.99]' : '',
               ]"
             >
@@ -548,20 +551,20 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     </span>
                     <span
                       :class="[
-                        'rounded px-2 py-0.5 text-xs font-semibold',
+                        'rounded border px-2 py-0.5 text-xs font-semibold',
                         getCompletionStatus(task) === 'DONE'
-                          ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
+                          ? 'border-[rgba(35,165,90,0.4)] bg-[rgba(35,165,90,0.12)] text-[var(--color-success)]'
                           : getCompletionStatus(task) === 'INCOMPLETE'
-                            ? 'bg-[rgba(237,66,69,0.15)] text-[var(--color-danger)]'
+                            ? 'border-[rgba(237,66,69,0.4)] bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]'
                             : getCompletionStatus(task) === 'SKIPPED'
-                              ? 'bg-[var(--color-card)] text-[var(--color-muted)]'
-                              : 'bg-[var(--color-card)] text-[var(--color-muted)]',
+                              ? 'border-[var(--color-line-strong)] bg-[var(--color-hover)] text-[var(--color-muted-deep)]'
+                              : 'border-[var(--color-line)] bg-[var(--color-hover)] text-[var(--color-muted)]',
                       ]"
                     >
                       {{
                         getCompletionStatus(task) === 'DONE' ? '✓ 완료'
-                        : getCompletionStatus(task) === 'SKIPPED' ? '스킵'
-                        : getCompletionStatus(task) === 'INCOMPLETE' ? '미완료'
+                        : getCompletionStatus(task) === 'INCOMPLETE' ? '✕ 미완료'
+                        : getCompletionStatus(task) === 'SKIPPED' ? '— 스킵'
                         : '미시작'
                       }}
                     </span>
@@ -573,7 +576,9 @@ function scrollTabs(direction: 'left' | 'right'): void {
                       'mt-2 font-semibold transition-colors duration-300',
                       getCompletionStatus(task) === 'DONE'
                         ? 'text-[var(--color-muted-deep)] line-through'
-                        : 'text-[var(--color-ink)]',
+                        : getCompletionStatus(task) === 'SKIPPED'
+                          ? 'text-[var(--color-muted)] line-through'
+                          : 'text-[var(--color-ink)]',
                     ]"
                   >
                     {{ task.title }}
@@ -601,12 +606,11 @@ function scrollTabs(direction: 'left' | 'right'): void {
                       'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
                       getCompletionStatus(task) === action.status
                         ? action.status === 'DONE'
-                          ? 'border-[var(--color-success)] bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
-                          : 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                        : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
-                      action.status === 'DONE' && getCompletionStatus(task) !== 'DONE'
-                        ? 'hover:border-[var(--color-success)] hover:bg-[rgba(35,165,90,0.15)] hover:text-[var(--color-success)]'
-                        : '',
+                          ? 'border-[rgba(35,165,90,0.5)] bg-[rgba(35,165,90,0.15)] text-[var(--color-success)]'
+                          : 'border-[var(--color-line-strong)] bg-[var(--color-hover)] text-[var(--color-muted-deep)]'
+                        : action.status === 'DONE'
+                          ? 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[rgba(35,165,90,0.5)] hover:bg-[rgba(35,165,90,0.1)] hover:text-[var(--color-success)]'
+                          : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-line-strong)] hover:text-[var(--color-muted-deep)]',
                     ]"
                     @click="handleCompleteTask(task.id, action.status)"
                   >
