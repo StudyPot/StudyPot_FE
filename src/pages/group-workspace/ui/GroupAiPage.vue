@@ -87,30 +87,7 @@ function addUniqueMessage(message: AiConversationMessage): void {
 }
 
 async function loadMoreMessages(): Promise<void> {
-  if (!conversation.value || !nextCursor.value || isLoadingMore.value) return
-
-  isLoadingMore.value = true
-  const container = messagesContainerRef.value
-  const prevScrollHeight = container?.scrollHeight ?? 0
-
-  try {
-    const page = await listAiConversationMessages(conversation.value.id, {
-      cursor: nextCursor.value,
-      direction: 'DESC',
-    })
-    messages.value = [...page.items, ...messages.value]
-    nextCursor.value = page.pageInfo.nextCursor
-    hasMoreMessages.value = page.pageInfo.hasNext
-
-    await nextTick()
-    if (container) {
-      container.scrollTop = container.scrollHeight - prevScrollHeight
-    }
-  } catch {
-    // ignore
-  } finally {
-    isLoadingMore.value = false
-  }
+  // 초기 로드 시 전체 페이지를 수집하므로 이 함수는 호출되지 않음
 }
 
 async function handleOpenConversation(): Promise<void> {
@@ -122,10 +99,19 @@ async function handleOpenConversation(): Promise<void> {
       conversationType: 'TEAM_LEAD_CHAT',
     })
     try {
-      const page = await listAiConversationMessages(conversation.value.id, { direction: 'DESC' })
-      messages.value = page.items
-      nextCursor.value = page.pageInfo.nextCursor
-      hasMoreMessages.value = page.pageInfo.hasNext
+      // 전체 페이지를 순회해 모든 메시지를 수집
+      const allMessages: AiConversationMessage[] = []
+      let cursor: string | undefined = undefined
+      let hasNext = true
+      while (hasNext) {
+        const page = await listAiConversationMessages(conversation.value.id, { cursor })
+        allMessages.push(...page.items)
+        hasNext = page.pageInfo.hasNext
+        cursor = page.pageInfo.nextCursor ?? undefined
+      }
+      messages.value = allMessages
+      hasMoreMessages.value = false
+      nextCursor.value = null
       await scrollToBottom()
     } catch {
       // 히스토리 로드 실패 시 빈 상태로 시작
@@ -190,7 +176,8 @@ function handleKeydown(event: KeyboardEvent): void {
 
 async function scrollToBottom(): Promise<void> {
   await nextTick()
-  messagesEndRef.value?.scrollIntoView({ behavior: 'smooth' })
+  const container = messagesContainerRef.value
+  if (container) container.scrollTop = container.scrollHeight
 }
 
 function formatTime(value: string): string {
