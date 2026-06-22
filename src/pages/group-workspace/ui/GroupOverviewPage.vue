@@ -111,7 +111,7 @@ onUnmounted(() => { clearProgressTimers() })
 
 // 워크스페이스(부모)는 온보딩↔개요 이동 시 재마운트되지 않아 members가 stale 해진다.
 // 개요가 보일 때마다 멤버 목록만 다시 불러 온보딩 현황(본인 포함)이 최신으로 표시되게 한다.
-onMounted(() => { void reloadMembers() })
+onMounted(() => { void reloadMembers?.() })
 
 watch(
   () => group.value,
@@ -169,14 +169,14 @@ function activityLevel(count: number): number {
   return 3
 }
 
-// 잔디: 최근 28일
+// 잔디: 백엔드가 내려준 커리큘럼 기간(시작~종료) 날짜를 그대로 사용한다.
+// (멤버별 dailyActivity는 같은 날짜 축이지만, 안전하게 모든 행의 날짜를 합쳐 정렬한다.)
 const heatmapDays = computed(() => {
-  const today = new Date()
-  return Array.from({ length: 28 }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(today.getDate() - (27 - i))
-    return d.toISOString().slice(0, 10)
-  })
+  const dates = new Set<string>()
+  for (const row of activityRows.value) {
+    for (const d of row.dailyActivity) dates.add(d.date)
+  }
+  return Array.from(dates).sort()
 })
 
 const heatmapData = computed(() =>
@@ -190,9 +190,10 @@ const heatmapData = computed(() =>
 )
 
 const HEAT_COLORS = [
-  'bg-[var(--color-card)]',
-  'bg-[rgba(54,92,255,0.2)]',
-  'bg-[rgba(54,92,255,0.5)]',
+  // 활동 없는 날도 GitHub 잔디처럼 회색 사각형이 보이도록 한다. (이전엔 카드색이라 배경과 섞여 안 보였음)
+  'bg-[var(--color-line-strong)]',
+  'bg-[rgba(54,92,255,0.25)]',
+  'bg-[rgba(54,92,255,0.55)]',
   'bg-[var(--color-primary)]',
 ]
 
