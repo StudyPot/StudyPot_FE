@@ -128,10 +128,6 @@ watch(
 const primaryEntry = computed<GroupEntryAction | null>(() =>
   group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
 )
-const inviteLink = computed(() => {
-  if (!group.value?.inviteCode) return ''
-  return `${window.location.origin}/groups/${groupId.value}/join?inviteCode=${encodeURIComponent(group.value.inviteCode)}`
-})
 
 const onboardingProgress = computed(() => {
   if (!group.value || members.value.length === 0) return null
@@ -208,11 +204,6 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
 }
 
-async function copyInviteLink(): Promise<void> {
-  if (!inviteLink.value) return
-  await copyToClipboard(inviteLink.value, '초대 링크를 복사했습니다.')
-}
-
 async function copyInviteCode(): Promise<void> {
   if (!group.value?.inviteCode) return
   await copyToClipboard(group.value.inviteCode, '초대 코드를 복사했습니다.')
@@ -279,7 +270,7 @@ function getDayLabel(dayStr: string): string {
     <template v-else-if="group && primaryEntry">
       <!-- 스터디 시작하기 배너 -->
       <section
-        v-if="isReadyToStart"
+        v-if="isReadyToStart && isOwner"
         class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -301,6 +292,16 @@ function getDayLabel(dayStr: string): string {
             {{ isStartingStudy ? '시작 중…' : '🚀 스터디 시작하기' }}
           </button>
         </div>
+      </section>
+
+      <section
+        v-else-if="isReadyToStart && !isOwner"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
+        <p class="text-sm font-bold text-[var(--color-primary)]">🎉 모든 멤버가 온보딩을 완료했습니다!</p>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">
+          관리자가 스터디를 시작하면 커리큘럼이 생성됩니다. 잠시만 기다려 주세요.
+        </p>
       </section>
 
       <!-- 온보딩 진행 현황 -->
@@ -449,14 +450,7 @@ function getDayLabel(dayStr: string): string {
             class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
             @click="copyInviteCode"
           >
-            코드 복사
-          </button>
-          <button
-            type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
-            @click="copyInviteLink"
-          >
-            링크 복사
+            초대 코드 복사
           </button>
           <span v-if="copyStatusMessage" role="status" class="text-xs font-semibold text-[var(--color-primary-deep)]">
             {{ copyStatusMessage }}
