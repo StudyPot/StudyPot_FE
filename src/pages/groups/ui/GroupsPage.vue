@@ -220,14 +220,14 @@ function formatDate(value: string): string {
           type="search"
           name="q"
           placeholder="그룹 이름 또는 주제로 검색"
-          class="h-9 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] pl-8 pr-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+          class="h-9 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] pl-8 pr-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
           aria-label="그룹 검색"
         />
       </div>
 
       <select
         v-model="activeSortIndex"
-        class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+        class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
         aria-label="정렬 기준"
         name="sort"
       >

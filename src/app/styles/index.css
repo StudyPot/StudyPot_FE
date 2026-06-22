@@ -36,13 +36,13 @@
 }
 
 [data-theme='light'] {
-  --color-rail: #eceef2;
-  --color-panel: #f5f6f8;
+  --color-rail: #eef0f4;
+  --color-panel: #f5f6f9;
   --color-surface: #ffffff;
-  --color-card: #f0f2f5;
-  --color-input: #eceef2;
-  --color-hover: #e8eaee;
-  --color-active: #dcdfe5;
+  --color-card: #ffffff;
+  --color-input: #ffffff;
+  --color-hover: #eef0f5;
+  --color-active: #e4e8f0;
 
   --color-primary: #5865f2;
   --color-primary-deep: #4752c4;
@@ -51,8 +51,8 @@
   --color-muted: #606470;
   --color-muted-deep: #808590;
 
-  --color-line: rgba(0, 0, 0, 0.04);
-  --color-line-strong: rgba(0, 0, 0, 0.10);
+  --color-line: rgba(0, 0, 0, 0.10);
+  --color-line-strong: rgba(0, 0, 0, 0.18);
 
   --color-success: #23a55a;
   --color-danger: #ed4245;
@@ -94,6 +94,12 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
+}
+
+[data-theme='light'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='submit']):not([type='button']),
+[data-theme='light'] textarea,
+[data-theme='light'] select {
+  background-color: var(--color-input);
 }
 
 [data-theme='light'] ::-webkit-scrollbar-thumb {

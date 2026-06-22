@@ -127,20 +127,28 @@ function getIconClasses(group: StudyGroup, isSelected: boolean): string {
       : `${base} rounded-3xl bg-[var(--color-active)] text-[var(--color-muted)] group-hover:rounded-2xl group-hover:bg-[var(--color-primary)] group-hover:text-white`
   }
   if (phase === 'before') {
-    return isSelected
-      ? `${base} rounded-2xl bg-[#3d2900] text-[#f0a04b]`
-      : `${base} rounded-3xl bg-[#231800] text-[#6b4a1a] group-hover:rounded-2xl group-hover:bg-[#3d2900] group-hover:text-[#f0a04b]`
+    return isDark.value
+      ? isSelected
+        ? `${base} rounded-2xl bg-[#3d2900] text-[#f0a04b]`
+        : `${base} rounded-3xl bg-[#231800] text-[#6b4a1a] group-hover:rounded-2xl group-hover:bg-[#3d2900] group-hover:text-[#f0a04b]`
+      : isSelected
+        ? `${base} rounded-2xl bg-[#fde68a] text-[#92400e]`
+        : `${base} rounded-3xl bg-[#fef3c7] text-[#d97706] group-hover:rounded-2xl group-hover:bg-[#fde68a] group-hover:text-[#92400e]`
   }
-  return isSelected
-    ? `${base} rounded-2xl bg-[#282828] text-[#505050]`
-    : `${base} rounded-3xl bg-[#1c1c1c] text-[#303030] group-hover:rounded-2xl group-hover:bg-[#282828] group-hover:text-[#505050]`
+  return isDark.value
+    ? isSelected
+      ? `${base} rounded-2xl bg-[#282828] text-[#505050]`
+      : `${base} rounded-3xl bg-[#1c1c1c] text-[#303030] group-hover:rounded-2xl group-hover:bg-[#282828] group-hover:text-[#505050]`
+    : isSelected
+      ? `${base} rounded-2xl bg-[#e5e7eb] text-[#9ca3af]`
+      : `${base} rounded-3xl bg-[#f3f4f6] text-[#d1d5db] group-hover:rounded-2xl group-hover:bg-[#e5e7eb] group-hover:text-[#9ca3af]`
 }
 
 function getDotClass(status: StudyGroupStatus): string {
   const phase = getStatusPhase(status)
   if (phase === 'active') return 'bg-[var(--color-success)]'
   if (phase === 'before') return 'bg-[#e0953a]'
-  return 'bg-[#383838]'
+  return isDark.value ? 'bg-[#383838]' : 'bg-[#c0c4cc]'
 }
 
 function toggleUserMenu(event: MouseEvent): void {
