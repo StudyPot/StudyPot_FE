@@ -30,6 +30,7 @@ export function sendAiConversationMessage(
 export type ListAiMessagesParams = {
   cursor?: string
   pageSize?: number
+  direction?: 'ASC' | 'DESC'
 }
 
 export function listAiConversationMessages(
@@ -39,6 +40,7 @@ export function listAiConversationMessages(
   const searchParams = new URLSearchParams()
   if (params.cursor) searchParams.set('cursor', params.cursor)
   if (params.pageSize != null) searchParams.set('pageSize', String(params.pageSize))
+  if (params.direction) searchParams.set('direction', params.direction)
   const query = searchParams.toString()
   return apiClient<CursorPageResponse<AiConversationMessage>>(
     `/ai-conversations/${conversationId}/messages${query ? `?${query}` : ''}`,
