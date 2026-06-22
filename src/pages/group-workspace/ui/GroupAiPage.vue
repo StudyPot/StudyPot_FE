@@ -98,8 +98,7 @@ async function loadMoreMessages(): Promise<void> {
       cursor: nextCursor.value,
       direction: 'DESC',
     })
-    // DESC 응답을 뒤집어서 오래된 순서로 앞에 prepend
-    messages.value = [...page.items.slice().reverse(), ...messages.value]
+    messages.value = [...page.items, ...messages.value]
     nextCursor.value = page.pageInfo.nextCursor
     hasMoreMessages.value = page.pageInfo.hasNext
 
@@ -123,9 +122,8 @@ async function handleOpenConversation(): Promise<void> {
       conversationType: 'TEAM_LEAD_CHAT',
     })
     try {
-      // DESC로 최신 메시지 먼저 받아서, 역순으로 저장(오래된 순 → 화면 위부터 아래로)
       const page = await listAiConversationMessages(conversation.value.id, { direction: 'DESC' })
-      messages.value = page.items.slice().reverse()
+      messages.value = page.items
       nextCursor.value = page.pageInfo.nextCursor
       hasMoreMessages.value = page.pageInfo.hasNext
       await scrollToBottom()
