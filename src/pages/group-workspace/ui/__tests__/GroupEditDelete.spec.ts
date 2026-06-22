@@ -1,10 +1,11 @@
 import { computed, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import type { GroupMember, StudyGroup } from '@/entities/group'
+import { useSessionStore } from '@/features/auth/session'
 import { groupWorkspaceContextKey } from '../../model/workspaceContext'
 import GroupOverviewPage from '../GroupOverviewPage.vue'
 
@@ -63,10 +64,18 @@ function mountWithContext(
     vi.stubGlobal('fetch', options.fetchMock)
   }
 
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  // isOwner 판정은 세션 사용자 id 기준이므로 현재 사용자를 멤버와 동일하게 맞춘다.
+  useSessionStore().$patch({
+    user: { id: ownerMember.userId, email: 'user1@example.com', nickname: 'user1' },
+    status: 'authenticated',
+  })
+
   const wrapper = mount(GroupOverviewPage, {
     attachTo: document.body,
     global: {
-      plugins: [createPinia(), router],
+      plugins: [pinia, router],
       provide: {
         [groupWorkspaceContextKey as symbol]: {
           groupId: computed(() => ownerGroup.id),
