@@ -61,6 +61,9 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
       for (const n of sorted.filter(isUnread)) {
         if (!seenIds.value.has(n.id) && shouldToastNewNotifications) {
           showToast(n)
+          // SSE가 아닌 폴링으로 새 알림이 들어와도 화면이 실시간 갱신되도록 lastEvent를 갱신한다.
+          // (이게 없으면 토스트만 뜨고 그룹 화면/온보딩 현황은 새로고침해야 반영됐다.)
+          lastEvent.value = n
         }
         seenIds.value.add(n.id)
       }
