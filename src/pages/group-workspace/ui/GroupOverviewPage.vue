@@ -130,10 +130,12 @@ const primaryEntry = computed<GroupEntryAction | null>(() =>
 )
 
 const onboardingProgress = computed(() => {
-  if (!group.value || members.value.length === 0) return null
+  if (!group.value) return null
   const active = members.value.filter((m) => m.status !== 'LEFT')
   const submitted = active.filter((m) => m.onboardingStatus === 'SUBMITTED').length
-  return { submitted, total: active.length }
+  // 분모는 정원(maxMembers) 기준으로 표시한다. (가입 인원이 아닌 그룹 정원)
+  const total = group.value.maxMembers
+  return { submitted, total }
 })
 
 const activityRows = ref<MemberActivityRow[]>([])
