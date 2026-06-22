@@ -6,6 +6,7 @@ export {
   getGroupMembersActivity,
   getMyWeekProgress,
   getWeek,
+  listCurriculumWeeks,
   listWeeklyTasks,
   markTaskDone,
   markTaskIncomplete,

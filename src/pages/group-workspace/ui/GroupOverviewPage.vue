@@ -234,6 +234,8 @@ async function handleStartStudy(): Promise<void> {
     await startStudy(groupId.value)
     clearProgressTimers()
     startProgress.value = 100
+    // 시작 직후 공유 group 상태를 갱신해 좌측 상태 태그가 새로고침 없이 ACTIVE로 바뀌도록 한다.
+    await reloadGroup()
     await new Promise<void>((resolve) => setTimeout(resolve, 600))
     showStartModal.value = false
     await router.push({ name: 'group-todo', params: { groupId: groupId.value } })
