@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { getCurrentWeek } from '@/entities/curriculum'
 import { getMyRetrospective, requestRetrospective, type Retrospective } from '@/entities/retrospective'
@@ -15,6 +16,18 @@ if (!workspaceContext) {
 }
 
 const { groupId } = workspaceContext
+const router = useRouter()
+
+function goToRetrospectiveChat(): void {
+  if (!retrospective.value || !currentWeekId.value) {
+    return
+  }
+  void router.push({
+    name: 'group-ai',
+    params: { groupId: groupId.value },
+    query: { retrospectiveId: retrospective.value.id, weekId: currentWeekId.value },
+  })
+}
 
 type PageState = 'loading' | 'none' | 'retrospective' | 'error'
 
@@ -175,6 +188,15 @@ const STATUS_LABEL: Record<string, string> = {
               회고 생성에 실패했습니다. 다시 요청하거나 잠시 후 시도해 주세요.
             </p>
           </div>
+
+          <button
+            v-if="currentWeekId"
+            type="button"
+            class="shrink-0 inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+            @click="goToRetrospectiveChat"
+          >
+            AI 팀장과 회고하기
+          </button>
 
           <button
             v-if="retrospective.status === 'FAILED' && currentWeekId"

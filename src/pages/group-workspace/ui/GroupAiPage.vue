@@ -2,6 +2,7 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import {
   listAiConversationMessages,
@@ -22,6 +23,7 @@ if (!workspaceContext) {
 }
 
 const { groupId } = workspaceContext
+const route = useRoute()
 
 type PageState = 'opening' | 'chat' | 'error'
 
@@ -95,9 +97,15 @@ async function handleOpenConversation(): Promise<void> {
   openError.value = ''
 
   try {
-    conversation.value = await openAiConversation(groupId.value, {
-      conversationType: 'TEAM_LEAD_CHAT',
-    })
+    const retrospectiveId =
+      typeof route.query.retrospectiveId === 'string' ? route.query.retrospectiveId : undefined
+    const weekId = typeof route.query.weekId === 'string' ? route.query.weekId : undefined
+    conversation.value = await openAiConversation(
+      groupId.value,
+      retrospectiveId
+        ? { conversationType: 'RETROSPECTIVE', retrospectiveId, weekId }
+        : { conversationType: 'TEAM_LEAD_CHAT' },
+    )
     try {
       // 전체 페이지를 순회해 모든 메시지를 수집
       const allMessages: AiConversationMessage[] = []
