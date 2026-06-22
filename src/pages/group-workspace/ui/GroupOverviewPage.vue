@@ -12,6 +12,7 @@ import {
 } from '@/entities/group'
 import { getGroupMembersActivity, startStudy, type MemberActivityRow } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
+import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -45,9 +46,17 @@ const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 const deleteError = ref('')
 
-const isOwner = computed(
-  () => members.value.length > 0 && members.value[0].permission === 'OWNER',
-)
+const sessionStore = useSessionStore()
+
+const isOwner = computed(() => {
+  const myUserId = sessionStore.user?.id
+  if (!myUserId) {
+    return false
+  }
+  return members.value.some(
+    (member) => member.userId === myUserId && member.permission === 'OWNER',
+  )
+})
 
 function handleGroupUpdated(updated: StudyGroup): void {
   group.value = updated
@@ -225,6 +234,8 @@ async function handleStartStudy(): Promise<void> {
     await startStudy(groupId.value)
     clearProgressTimers()
     startProgress.value = 100
+    // 시작 직후 공유 group 상태를 갱신해 좌측 상태 태그가 새로고침 없이 ACTIVE로 바뀌도록 한다.
+    await reloadGroup()
     await new Promise<void>((resolve) => setTimeout(resolve, 600))
     showStartModal.value = false
     await router.push({ name: 'group-todo', params: { groupId: groupId.value } })

@@ -31,6 +31,10 @@ export function getWeek(weekId: string): Promise<CurriculumWeek> {
   return apiClient<CurriculumWeek>(`/weeks/${weekId}`)
 }
 
+export function listCurriculumWeeks(groupId: string): Promise<CurriculumWeek[]> {
+  return apiClient<CurriculumWeek[]>(`/groups/${groupId}/weeks`)
+}
+
 export function getCurrentLearningActivity(groupId: string): Promise<CurrentLearningActivity> {
   return apiClient<CurrentLearningActivity>(`/groups/${groupId}/learning-activity/me`)
 }

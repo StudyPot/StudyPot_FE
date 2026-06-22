@@ -7,24 +7,24 @@ const store = useInAppNotificationStore()
 <template>
   <Teleport to="body">
     <div
-      class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"
+      class="fixed top-5 inset-x-0 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none"
       aria-live="polite"
       aria-atomic="false"
     >
       <TransitionGroup
         tag="div"
-        class="flex flex-col gap-2"
+        class="flex flex-col items-center gap-2"
         enter-active-class="transition-all duration-300 ease-out"
-        enter-from-class="opacity-0 translate-x-8"
-        enter-to-class="opacity-100 translate-x-0"
+        enter-from-class="opacity-0 -translate-y-4"
+        enter-to-class="opacity-100 translate-y-0"
         leave-active-class="transition-all duration-200 ease-in"
-        leave-from-class="opacity-100 translate-x-0"
-        leave-to-class="opacity-0 translate-x-8"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 -translate-y-4"
       >
         <div
           v-for="toast in store.toasts"
           :key="toast.id"
-          class="flex w-80 items-start gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3 shadow-lg"
+          class="pointer-events-auto flex w-80 max-w-full items-start gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3 shadow-lg"
           role="alert"
         >
           <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm text-white">

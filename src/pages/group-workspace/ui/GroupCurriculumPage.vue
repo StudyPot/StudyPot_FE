@@ -4,6 +4,7 @@ import { inject, onMounted, ref } from 'vue'
 import {
   getCurriculum,
   getWeek,
+  listCurriculumWeeks,
   listWeeklyTasks,
   startStudy,
   type Curriculum,
@@ -44,6 +45,7 @@ type WeekDetailState = 'idle' | 'loading' | 'loaded' | 'not-found' | 'error'
 const pageState = ref<PageState>('loading')
 const errorMessage = ref('')
 const curriculum = ref<Curriculum | null>(null)
+const weeks = ref<CurriculumWeek[]>([])
 const isStarting = ref(false)
 const startError = ref('')
 
@@ -62,7 +64,12 @@ async function loadCurriculum(): Promise<void> {
   errorMessage.value = ''
 
   try {
-    curriculum.value = await getCurriculum(groupId.value)
+    const [curr, weekList] = await Promise.all([
+      getCurriculum(groupId.value),
+      listCurriculumWeeks(groupId.value).catch(() => [] as CurriculumWeek[]),
+    ])
+    curriculum.value = curr
+    weeks.value = weekList
     pageState.value = 'curriculum'
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
@@ -201,14 +208,14 @@ function formatDate(value: string): string {
       </section>
 
       <section
-        v-if="curriculum.weeks && curriculum.weeks.length > 0"
+        v-if="weeks.length > 0"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <h3 class="text-base font-bold text-[var(--color-ink)]">주차 목록</h3>
 
         <ul class="mt-4 grid gap-3">
           <li
-            v-for="week in curriculum.weeks"
+            v-for="week in weeks"
             :key="week.id"
             class="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)]"
           >

@@ -2,6 +2,7 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import {
   listAiConversationMessages,
@@ -22,6 +23,7 @@ if (!workspaceContext) {
 }
 
 const { groupId } = workspaceContext
+const route = useRoute()
 
 type PageState = 'opening' | 'chat' | 'error'
 
@@ -95,9 +97,15 @@ async function handleOpenConversation(): Promise<void> {
   openError.value = ''
 
   try {
-    conversation.value = await openAiConversation(groupId.value, {
-      conversationType: 'TEAM_LEAD_CHAT',
-    })
+    const retrospectiveId =
+      typeof route.query.retrospectiveId === 'string' ? route.query.retrospectiveId : undefined
+    const weekId = typeof route.query.weekId === 'string' ? route.query.weekId : undefined
+    conversation.value = await openAiConversation(
+      groupId.value,
+      retrospectiveId
+        ? { conversationType: 'RETROSPECTIVE', retrospectiveId, weekId }
+        : { conversationType: 'TEAM_LEAD_CHAT' },
+    )
     try {
       // 전체 페이지를 순회해 모든 메시지를 수집
       const allMessages: AiConversationMessage[] = []
@@ -119,8 +127,8 @@ async function handleOpenConversation(): Promise<void> {
     subscribeToStream(conversation.value.id)
     pageState.value = 'chat'
   } catch (error) {
-    if (error instanceof ApiError && error.status === 403) {
-      openError.value = '대화 세션을 열 권한이 없어요.'
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+      openError.value = '스터디가 시작된 후에 AI 팀장과 대화할 수 있어요.'
     } else {
       openError.value = error instanceof ApiError ? error.message : '대화 세션을 열지 못했습니다.'
     }
