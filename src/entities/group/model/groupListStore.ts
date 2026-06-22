@@ -15,6 +15,9 @@ export const useGroupListStore = defineStore('groupList', {
         this.groups = []
       }
     },
+    removeGroup(groupId: string): void {
+      this.groups = this.groups.filter((g) => g.id !== groupId)
+    },
     clearGroups(): void {
       this.groups = []
     },

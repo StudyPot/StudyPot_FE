@@ -13,6 +13,7 @@ import {
 import { getGroupMembersActivity, startStudy, type MemberActivityRow } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
+import { useGroupListStore } from '@/entities/group'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -47,6 +48,7 @@ const isDeleting = ref(false)
 const deleteError = ref('')
 
 const sessionStore = useSessionStore()
+const groupListStore = useGroupListStore()
 
 const isOwner = computed(() => {
   const myUserId = sessionStore.user?.id
@@ -68,6 +70,7 @@ async function handleDeleteGroup(): Promise<void> {
   isDeleting.value = true
   try {
     await deleteGroup(groupId.value)
+    groupListStore.removeGroup(groupId.value)
     await router.replace({ name: 'groups' })
   } catch (error) {
     if (error instanceof ApiError) {
