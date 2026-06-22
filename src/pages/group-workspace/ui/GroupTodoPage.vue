@@ -68,7 +68,9 @@ const errorMessage = ref('')
 
 // ─── 커리큘럼 주차 목록 ──────────────────────────────────────────
 const curriculum = ref<Curriculum | null>(null)
-const weekSummaries = computed<CurriculumWeekSummary[]>(() => curriculum.value?.weeks ?? [])
+const weekSummaries = computed<CurriculumWeekSummary[]>(
+  () => (curriculum.value?.weeks ?? []).filter((w) => w.status !== 'PENDING'),
+)
 
 // ─── 선택된 주차 ─────────────────────────────────────────────────
 const selectedWeekId = ref<string>('')

@@ -115,7 +115,7 @@ function extractGroupId(value: string): string | null {
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
-        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
       >
         그룹 목록
       </RouterLink>

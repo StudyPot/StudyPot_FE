@@ -223,7 +223,7 @@ function renderMarkdown(content: string): string {
 </script>
 
 <template>
-  <div class="grid gap-5">
+  <div class="flex h-full flex-col">
     <!-- opening -->
     <ScreenState
       v-if="pageState === 'opening'"
@@ -245,7 +245,7 @@ function renderMarkdown(content: string): string {
     <!-- chat -->
     <section
       v-else-if="pageState === 'chat'"
-      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
+      class="flex flex-1 flex-col min-h-0 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
     >
       <div class="border-b border-[var(--color-line)] px-5 py-4">
         <p class="text-sm font-semibold text-[var(--color-primary)]">AI 팀장</p>
@@ -253,7 +253,7 @@ function renderMarkdown(content: string): string {
       </div>
 
       <!-- 메시지 목록 -->
-      <div ref="messagesContainerRef" class="flex max-h-120 flex-col gap-4 overflow-y-auto px-5 py-4">
+      <div ref="messagesContainerRef" class="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto px-5 py-4">
         <!-- 이전 메시지 불러오기 -->
         <div v-if="hasMoreMessages" class="flex justify-center">
           <button
