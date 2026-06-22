@@ -40,6 +40,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
   const toasts = ref<ToastItem[]>([])
   const seenIds = ref<Set<string>>(new Set())
   const isSseConnected = ref(false)
+  // 실시간으로 새로 도착한 알림. 화면이 watch 해서 관련 데이터를 갱신할 수 있다.
+  const lastEvent = ref<Notification | null>(null)
 
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let eventSource: EventSource | null = null
@@ -74,6 +76,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     if (!seenIds.value.has(notification.id)) {
       seenIds.value.add(notification.id)
       showToast(notification)
+      lastEvent.value = notification
     }
     const idx = notifications.value.findIndex((n) => n.id === notification.id)
     if (idx === -1) {
@@ -229,6 +232,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
   return {
     notifications,
     toasts,
+    lastEvent,
     unreadCount,
     isSseConnected,
     startSse,
