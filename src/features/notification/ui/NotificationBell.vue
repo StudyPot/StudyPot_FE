@@ -6,14 +6,17 @@ import { useInAppNotificationStore } from '../model/inAppNotificationStore'
 
 const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   GROUP_INVITE_CREATED: '그룹 초대',
+  MEMBER_JOINED: '멤버 참여',
   ONBOARDING_REQUESTED: '온보딩 요청',
   ONBOARDING_SUBMITTED: '온보딩 제출',
+  ONBOARDING_COMPLETED: '온보딩 완료',
   STUDY_STARTED: '스터디 시작',
   WEEK_STARTED: '주차 시작',
   TASK_DUE_REMINDER: '마감 알림',
   TASK_OVERDUE_CHECK: '지연 확인',
   INCOMPLETE_REASON_REQUESTED: '미완료 사유 요청',
   RETROSPECTIVE_READY: '회고 준비 완료',
+  RETROSPECTIVE_REMINDER: '회고 리마인더',
   NEXT_WEEK_ADJUSTED: '다음 주 조정',
 }
 

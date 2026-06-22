@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { inject, onMounted, reactive, ref } from 'vue'
+import { inject, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   getMyOnboarding,
@@ -26,7 +27,20 @@ if (!workspaceContext) {
   throw new Error('GroupOnboardingPage must be used inside GroupWorkspacePage.')
 }
 
-const { groupId, reloadMembers } = workspaceContext
+const { groupId, group, reloadMembers } = workspaceContext
+const router = useRouter()
+
+// 스터디가 시작되면(상태가 더 이상 온보딩 단계가 아니면) 온보딩 페이지는 자동으로 사라지고
+// 그룹 개요로 이동한다. (새로고침 없이도 실시간 갱신으로 그룹 상태가 바뀌면 반영됨)
+watch(
+  () => group.value?.status,
+  (status) => {
+    if (status && status !== 'ONBOARDING' && status !== 'READY_TO_START' && status !== 'DRAFT') {
+      void router.replace({ name: 'group-overview', params: { groupId: groupId.value } })
+    }
+  },
+  { immediate: true },
+)
 
 type PageState = 'loading' | 'form' | 'submitted' | 'error'
 
