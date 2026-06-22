@@ -26,7 +26,7 @@ if (!workspaceContext) {
   throw new Error('GroupOnboardingPage must be used inside GroupWorkspacePage.')
 }
 
-const { groupId } = workspaceContext
+const { groupId, reloadMembers } = workspaceContext
 
 type PageState = 'loading' | 'form' | 'submitted' | 'error'
 
@@ -103,6 +103,8 @@ async function handleSubmit(): Promise<void> {
 
     onboarding.value = result
     pageState.value = 'submitted'
+    // 공유 워크스페이스 members를 갱신해 개요의 온보딩 현황에 즉시 반영되게 한다.
+    void reloadMembers()
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       submitError.value = '이미 제출한 온보딩이에요.'
