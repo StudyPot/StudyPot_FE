@@ -184,6 +184,7 @@ function handleKeydown(event: KeyboardEvent): void {
 
 async function scrollToBottom(): Promise<void> {
   await nextTick()
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
   const container = messagesContainerRef.value
   if (container) container.scrollTop = container.scrollHeight
 }
