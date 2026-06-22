@@ -458,31 +458,6 @@ function scrollTabs(direction: 'left' | 'right'): void {
                 </div>
               </dl>
             </div>
-
-            <!-- 내 진행 상태 -->
-            <div v-if="progress" class="shrink-0">
-              <p class="text-xs text-[var(--color-muted)]">내 진행 상태</p>
-              <p class="mt-1 text-sm font-semibold text-[var(--color-ink)]">
-                {{ PROGRESS_STATUS_LABEL[progress.status] }}
-              </p>
-              <div class="mt-2 flex flex-wrap gap-1">
-                <button
-                  v-for="opt in (['IN_PROGRESS', 'COMPLETED', 'INCOMPLETE'] as MemberWeekProgressStatus[])"
-                  :key="opt"
-                  type="button"
-                  :disabled="isUpdatingProgress || progress.status === opt"
-                  :class="[
-                    'inline-flex h-7 items-center rounded border px-2.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
-                    progress.status === opt
-                      ? 'border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-primary-deep)]'
-                      : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
-                  ]"
-                  @click="handleUpdateProgress(opt)"
-                >
-                  {{ PROGRESS_STATUS_LABEL[opt] }}
-                </button>
-              </div>
-            </div>
           </div>
 
           <!-- 태스크 완료 요약 -->
