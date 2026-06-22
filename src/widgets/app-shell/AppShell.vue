@@ -7,6 +7,7 @@ import { getMyOnboarding } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
 import { NotificationBell } from '@/features/notification'
 import { apiOrigin } from '@/shared/config/api'
+import { useTheme } from '@/shared/theme/useTheme'
 
 type StatusPhase = 'before' | 'active' | 'done'
 type ChannelDef = { routeName: string; label: string; type: 'home' | 'todo' | 'ai' | 'board' | 'person' | 'onboard' | 'review' }
@@ -72,6 +73,7 @@ const statusLabel: Record<StudyGroupStatus, string> = {
 }
 
 const userInitial = computed(() => sessionStore.user?.nickname?.slice(0, 1)?.toUpperCase() ?? '?')
+const { isDark, toggle: toggleTheme } = useTheme()
 
 onMounted(() => {
   if (sessionStore.isAuthenticated) void groupListStore.loadGroups()
@@ -553,7 +555,48 @@ function startGoogleLogin(): void {
           <span class="text-sm font-semibold text-[var(--color-ink)]">스터디 그룹</span>
         </template>
 
-        <NotificationBell class="ml-auto" />
+        <div class="ml-auto flex items-center gap-2">
+          <!-- Theme toggle switch -->
+          <button
+            type="button"
+            class="relative flex h-8 w-14 shrink-0 items-center rounded-full bg-[var(--color-active)] p-1 transition-colors duration-200"
+            :title="isDark ? '라이트 모드로 전환' : '다크 모드로 전환'"
+            @click="toggleTheme"
+          >
+            <!-- Sliding thumb -->
+            <span
+              class="absolute left-1 h-6 w-6 rounded-full bg-[var(--color-surface)] shadow-sm transition-transform duration-200"
+              :class="isDark ? 'translate-x-6' : 'translate-x-0'"
+            />
+            <!-- Sun icon (left = light mode) -->
+            <span
+              class="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center transition-colors duration-200"
+              :class="isDark ? 'text-[var(--color-muted-deep)]' : 'text-[var(--color-primary)]'"
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4" />
+                <line x1="12" y1="2" x2="12" y2="4" />
+                <line x1="12" y1="20" x2="12" y2="22" />
+                <line x1="4.93" y1="4.93" x2="6.34" y2="6.34" />
+                <line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
+                <line x1="2" y1="12" x2="4" y2="12" />
+                <line x1="20" y1="12" x2="22" y2="12" />
+                <line x1="4.93" y1="19.07" x2="6.34" y2="17.66" />
+                <line x1="17.66" y1="6.34" x2="19.07" y2="4.93" />
+              </svg>
+            </span>
+            <!-- Moon icon (right = dark mode) -->
+            <span
+              class="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center transition-colors duration-200"
+              :class="isDark ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted-deep)]'"
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </span>
+          </button>
+          <NotificationBell />
+        </div>
       </div>
 
       <!-- Content -->
