@@ -13,6 +13,8 @@ const submittedMember: MemberOnboardingResponse = {
   groupId,
   memberId: '018f7a4e-1000-7000-9000-000000000001',
   memberNickname: 'user1',
+  permission: 'OWNER',
+  joinedAt: '2026-05-01T09:00:00+09:00',
   skillLevel: 3,
   additionalNote: '실전 위주의 과제를 많이 하고 싶어요.',
   availabilitySlots: [
@@ -28,6 +30,8 @@ const draftMember: MemberOnboardingResponse = {
   groupId,
   memberId: '018f7a4e-1000-7000-9000-000000000003',
   memberNickname: 'kim_study',
+  permission: 'MEMBER',
+  joinedAt: '2026-05-03T09:00:00+09:00',
   skillLevel: 1,
   additionalNote: null,
   availabilitySlots: [],
