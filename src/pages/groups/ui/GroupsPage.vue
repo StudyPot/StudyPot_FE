@@ -14,8 +14,16 @@ import {
 } from '@/entities/group'
 import { listBookmarks, toggleBookmark } from '@/entities/bookmark'
 import { startStudy } from '@/entities/curriculum'
+import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
+
+const sessionStore = useSessionStore()
+
+function isOwner(group: StudyGroup): boolean {
+  const myUserId = sessionStore.user?.id
+  return !!myUserId && !!group.createdBy && group.createdBy === myUserId
+}
 
 type StatusFilterOption = StudyGroupStatus | 'ALL'
 type SortOption = { field: GroupSortField; order: SortOrder; label: string }
@@ -56,14 +64,16 @@ const activeSortIndex = ref(0)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const hasGroups = computed(() => groups.value.length > 0)
-const activeSort = computed(() => SORT_OPTIONS[activeSortIndex.value])
+const activeSort = computed(() => SORT_OPTIONS[activeSortIndex.value] ?? SORT_OPTIONS[0])
 
 function buildParams(): ListGroupsParams {
   const params: ListGroupsParams = {}
   if (searchQuery.value.trim()) params.q = searchQuery.value.trim()
   if (activeStatus.value !== 'ALL') params.status = activeStatus.value
-  params.sort = activeSort.value.field
-  params.order = activeSort.value.order
+  if (activeSort.value) {
+    params.sort = activeSort.value.field
+    params.order = activeSort.value.order
+  }
   return params
 }
 
@@ -391,7 +401,7 @@ function formatDate(value: string): string {
           </RouterLink>
 
           <button
-            v-if="group.status === 'READY_TO_START'"
+            v-if="group.status === 'READY_TO_START' && isOwner(group)"
             type="button"
             :disabled="startingGroupId === group.id"
             class="inline-flex h-8 items-center rounded bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] disabled:opacity-60"

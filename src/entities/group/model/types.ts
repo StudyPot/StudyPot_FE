@@ -6,6 +6,7 @@ export type GroupMemberStatus = 'PENDING_ONBOARDING' | 'ACTIVE' | 'LEFT'
 
 export type StudyGroup = {
   id: string
+  createdBy?: string
   name: string
   topic: string
   detailKeywords: string[]
