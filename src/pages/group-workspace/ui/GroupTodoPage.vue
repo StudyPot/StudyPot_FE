@@ -89,6 +89,15 @@ const allTasksDone = computed(
   () => tasks.value.length > 0 && tasks.value.every((t) => completionMap[t.id] === 'DONE'),
 )
 
+const sortedTasks = computed(() =>
+  [...tasks.value].sort((a, b) => {
+    const aDone = completionMap[a.id] === 'DONE' ? 1 : 0
+    const bDone = completionMap[b.id] === 'DONE' ? 1 : 0
+    if (aDone !== bDone) return aDone - bDone
+    return a.displayOrder - b.displayOrder
+  }),
+)
+
 // ─── 탭 스크롤 ref ────────────────────────────────────────────────
 const tabsRef = ref<HTMLElement | null>(null)
 
@@ -502,9 +511,14 @@ function scrollTabs(direction: 'left' | 'right'): void {
             {{ selectedWeek.weekNumber }}주차 과제 ({{ tasks.length }}개)
           </h3>
 
-          <ul v-if="tasks.length > 0" class="mt-4 grid gap-3">
+          <TransitionGroup
+            v-if="tasks.length > 0"
+            tag="ul"
+            class="mt-4 grid gap-3"
+            move-class="transition-all duration-500 ease-in-out"
+          >
             <li
-              v-for="task in tasks"
+              v-for="task in sortedTasks"
               :key="task.id"
               :class="[
                 'rounded-lg border p-4 transition-all duration-300',
@@ -610,7 +624,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                 {{ taskError[task.id] }}
               </p>
             </li>
-          </ul>
+          </TransitionGroup>
 
           <p v-else class="mt-4 text-sm text-[var(--color-muted)]">
             이 주차에 등록된 과제가 없어요.
