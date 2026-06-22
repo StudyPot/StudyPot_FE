@@ -127,8 +127,8 @@ async function handleOpenConversation(): Promise<void> {
     subscribeToStream(conversation.value.id)
     pageState.value = 'chat'
   } catch (error) {
-    if (error instanceof ApiError && error.status === 403) {
-      openError.value = '대화 세션을 열 권한이 없어요.'
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+      openError.value = '스터디가 시작된 후에 AI 팀장과 대화할 수 있어요.'
     } else {
       openError.value = error instanceof ApiError ? error.message : '대화 세션을 열지 못했습니다.'
     }
