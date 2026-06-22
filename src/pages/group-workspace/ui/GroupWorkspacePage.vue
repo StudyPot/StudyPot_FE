@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import {
   getGroup,
   getMyGroupMemberProfile,
+  listGroupMembers,
   type GroupMember,
   type StudyGroup,
 } from '@/entities/group'
@@ -40,7 +41,7 @@ async function loadGroup(): Promise<void> {
 
   try {
     group.value = await getGroup(groupId.value)
-    await Promise.allSettled([loadMyOnboardingStatus(), loadMyProfile()])
+    await Promise.allSettled([loadMyOnboardingStatus(), loadMembers()])
   } catch (error) {
     groupErrorMessage.value =
       error instanceof ApiError ? error.message : '그룹 정보를 불러오지 못했습니다.'
@@ -55,7 +56,16 @@ async function loadMyOnboardingStatus(): Promise<void> {
   } catch {}
 }
 
-async function loadMyProfile(): Promise<void> {
+async function loadMembers(): Promise<void> {
+  try {
+    members.value = await listGroupMembers(groupId.value)
+  } catch {
+    // 팀원 목록 조회에 실패하면 최소한 내 멤버 정보만이라도 채운다.
+    await loadMyProfileOnly()
+  }
+}
+
+async function loadMyProfileOnly(): Promise<void> {
   try {
     const profile = await getMyGroupMemberProfile(groupId.value)
     members.value = [

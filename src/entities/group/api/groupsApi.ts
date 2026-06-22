@@ -92,6 +92,10 @@ export function joinGroup(groupId: string, request: JoinGroupRequest): Promise<G
   })
 }
 
+export function listGroupMembers(groupId: string): Promise<GroupMember[]> {
+  return apiClient<GroupMember[]>(`/groups/${groupId}/members`)
+}
+
 export function getMyGroupMemberProfile(groupId: string): Promise<MyGroupMemberProfile> {
   return apiClient<MyGroupMemberProfile>(`/groups/${groupId}/members/me/profile`)
 }

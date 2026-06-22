@@ -107,9 +107,14 @@ async function submitReview(): Promise<void> {
       if (error.status === 409) {
         submitError.value = '이미 리뷰를 작성했습니다.'
         void loadPage()
-      } else if (error.status === 400) {
-        const payload = error.payload as { errors?: Record<string, string> } | null
-        submitFieldError.value = payload?.errors?.rating ?? '입력 값을 확인해 주세요.'
+      } else if (error.status === 400 || error.status === 422) {
+        const payload = error.payload as
+          | { fieldErrors?: { field?: string; message?: string }[]; errors?: Record<string, string> }
+          | null
+        const ratingError =
+          payload?.fieldErrors?.find((fieldError) => fieldError.field === 'rating')?.message ??
+          payload?.errors?.rating
+        submitFieldError.value = ratingError ?? '입력 값을 확인해 주세요.'
       } else {
         submitError.value = error.message
       }

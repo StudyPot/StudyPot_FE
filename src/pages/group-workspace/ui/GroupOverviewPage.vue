@@ -12,6 +12,7 @@ import {
 } from '@/entities/group'
 import { startStudy } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
+import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -45,9 +46,17 @@ const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 const deleteError = ref('')
 
-const isOwner = computed(
-  () => members.value.length > 0 && members.value[0].permission === 'OWNER',
-)
+const sessionStore = useSessionStore()
+
+const isOwner = computed(() => {
+  const myUserId = sessionStore.user?.id
+  if (!myUserId) {
+    return false
+  }
+  return members.value.some(
+    (member) => member.userId === myUserId && member.permission === 'OWNER',
+  )
+})
 
 function handleGroupUpdated(updated: StudyGroup): void {
   group.value = updated
