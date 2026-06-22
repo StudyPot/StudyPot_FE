@@ -107,7 +107,7 @@ async function handleSubmit(): Promise<void> {
     void reloadMembers()
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
-      submitError.value = '이미 제출한 온보딩이에요.'
+      submitError.value = '이미 제출된 온보딩입니다.'
     } else {
       submitError.value =
         error instanceof ApiError ? error.message : '제출 중 오류가 발생했어요.'
