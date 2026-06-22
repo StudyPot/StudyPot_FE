@@ -40,7 +40,9 @@ watch(
   (event) => {
     if (!event) return
     const eventGroupId =
-      (event.payload?.groupId as string | undefined) ?? event.relatedResourceIds?.groupId
+      event.groupId ??
+      (event.payload?.groupId as string | undefined) ??
+      event.relatedResourceIds?.groupId
     if (eventGroupId === groupId.value && LIVE_REFRESH_TYPES.has(event.notificationType)) {
       void loadGroup()
     }

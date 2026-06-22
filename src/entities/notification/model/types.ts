@@ -21,6 +21,7 @@ export type NotificationStatus = 'PENDING' | 'DELIVERED' | 'READ' | 'FAILED' | '
 
 export type Notification = {
   id: string
+  groupId?: string | null
   notificationType: NotificationType
   channel: NotificationChannel
   title: string
