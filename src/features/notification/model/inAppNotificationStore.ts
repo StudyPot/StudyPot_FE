@@ -94,6 +94,9 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
   function startSse(): void {
     shouldReconnectSse = true
     void fetchNotifications()
+    // SSE가 (Caddy 버퍼링 등으로) 연결만 되고 이벤트를 못 받는 경우에도 알림이 누락되지 않도록
+    // 폴링을 항상 안전망으로 함께 돌린다. 중복은 seenIds로 걸러진다.
+    startPollingFallback()
     if (eventSource || reconnectTimer) {
       return
     }
@@ -109,7 +112,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
       es.onopen = () => {
         isSseConnected.value = true
         reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
-        stopPollingFallback()
+        // 폴링은 끄지 않는다 — SSE가 열렸지만 이벤트가 흐르지 않는 경우(프록시 버퍼링 등)를
+        // 대비한 안전망. 중복 알림은 seenIds로 무시된다.
       }
 
       es.addEventListener('notification-created', (event) => {
