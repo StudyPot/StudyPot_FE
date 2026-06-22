@@ -4,6 +4,7 @@ export {
   getGroup,
   getMyGroupMemberProfile,
   joinGroup,
+  joinGroupByInviteCode,
   listGroupMembers,
   listGroups,
   suggestDetailKeywords,

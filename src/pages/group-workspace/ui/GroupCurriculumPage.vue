@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
 
 import {
   getCurriculum,
@@ -13,6 +13,7 @@ import {
   type WeeklyTask,
   type WeeklyTaskType,
 } from '@/entities/curriculum'
+import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -37,7 +38,13 @@ if (!workspaceContext) {
   throw new Error('GroupCurriculumPage must be used inside GroupWorkspacePage.')
 }
 
-const { groupId } = workspaceContext
+const { groupId, members } = workspaceContext
+const sessionStore = useSessionStore()
+
+const isOwner = computed(() => {
+  const myUserId = sessionStore.user?.id
+  return !!myUserId && members.value.some((m) => m.userId === myUserId && m.permission === 'OWNER')
+})
 
 type PageState = 'loading' | 'curriculum' | 'none' | 'error'
 type WeekDetailState = 'idle' | 'loading' | 'loaded' | 'not-found' | 'error'
@@ -171,6 +178,7 @@ function formatDate(value: string): string {
       </p>
 
       <button
+        v-if="isOwner"
         type="button"
         :disabled="isStarting"
         class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
@@ -178,6 +186,9 @@ function formatDate(value: string): string {
       >
         {{ isStarting ? '생성 중…' : '스터디 시작' }}
       </button>
+      <p v-else class="mt-5 text-sm text-[var(--color-muted)]">
+        관리자가 스터디를 시작하면 커리큘럼이 생성됩니다.
+      </p>
     </section>
 
     <template v-else-if="pageState === 'curriculum' && curriculum">

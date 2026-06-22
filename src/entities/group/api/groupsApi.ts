@@ -92,6 +92,13 @@ export function joinGroup(groupId: string, request: JoinGroupRequest): Promise<G
   })
 }
 
+export function joinGroupByInviteCode(inviteCode: string): Promise<GroupMember> {
+  return apiClient<GroupMember>(`/groups/join`, {
+    method: 'POST',
+    body: { inviteCode },
+  })
+}
+
 export function listGroupMembers(groupId: string): Promise<GroupMember[]> {
   return apiClient<GroupMember[]>(`/groups/${groupId}/members`)
 }
