@@ -26,4 +26,6 @@ export type OnboardingResponse = {
 
 export type MemberOnboardingResponse = OnboardingResponse & {
   memberNickname: string
+  permission: 'OWNER' | 'MEMBER'
+  joinedAt?: string | null
 }
