@@ -8,6 +8,7 @@ export type GroupWorkspaceContext = {
   isGroupLoading: Ref<boolean>
   groupErrorMessage: Ref<string>
   reloadGroup: () => Promise<void>
+  reloadMembers: () => Promise<void>
   members: Ref<GroupMember[]>
 }
 

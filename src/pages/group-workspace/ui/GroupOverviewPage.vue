@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { computed, inject, onUnmounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
@@ -31,7 +31,8 @@ if (!workspaceContext) {
   throw new Error('GroupOverviewPage must be used inside GroupWorkspacePage.')
 }
 
-const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, members } = workspaceContext
+const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, reloadMembers, members } =
+  workspaceContext
 
 const isReadyToStart = computed(() => group.value?.status === 'READY_TO_START')
 const router = useRouter()
@@ -107,6 +108,10 @@ function clearProgressTimers(): void {
 }
 
 onUnmounted(() => { clearProgressTimers() })
+
+// 워크스페이스(부모)는 온보딩↔개요 이동 시 재마운트되지 않아 members가 stale 해진다.
+// 개요가 보일 때마다 멤버 목록만 다시 불러 온보딩 현황(본인 포함)이 최신으로 표시되게 한다.
+onMounted(() => { void reloadMembers() })
 
 watch(
   () => group.value,

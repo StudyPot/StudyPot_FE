@@ -55,6 +55,7 @@ provide(groupWorkspaceContextKey, {
   isGroupLoading,
   groupErrorMessage,
   reloadGroup: loadGroup,
+  reloadMembers: loadMembers,
   members,
 })
 
