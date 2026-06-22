@@ -2,6 +2,8 @@
   "currentUser": {
     "id": "018f7a4e-0000-7000-9000-000000000001",
     "email": "user@example.com",
-    "nickname": "user1"
+    "nickname": "user1",
+    "bio": "Spring Boot와 JPA를 공부하고 있는 백엔드 개발자입니다.",
+    "preferredTopics": ["Spring Boot", "JPA", "테스트 코드"]
   }
 }

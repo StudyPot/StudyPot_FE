@@ -3,15 +3,24 @@ import type { RouteRecordRaw } from 'vue-router'
 
 import { useSessionStore } from '@/features/auth/session'
 import { AuthCallbackPage } from '@/pages/auth-callback'
+import { BookmarksPage } from '@/pages/bookmarks'
+import { FollowPage } from '@/pages/follow'
 import { GroupCreatePage } from '@/pages/group-create'
 import { GroupJoinPage } from '@/pages/group-join'
 import {
-  GroupFeaturePlaceholderPage,
+  GroupAiPage,
+  GroupBoardPage,
+  GroupCurriculumPage,
+  GroupMyPage,
+  GroupOnboardingPage,
   GroupOverviewPage,
+  GroupRetrospectivePage,
+  GroupReviewPage,
+  GroupTodoPage,
   GroupWorkspacePage,
 } from '@/pages/group-workspace'
 import { GroupsPage } from '@/pages/groups'
-import { LoginPage } from '../../pages/login'
+import { ProfilePage } from '@/pages/profile'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -21,9 +30,10 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    // Kept for logout redirects and session-restore failure; AppShell renders the login UI
     path: '/login',
     name: 'login',
-    component: LoginPage,
+    component: { template: '<div />' },
   },
   {
     path: '/auth/callback',
@@ -38,123 +48,102 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/failure',
     name: 'auth-failure',
-    redirect: {
+    redirect: (to) => ({
       name: 'login',
-      query: {
-        error: 'oauth',
-      },
-    },
+      query: { error: 'oauth', ...to.query },
+    }),
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/bookmarks',
+    name: 'bookmarks',
+    component: BookmarksPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/follow',
+    name: 'follow',
+    component: FollowPage,
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups',
     name: 'groups',
     component: GroupsPage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/new',
     name: 'group-create',
     component: GroupCreatePage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/join',
     name: 'group-join',
     component: GroupJoinPage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/:groupId/join',
     name: 'group-join-with-id',
     component: GroupJoinPage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
   },
   {
     path: '/groups/:groupId',
     component: GroupWorkspacePage,
-    meta: {
-      requiresAuth: true,
-    },
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
         name: 'group-overview',
         component: GroupOverviewPage,
-        meta: {
-          workspaceTitle: '그룹 홈',
-          workspaceSummary: '그룹의 주요 학습 흐름으로 이동합니다.',
-        },
       },
       {
         path: 'onboarding',
         name: 'group-onboarding',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '온보딩',
-          workspaceSummary: '나의 준비도와 가능한 시간을 정리합니다.',
-        },
+        component: GroupOnboardingPage,
       },
       {
         path: 'curriculum',
         name: 'group-curriculum',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '커리큘럼',
-          workspaceSummary: '스터디 전체 주차 계획을 확인합니다.',
-        },
+        component: GroupCurriculumPage,
       },
       {
         path: 'todo',
         name: 'group-todo',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: 'Todo',
-          workspaceSummary: '이번 주 과제와 나의 진행 상태를 확인합니다.',
-        },
+        component: GroupTodoPage,
       },
       {
         path: 'retrospective',
         name: 'group-retrospective',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '회고',
-          workspaceSummary: '주차별 회고와 AI 피드백을 확인합니다.',
-        },
+        component: GroupRetrospectivePage,
+      },
+      {
+        path: 'review',
+        name: 'group-review',
+        component: GroupReviewPage,
       },
       {
         path: 'ai',
         name: 'group-ai',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: 'AI 팀장',
-          workspaceSummary: '그룹 학습 흐름을 AI 팀장과 함께 점검합니다.',
-        },
+        component: GroupAiPage,
       },
       {
-        path: 'notifications',
-        name: 'group-notifications',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '알림',
-          workspaceSummary: '그룹과 나에게 온 알림을 확인합니다.',
-        },
+        path: 'board',
+        name: 'group-board',
+        component: GroupBoardPage,
       },
       {
-        path: 'rules',
-        name: 'group-rules',
-        component: GroupFeaturePlaceholderPage,
-        meta: {
-          workspaceTitle: '규칙',
-          workspaceSummary: '그룹 운영 규칙과 위반 내역을 관리합니다.',
-        },
+        path: 'my',
+        name: 'group-my',
+        component: GroupMyPage,
       },
     ],
   },
@@ -177,11 +166,10 @@ router.beforeEach(async (to) => {
     return true
   }
 
+  // Session restore failed; redirect to login route (AppShell will show the login UI)
   return {
     name: 'login',
-    query: {
-      redirect: to.fullPath,
-    },
+    query: { redirect: to.fullPath },
   }
 })
 

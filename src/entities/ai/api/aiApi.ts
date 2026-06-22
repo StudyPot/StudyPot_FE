@@ -1,4 +1,5 @@
-import { apiClient } from '@/shared/api'
+import { apiClient, type CursorPageResponse } from '@/shared/api'
+import { apiBaseUrl } from '@/shared/config/api'
 import type {
   AiConversation,
   AiConversationMessage,
@@ -23,5 +24,30 @@ export function sendAiConversationMessage(
   return apiClient<AiConversationMessage>(`/ai-conversations/${conversationId}/messages`, {
     method: 'POST',
     body: request,
+  })
+}
+
+export type ListAiMessagesParams = {
+  cursor?: string
+  pageSize?: number
+}
+
+export function listAiConversationMessages(
+  conversationId: string,
+  params: ListAiMessagesParams = {},
+): Promise<CursorPageResponse<AiConversationMessage>> {
+  const searchParams = new URLSearchParams()
+  if (params.cursor) searchParams.set('cursor', params.cursor)
+  if (params.pageSize != null) searchParams.set('pageSize', String(params.pageSize))
+  const query = searchParams.toString()
+  return apiClient<CursorPageResponse<AiConversationMessage>>(
+    `/ai-conversations/${conversationId}/messages${query ? `?${query}` : ''}`,
+  )
+}
+
+export function subscribeToAiConversationStream(conversationId: string): EventSource {
+  const base = apiBaseUrl.replace(/\/$/, '')
+  return new EventSource(`${base}/ai-conversations/${conversationId}/stream`, {
+    withCredentials: true,
   })
 }

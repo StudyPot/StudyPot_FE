@@ -1,5 +1,10 @@
 # studypot
 
+## SSAFY Coach backend evidence
+
+Backend implementation evidence for the SSAFY Coach partial backend rubrics is pinned in
+[docs/backend-rubric-evidence.md](docs/backend-rubric-evidence.md).
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup

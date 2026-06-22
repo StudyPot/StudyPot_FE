@@ -1,10 +1,23 @@
 <script setup lang="ts">
+/*
+ * SSAFY Coach backend evidence (framework_back_hw_09_2@4abd8ecc94a9551896e1d7193ddf1f37973b662b):
+ * #06 signup/login hardening: src/main/java/com/studypot/aistudyleader/auth/controller/SignupController.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/service/SignupService.java,
+ *     src/main/java/com/studypot/aistudyleader/auth/repository/AuthJdbcSql.java,
+ *     src/main/resources/db/migration/V5__users_password_hash.sql.
+ * SignupServiceTest proves BCrypt password hashing and duplicate email validation.
+ */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { apiOrigin } from '@/shared/config/api'
 
 const route = useRoute()
 
 const noticeMessage = computed(() => {
+  if (route.query.error === 'oauth') {
+    return 'Google 로그인에 실패했습니다. 다시 시도해주세요.'
+  }
+
   if (route.query.signedOut === 'all') {
     return '모든 기기에서 로그아웃되었습니다.'
   }
@@ -17,13 +30,13 @@ const noticeMessage = computed(() => {
 })
 
 function startGoogleLogin(): void {
-  window.location.assign('/api/oauth2/authorization/google')
+  window.location.assign(`${apiOrigin}/api/oauth2/authorization/google`)
 }
 </script>
 
 <template>
   <main class="flex min-h-screen items-center justify-center px-6 py-10">
-    <section class="w-full max-w-sm rounded-lg border border-[var(--color-line)] bg-white p-6">
+    <section class="w-full max-w-sm rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-6">
       <p
         v-if="noticeMessage"
         role="status"

@@ -1,8 +1,7 @@
-export { getMyOnboarding, saveMyOnboarding, submitMyOnboarding } from './api/onboardingApi'
+export { getMyOnboarding, submitMyOnboarding } from './api/onboardingApi'
 export type {
   AvailabilitySlot,
   OnboardingResponse,
   OnboardingStatus,
-  SaveOnboardingRequest,
-  TaskPreferenceType,
+  SubmitOnboardingRequest,
 } from './model/types'

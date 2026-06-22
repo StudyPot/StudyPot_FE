@@ -1,16 +1,85 @@
-import { apiClient } from '@/shared/api'
-import type { CreateGroupRequest, GroupMember, JoinGroupRequest, StudyGroup } from '../model/types'
+import { ApiError, apiClient } from '@/shared/api'
+import type {
+  CreateGroupRequest,
+  DetailKeywordSuggestionsResponse,
+  GroupMember,
+  GroupMemberCurrentWeekSummary,
+  GroupMemberOnboardingSummary,
+  GroupMemberPermission,
+  GroupMemberRetrospectiveSummary,
+  GroupMemberStatus,
+  GroupMemberTaskCompletionSummary,
+  JoinGroupRequest,
+  ListGroupsParams,
+  StudyGroup,
+  SuggestDetailKeywordsRequest,
+  UpdateGroupMemberProfileRequest,
+  UpdateGroupRequest,
+} from '../model/types'
 
-export function listGroups(): Promise<StudyGroup[]> {
-  return apiClient<StudyGroup[]>('/groups')
+export type MyGroupMemberProfile = {
+  memberId: string
+  groupId: string
+  userId: string
+  permission: GroupMemberPermission
+  status: GroupMemberStatus
+  displayName: string | null
+  onboarding: GroupMemberOnboardingSummary
+  currentWeek: GroupMemberCurrentWeekSummary | null
+  taskCompletion: GroupMemberTaskCompletionSummary
+  retrospective: GroupMemberRetrospectiveSummary
 }
 
-export function getGroup(groupId: string): Promise<StudyGroup> {
-  return apiClient<StudyGroup>(`/groups/${groupId}`)
+export function listGroups(params?: ListGroupsParams): Promise<StudyGroup[]> {
+  const qs = new URLSearchParams()
+  if (params?.q?.trim()) qs.set('q', params.q.trim())
+  if (params?.status) qs.set('status', params.status)
+  if (params?.sort) qs.set('sort', params.sort)
+  if (params?.order) qs.set('order', params.order)
+  const query = qs.toString()
+  return apiClient<StudyGroup[]>(query ? `/groups?${query}` : '/groups')
+}
+
+export async function getGroup(groupId: string): Promise<StudyGroup> {
+  try {
+    return await apiClient<StudyGroup>(`/groups/${groupId}`)
+  } catch (error) {
+    if (isMissingGroupDetailEndpoint(error)) {
+      const group = (await listGroups()).find((item) => item.id === groupId)
+
+      if (group) {
+        return group
+      }
+    }
+
+    throw error
+  }
 }
 
 export function createGroup(request: CreateGroupRequest): Promise<StudyGroup> {
   return apiClient<StudyGroup>('/groups', {
+    method: 'POST',
+    body: request,
+  })
+}
+
+export function updateGroup(groupId: string, request: UpdateGroupRequest): Promise<StudyGroup> {
+  return apiClient<StudyGroup>(`/groups/${groupId}`, {
+    method: 'PATCH',
+    body: request,
+  })
+}
+
+export function deleteGroup(groupId: string): Promise<void> {
+  return apiClient<void>(`/groups/${groupId}`, {
+    method: 'DELETE',
+  })
+}
+
+export function suggestDetailKeywords(
+  request: SuggestDetailKeywordsRequest,
+): Promise<DetailKeywordSuggestionsResponse> {
+  return apiClient<DetailKeywordSuggestionsResponse>('/groups/detail-keyword-suggestions', {
     method: 'POST',
     body: request,
   })
@@ -21,4 +90,26 @@ export function joinGroup(groupId: string, request: JoinGroupRequest): Promise<G
     method: 'POST',
     body: request,
   })
+}
+
+export function listGroupMembers(groupId: string): Promise<GroupMember[]> {
+  return apiClient<GroupMember[]>(`/groups/${groupId}/members`)
+}
+
+export function getMyGroupMemberProfile(groupId: string): Promise<MyGroupMemberProfile> {
+  return apiClient<MyGroupMemberProfile>(`/groups/${groupId}/members/me/profile`)
+}
+
+export function updateMyGroupMemberProfile(
+  groupId: string,
+  request: UpdateGroupMemberProfileRequest,
+): Promise<MyGroupMemberProfile> {
+  return apiClient<MyGroupMemberProfile>(`/groups/${groupId}/members/me/profile`, {
+    method: 'PATCH',
+    body: request,
+  })
+}
+
+function isMissingGroupDetailEndpoint(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 404 || error.status === 405)
 }

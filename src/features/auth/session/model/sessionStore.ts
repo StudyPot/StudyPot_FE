@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useRouter } from 'vue-router'
 
 import { ApiError } from '@/shared/api'
 import { getCurrentUser } from '@/entities/user/api/currentUser'
@@ -50,6 +51,16 @@ export const useSessionStore = defineStore('session', {
         return this.user
       } catch {
         this.clearSession()
+        // 리프레시 실패 시 현재 경로를 저장하고 로그인으로 이동
+        try {
+          const router = useRouter()
+          await router.push({
+            name: 'login',
+            query: { redirect: window.location.pathname },
+          })
+        } catch {
+          // router 없는 컨텍스트에서는 무시 (router guard가 처리)
+        }
         return null
       }
     },

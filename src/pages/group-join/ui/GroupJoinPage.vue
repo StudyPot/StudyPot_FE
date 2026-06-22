@@ -113,7 +113,7 @@ function extractGroupId(value: string): string | null {
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
-        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
       >
         그룹 목록
       </RouterLink>
@@ -126,7 +126,7 @@ function extractGroupId(value: string): string | null {
 
     <form class="mt-8 grid gap-6" @submit.prevent="submitJoin">
       <section
-        class="grid gap-5 rounded-lg border border-[var(--color-line)] bg-white/85 p-5 shadow-[var(--shadow-soft)]"
+        class="grid gap-5 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <label class="grid gap-2">
           <span class="text-sm font-semibold text-[var(--color-ink)]">초대 링크 또는 그룹 ID</span>
@@ -134,13 +134,13 @@ function extractGroupId(value: string): string | null {
             v-model="form.groupReference"
             name="groupReference"
             type="text"
-            class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             placeholder="https://studypot.dev/groups/{groupId}/join"
           />
           <span class="text-xs text-[var(--color-muted)]">
             초대 링크를 받았다면 그대로 붙여넣을 수 있습니다.
           </span>
-          <span v-if="fieldErrors.groupReference" class="text-xs font-semibold text-red-700">
+          <span v-if="fieldErrors.groupReference" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ fieldErrors.groupReference }}
           </span>
         </label>
@@ -151,10 +151,10 @@ function extractGroupId(value: string): string | null {
             v-model="form.inviteCode"
             name="inviteCode"
             type="text"
-            class="h-11 rounded-md border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
             placeholder="SPRING-AB12"
           />
-          <span v-if="fieldErrors.inviteCode" class="text-xs font-semibold text-red-700">
+          <span v-if="fieldErrors.inviteCode" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ fieldErrors.inviteCode }}
           </span>
         </label>
@@ -163,7 +163,7 @@ function extractGroupId(value: string): string | null {
       <p
         v-if="errorMessage"
         role="alert"
-        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+        class="rounded-lg border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.1)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
       >
         {{ errorMessage }}
       </p>
@@ -171,7 +171,7 @@ function extractGroupId(value: string): string | null {
       <div class="flex flex-wrap justify-end gap-3">
         <RouterLink
           :to="{ name: 'groups' }"
-          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line)] bg-white px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
         >
           취소
         </RouterLink>

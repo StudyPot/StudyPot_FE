@@ -1,4 +1,14 @@
-import { apiBaseUrl } from '@/shared/config/api'
+import { apiBaseUrl, apiOrigin } from '@/shared/config/api'
+
+export type PageInfo = {
+  nextCursor: string | null
+  hasNext: boolean
+}
+
+export type CursorPageResponse<T> = {
+  items: T[]
+  pageInfo: PageInfo
+}
 
 export type ProblemDetail = {
   type?: string
@@ -32,6 +42,28 @@ export type ApiClientOptions = Omit<RequestInit, 'body'> & {
   body?: BodyInit | Record<string, unknown> | unknown[] | null
 }
 
+type CsrfBootstrapResponse = {
+  cookieName?: string
+  headerName?: string
+  token?: string
+}
+
+// 동시에 여러 요청이 401 받아도 refresh를 한 번만 호출하기 위한 공유 Promise
+let refreshingPromise: Promise<void> | null = null
+
+async function refreshAccessToken(): Promise<void> {
+  const headers = new Headers()
+  await appendCsrfHeader(headers, 'POST')
+  const response = await fetch(resolveApiUrl('/auth/refresh'), {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseResponseBody<ApiErrorPayload>(response))
+  }
+}
+
 export async function apiClient<TResponse = unknown>(
   path: string,
   options: ApiClientOptions = {},
@@ -44,7 +76,7 @@ export async function apiClient<TResponse = unknown>(
     requestHeaders.set('Content-Type', 'application/json')
   }
 
-  appendCsrfHeader(requestHeaders, requestOptions.method)
+  await appendCsrfHeader(requestHeaders, requestOptions.method)
 
   const response = await fetch(resolveApiUrl(path), {
     credentials: 'include',
@@ -52,6 +84,43 @@ export async function apiClient<TResponse = unknown>(
     headers: requestHeaders,
     body: hasJsonBody ? JSON.stringify(body) : body,
   })
+
+  // access token 만료 시 refresh 후 재시도 (refresh 엔드포인트 자체는 제외)
+  if (response.status === 401 && !path.includes('/auth/refresh')) {
+    try {
+      if (!refreshingPromise) {
+        refreshingPromise = refreshAccessToken().finally(() => {
+          refreshingPromise = null
+        })
+      }
+      await refreshingPromise
+
+      // 새 토큰으로 원래 요청 재시도
+      const retryHeaders = new Headers(headers)
+      if (hasJsonBody && !retryHeaders.has('Content-Type')) {
+        retryHeaders.set('Content-Type', 'application/json')
+      }
+      await appendCsrfHeader(retryHeaders, requestOptions.method)
+
+      const retryResponse = await fetch(resolveApiUrl(path), {
+        credentials: 'include',
+        ...requestOptions,
+        headers: retryHeaders,
+        body: hasJsonBody ? JSON.stringify(body) : body,
+      })
+
+      if (!retryResponse.ok) {
+        throw new ApiError(retryResponse.status, await parseResponseBody<ApiErrorPayload>(retryResponse))
+      }
+      if (retryResponse.status === 204) {
+        return undefined as TResponse
+      }
+      return parseResponseBody<TResponse>(retryResponse)
+    } catch (refreshError) {
+      // refresh 실패 시 원래 401 에러 던짐
+      throw new ApiError(401, await parseResponseBody<ApiErrorPayload>(response))
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, await parseResponseBody<ApiErrorPayload>(response))
@@ -124,7 +193,7 @@ function looksLikeJson(text: string): boolean {
   return trimmedText.startsWith('{') || trimmedText.startsWith('[')
 }
 
-function appendCsrfHeader(headers: Headers, method?: string): void {
+async function appendCsrfHeader(headers: Headers, method?: string): Promise<void> {
   if (!requiresCsrfHeader(method) || hasBearerAuthorization(headers)) {
     return
   }
@@ -137,6 +206,44 @@ function appendCsrfHeader(headers: Headers, method?: string): void {
 
   if (token) {
     headers.set('X-XSRF-TOKEN', token)
+    return
+  }
+
+  if (!requiresCsrfBootstrap()) {
+    return
+  }
+
+  const bootstrappedToken = await fetchCsrfToken()
+
+  if (bootstrappedToken?.token) {
+    headers.set(bootstrappedToken.headerName ?? 'X-XSRF-TOKEN', bootstrappedToken.token)
+  }
+}
+
+async function fetchCsrfToken(): Promise<CsrfBootstrapResponse | null> {
+  const response = await fetch(resolveApiUrl('/auth/csrf'), {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const body = await parseResponseBody<CsrfBootstrapResponse>(response)
+  const headerToken = response.headers.get('X-XSRF-TOKEN')
+  const token = typeof body?.token === 'string' && body.token ? body.token : headerToken
+
+  if (!token) {
+    return null
+  }
+
+  return {
+    cookieName: body?.cookieName,
+    headerName: body?.headerName,
+    token,
   }
 }
 
@@ -146,6 +253,10 @@ function requiresCsrfHeader(method = 'GET'): boolean {
 
 function hasBearerAuthorization(headers: Headers): boolean {
   return headers.get('Authorization')?.toLowerCase().startsWith('bearer ') ?? false
+}
+
+function requiresCsrfBootstrap(): boolean {
+  return Boolean(apiOrigin && typeof window !== 'undefined' && apiOrigin !== window.location.origin)
 }
 
 function getCookieValue(name: string): string | null {

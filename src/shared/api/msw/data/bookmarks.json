@@ -1,0 +1,20 @@
+{
+  "bookmarkedGroupIds": ["018f7a4e-0000-7000-9000-000000000010"],
+  "bookmarkList": [
+    {
+      "groupId": "018f7a4e-0000-7000-9000-000000000010",
+      "group": {
+        "id": "018f7a4e-0000-7000-9000-000000000010",
+        "name": "Backend Interview Study",
+        "topic": "Spring Boot",
+        "detailKeywords": ["JPA", "Security", "Testing"],
+        "status": "ONBOARDING",
+        "maxMembers": 6,
+        "inviteCode": "sb-onboarding-2026",
+        "startsAt": "2026-05-12",
+        "endsAt": "2026-06-30"
+      },
+      "bookmarkedAt": "2026-06-01T00:00:00+09:00"
+    }
+  ]
+}
