@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
 
+import { getMyGroupMemberProfile } from '@/entities/group'
 import {
   createReview,
   getMyReview,
@@ -26,6 +27,7 @@ type FormMode = 'view' | 'write' | 'edit'
 const pageState = ref<PageState>('loading')
 const pageError = ref('')
 const formMode = ref<FormMode>('write')
+const hasPendingTodos = ref(false)
 
 const myReview = ref<Review | null>(null)
 const answers = ref<RetroAnswers>({})
@@ -38,6 +40,15 @@ onMounted(() => void loadPage())
 async function loadPage(): Promise<void> {
   pageState.value = 'loading'
   pageError.value = ''
+
+  try {
+    const [profile] = await Promise.allSettled([getMyGroupMemberProfile(groupId.value)])
+    if (profile.status === 'fulfilled') {
+      hasPendingTodos.value = profile.value.taskCompletion.incompleteCount > 0
+    }
+  } catch {
+    // 프로필 로드 실패 시 todo 체크 건너뜀
+  }
 
   try {
     myReview.value = await getMyReview(groupId.value)
@@ -141,7 +152,24 @@ function formatDate(value: string): string {
     />
 
     <template v-else-if="pageState === 'ready'">
+      <!-- Todo 미완료 차단 메시지 -->
       <section
+        v-if="hasPendingTodos"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-10 text-center shadow-[var(--shadow-soft)]"
+      >
+        <p class="text-3xl">📝</p>
+        <p class="mt-4 text-base font-bold text-[var(--color-ink)]">아직 완료하지 않은 Todo가 있어요</p>
+        <p class="mt-2 text-sm text-[var(--color-muted)]">이번 주 할 일을 모두 완료한 뒤 회고를 작성할 수 있어요.</p>
+        <RouterLink
+          :to="{ name: 'group-todo', params: { groupId } }"
+          class="mt-5 inline-flex h-9 items-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)]"
+        >
+          Todo 완료하러 가기
+        </RouterLink>
+      </section>
+
+      <section
+        v-else
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
       >
         <!-- 헤더 -->
