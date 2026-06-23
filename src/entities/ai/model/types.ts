@@ -1,3 +1,14 @@
+export type AiManager = {
+  groupId: string
+  persona: string
+  updatedAt: string | null
+  updatedByNickname: string | null
+}
+
+export type UpdateAiManagerRequest = {
+  persona: string
+}
+
 export type AiConversationType = 'TEAM_LEAD_CHAT' | 'RETROSPECTIVE'
 
 export type AiConversationStatus = 'OPEN' | 'CLOSED'

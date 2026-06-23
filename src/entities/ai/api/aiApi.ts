@@ -3,9 +3,22 @@ import { apiBaseUrl } from '@/shared/config/api'
 import type {
   AiConversation,
   AiConversationMessage,
+  AiManager,
   CreateMessageRequest,
   OpenConversationRequest,
+  UpdateAiManagerRequest,
 } from '../model/types'
+
+export function getAiManager(groupId: string): Promise<AiManager> {
+  return apiClient<AiManager>(`/groups/${groupId}/ai-manager`)
+}
+
+export function updateAiManager(groupId: string, request: UpdateAiManagerRequest): Promise<AiManager> {
+  return apiClient<AiManager>(`/groups/${groupId}/ai-manager`, {
+    method: 'PATCH',
+    body: request,
+  })
+}
 
 export function openAiConversation(
   groupId: string,

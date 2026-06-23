@@ -197,32 +197,25 @@ function toLocalDateStr(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+// X축은 항상 28일 고정 (today-27 ~ today)
 const activityDays = computed(() => {
   const msPerDay = 24 * 60 * 60 * 1000
-
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-
-  // 스터디 시작일 기준. 미래이면 오늘로 클램핑
-  let startDate = today
-  if (group.value?.startsAt) {
-    const d = new Date(group.value.startsAt)
-    if (!isNaN(d.getTime())) {
-      d.setHours(0, 0, 0, 0)
-      if (d <= today) startDate = d
-    }
-  }
-
-  // 시작일부터 오늘까지 경과 일수(1-indexed)
-  const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / msPerDay) + 1
-  // 최대 28일. 초과 시 최신 28일 슬라이딩 윈도우
-  const windowSize = Math.min(daysSinceStart, MAX_CHART_DAYS)
-
   const result: string[] = []
-  for (let i = windowSize - 1; i >= 0; i--) {
+  for (let i = MAX_CHART_DAYS - 1; i >= 0; i--) {
     result.push(toLocalDateStr(new Date(today.getTime() - i * msPerDay)))
   }
   return result
+})
+
+// 스터디 시작일 (자정 기준)
+const chartStartDate = computed<Date | null>(() => {
+  if (!group.value?.startsAt) return null
+  const d = new Date(group.value.startsAt)
+  if (isNaN(d.getTime())) return null
+  d.setHours(0, 0, 0, 0)
+  return d
 })
 
 const MEMBER_COLORS = [
@@ -261,7 +254,14 @@ const combinedChartData = computed(() => ({
     const color = MEMBER_COLORS[i % MEMBER_COLORS.length]!
     return {
       label: row.memberNickname,
-      data: activityDays.value.map((day) => row.dailyActivity.find((d) => d.date === day)?.count ?? 0),
+      data: activityDays.value.map((day) => {
+        if (chartStartDate.value) {
+          const d = new Date(day)
+          d.setHours(0, 0, 0, 0)
+          if (d < chartStartDate.value) return null
+        }
+        return row.dailyActivity.find((d) => d.date === day)?.count ?? 0
+      }),
       borderColor: color.border,
       backgroundColor: color.background,
       fill: true,

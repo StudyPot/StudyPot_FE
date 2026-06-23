@@ -1,4 +1,10 @@
 {
+  "aiManager": {
+    "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+    "persona": "넌 스파르타식 코치야. 학습에 소홀한 팀원에게 직접적으로 질책하되, 목표를 달성했을 땐 짧게 인정해 준다. 유머는 최소화하고 효율과 결과를 최우선으로 생각한다.",
+    "updatedAt": "2026-06-23T09:00:00+09:00",
+    "updatedByNickname": "user1"
+  },
   "startConversationRequest": {
     "conversationType": "TEAM_LEAD_CHAT",
     "context": "현재 주차 학습 방향 조언 요청"

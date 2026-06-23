@@ -2,7 +2,10 @@ import { HttpResponse, http } from 'msw'
 
 import { mockMswData } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
-import type { AiConversation, AiConversationMessage, CreateMessageRequest } from '../model/types'
+import type { AiConversation, AiConversationMessage, AiManager, CreateMessageRequest, UpdateAiManagerRequest } from '../model/types'
+
+// 그룹별 AI 팀장 퍼소나 상태 (in-memory)
+const aiManagerStore = new Map<string, AiManager>()
 
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 
@@ -11,6 +14,29 @@ function sseEvent(name: string, data: unknown): Uint8Array {
 }
 
 export const aiHandlers = [
+  // AI 팀장 퍼소나 조회
+  http.get(`${apiBaseUrl}/groups/:groupId/ai-manager`, ({ params }) => {
+    const groupId = String(params.groupId)
+    const stored = aiManagerStore.get(groupId)
+    if (stored) return HttpResponse.json(stored)
+    const base = mockMswData.aiTeamLeader.aiManager as AiManager
+    return HttpResponse.json({ ...base, groupId })
+  }),
+
+  // AI 팀장 퍼소나 설정
+  http.patch(`${apiBaseUrl}/groups/:groupId/ai-manager`, async ({ params, request }) => {
+    const groupId = String(params.groupId)
+    const body = (await request.json()) as UpdateAiManagerRequest
+    const updated: AiManager = {
+      groupId,
+      persona: body.persona,
+      updatedAt: new Date().toISOString(),
+      updatedByNickname: 'user1',
+    }
+    aiManagerStore.set(groupId, updated)
+    return HttpResponse.json(updated)
+  }),
+
   http.post(`${apiBaseUrl}/groups/:groupId/ai-conversations`, async ({ params, request }) => {
     const body = (await request.json()) as Partial<AiConversation>
     const conversation = mockMswData.aiTeamLeader.conversation as unknown as AiConversation
