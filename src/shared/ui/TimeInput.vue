@@ -72,7 +72,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
   <div ref="rootRef" class="relative inline-block">
     <button
       type="button"
-      class="flex h-9 min-w-[9rem] items-center gap-1 rounded border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] transition focus:outline-none focus:ring-2 focus:ring-[rgba(88,101,242,0.25)]"
+      class="flex h-9 min-w-[9rem] items-center gap-1 rounded border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.25)]"
       @click="isOpen ? (isOpen = false) : open()"
     >
       <svg class="h-3.5 w-3.5 shrink-0 text-[var(--color-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

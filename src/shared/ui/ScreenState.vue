@@ -23,7 +23,7 @@ const defaultEyebrows: Record<ScreenStateVariant, string> = {
 }
 
 const toneClasses: Record<ScreenStateVariant, string> = {
-  loading: 'border-[rgba(54,92,255,0.22)] bg-[var(--color-card)]',
+  loading: 'border-[rgba(25,195,125,0.22)] bg-[var(--color-card)]',
   empty: 'border-[var(--color-line)] bg-[var(--color-card)]',
   error: 'border-[rgba(237,66,69,0.25)] bg-[rgba(237,66,69,0.1)]',
   forbidden: 'border-[rgba(250,166,26,0.25)] bg-[rgba(250,166,26,0.1)]',
@@ -69,7 +69,7 @@ const isLoading = computed(() => props.variant === 'loading')
       <button
         v-if="actionLabel"
         type="button"
-        class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+        class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)]"
         @click="emit('action')"
       >
         {{ actionLabel }}

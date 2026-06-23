@@ -230,14 +230,14 @@ function formatDate(value: string): string {
           type="search"
           name="q"
           placeholder="그룹 이름 또는 주제로 검색"
-          class="h-9 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] pl-8 pr-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+          class="h-9 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] pl-8 pr-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
           aria-label="그룹 검색"
         />
       </div>
 
       <select
         v-model="activeSortIndex"
-        class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+        class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
         aria-label="정렬 기준"
         name="sort"
       >
@@ -254,7 +254,7 @@ function formatDate(value: string): string {
         :key="filter.value"
         type="button"
         :class="[
-          'inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]',
+          'inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]',
           activeStatus === filter.value
             ? 'bg-[var(--color-primary)] text-white'
             : 'bg-[var(--color-active)] text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]',
@@ -337,7 +337,7 @@ function formatDate(value: string): string {
               :aria-label="bookmarkedGroupIds.has(group.id) ? `${group.name} 찜 해제` : `${group.name} 찜하기`"
               :aria-pressed="bookmarkedGroupIds.has(group.id)"
               :disabled="togglingBookmarkIds.has(group.id)"
-              class="flex h-7 w-7 items-center justify-center rounded text-base transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              class="flex h-7 w-7 items-center justify-center rounded text-base transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
               :class="bookmarkedGroupIds.has(group.id) ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted)]'"
               @click="handleToggleBookmark(group.id)"
             >

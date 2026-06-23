@@ -1,13 +1,33 @@
 <script setup lang="ts">
 import { useInAppNotificationStore } from '@/features/notification/model/inAppNotificationStore'
+import type { ToastVariant } from '@/features/notification/model/inAppNotificationStore'
 
 const store = useInAppNotificationStore()
+
+// 변형별 아이콘 색(표면은 흰 카드로 통일, 좌측 점/아이콘만 색으로 구분)
+const accent: Record<ToastVariant, string> = {
+  success: 'var(--color-success)',
+  info: 'var(--color-info)',
+  warning: 'var(--color-warning)',
+  error: 'var(--color-danger)',
+}
+
+const icon: Record<ToastVariant, string> = {
+  success: '✓',
+  info: '🔔',
+  warning: '!',
+  error: '✕',
+}
+
+function variantOf(v: ToastVariant | undefined): ToastVariant {
+  return v ?? 'info'
+}
 </script>
 
 <template>
   <Teleport to="body">
     <div
-      class="fixed top-5 inset-x-0 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none"
+      class="pointer-events-none fixed inset-x-0 top-5 z-50 flex flex-col items-center gap-2 px-4"
       aria-live="polite"
       aria-atomic="false"
     >
@@ -24,15 +44,20 @@ const store = useInAppNotificationStore()
         <div
           v-for="toast in store.toasts"
           :key="toast.id"
-          class="pointer-events-auto flex w-80 max-w-full items-start gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3 shadow-lg"
+          class="pointer-events-auto flex w-80 max-w-full items-start gap-3 rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-strong)]"
           role="alert"
         >
-          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm text-white">
-            🔔
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+            :style="{ backgroundColor: accent[variantOf(toast.variant)] }"
+          >
+            {{ icon[variantOf(toast.variant)] }}
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-[var(--color-ink)]">{{ toast.title }}</p>
-            <p class="mt-0.5 text-xs leading-5 text-[var(--color-muted)]">{{ toast.body }}</p>
+            <p v-if="toast.body" class="mt-0.5 text-xs leading-5 text-[var(--color-muted)]">
+              {{ toast.body }}
+            </p>
           </div>
           <button
             type="button"

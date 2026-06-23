@@ -8,9 +8,12 @@ import {
   type RetrospectiveAnswer,
   type RetrospectiveWeekOverview,
 } from '@/entities/retrospective'
+import { useInAppNotificationStore } from '@/features/notification'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
+
+const toastStore = useInAppNotificationStore()
 
 const workspaceContext = inject(groupWorkspaceContextKey)
 
@@ -139,8 +142,14 @@ async function handleSubmit(): Promise<void> {
     await submitRetrospective(week.weekId, answers)
     week.answered = true
     submittedAnswers.value = answers
+    toastStore.pushToast(
+      '회고를 제출했어요',
+      `${week.weekNumber}주차 회고가 저장되었습니다.`,
+      'success',
+    )
   } catch (error) {
     submitError.value = error instanceof ApiError ? error.message : '회고 제출에 실패했습니다.'
+    toastStore.pushToast('회고 제출 실패', submitError.value, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -274,7 +283,7 @@ async function handleSubmit(): Promise<void> {
         <button
           type="button"
           :disabled="isSubmitting"
-          class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+          class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
           @click="handleSubmit"
         >
           {{ isSubmitting ? '제출 중…' : '회고 제출' }}

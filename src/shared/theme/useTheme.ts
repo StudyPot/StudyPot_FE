@@ -1,29 +1,16 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
-const STORAGE_KEY = 'studypot-theme'
+// 단일 라이트 테마(프레시 그린 리디자인). 다크 모드는 제거되었다.
+// 기존 호출부 호환을 위해 동일한 API(isDark/toggle)를 유지하되 항상 라이트로 고정한다.
+const isDark = ref(false)
 
-function getInitialDark(): boolean {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved !== null) return saved !== 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-}
-
-const isDark = ref(getInitialDark())
-
-function applyTheme(dark: boolean): void {
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
-}
-
-applyTheme(isDark.value)
-
-watch(isDark, (val) => {
-  applyTheme(val)
-  localStorage.setItem(STORAGE_KEY, val ? 'dark' : 'light')
-})
+document.documentElement.setAttribute('data-theme', 'light')
 
 export function useTheme() {
   return {
     isDark,
-    toggle: () => { isDark.value = !isDark.value },
+    toggle: () => {
+      /* no-op: 라이트 테마 단일 운영 */
+    },
   }
 }

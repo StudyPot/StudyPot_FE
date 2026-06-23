@@ -234,7 +234,7 @@ function formatNumber(value: number): string {
           :key="tab.id"
           type="button"
           :class="[
-            'relative px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[rgba(54,92,255,0.2)]',
+            'relative px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[rgba(25,195,125,0.2)]',
             activeTab === tab.id
               ? 'text-[var(--color-primary-deep)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--color-primary)]'
               : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]',
@@ -276,7 +276,7 @@ function formatNumber(value: number): string {
             <button
               type="button"
               :disabled="isMarkingAllRead || !myNotifications.some(isUnread)"
-              class="inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
+              class="inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50"
               @click="handleMarkAllRead"
             >
               {{ isMarkingAllRead ? '처리 중…' : '전체 읽음' }}
@@ -290,7 +290,7 @@ function formatNumber(value: number): string {
               :class="[
                 'flex items-start gap-3 rounded-md border p-3 text-sm transition',
                 isUnread(notification)
-                  ? 'border-[rgba(54,92,255,0.22)] bg-[var(--color-card)]'
+                  ? 'border-[rgba(25,195,125,0.22)] bg-[var(--color-card)]'
                   : 'border-[var(--color-line-strong)] bg-[var(--color-active)]',
               ]"
             >
@@ -323,7 +323,7 @@ function formatNumber(value: number): string {
                 v-if="isUnread(notification)"
                 type="button"
                 :disabled="markingReadId === notification.id"
-                class="shrink-0 inline-flex h-7 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-2 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                class="shrink-0 inline-flex h-7 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-2 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
                 @click="handleMarkRead(notification.id)"
               >
                 읽음

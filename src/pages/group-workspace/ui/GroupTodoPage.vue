@@ -17,9 +17,12 @@ import {
   type TaskCompletionStatus,
   type WeeklyTask,
 } from '@/entities/curriculum'
+import { useInAppNotificationStore } from '@/features/notification'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
+
+const toastStore = useInAppNotificationStore()
 
 const TASK_TYPE_LABEL: Record<string, string> = {
   READING: '읽기',
@@ -30,7 +33,7 @@ const TASK_TYPE_LABEL: Record<string, string> = {
 }
 
 const TASK_TYPE_COLOR: Record<string, string> = {
-  READING: 'bg-[rgba(88,101,242,0.15)] text-[#a5b4fc] border-[rgba(88,101,242,0.3)]',
+  READING: 'bg-[rgba(25,195,125,0.15)] text-[#a5b4fc] border-[rgba(25,195,125,0.3)]',
   PRACTICE: 'bg-[rgba(35,165,90,0.15)] text-[#4ade80] border-[rgba(35,165,90,0.3)]',
   ASSIGNMENT: 'bg-[rgba(224,149,58,0.15)] text-[#fbbf24] border-[rgba(224,149,58,0.3)]',
   PROJECT: 'bg-[rgba(139,92,246,0.15)] text-[#c4b5fd] border-[rgba(139,92,246,0.3)]',
@@ -67,8 +70,8 @@ const errorMessage = ref('')
 
 // ─── 커리큘럼 주차 목록 ──────────────────────────────────────────
 const curriculum = ref<Curriculum | null>(null)
-const weekSummaries = computed<CurriculumWeekSummary[]>(
-  () => (curriculum.value?.weeks ?? []).filter((w) => w.status !== 'PENDING'),
+const weekSummaries = computed<CurriculumWeekSummary[]>(() =>
+  (curriculum.value?.weeks ?? []).filter((w) => w.status !== 'PENDING'),
 )
 
 // ─── 선택된 주차 ─────────────────────────────────────────────────
@@ -180,7 +183,8 @@ async function loadWeekDetail(weekId: string): Promise<void> {
       }
     }
   } catch (error) {
-    errorMessage.value = error instanceof ApiError ? error.message : '주차 정보를 불러오지 못했습니다.'
+    errorMessage.value =
+      error instanceof ApiError ? error.message : '주차 정보를 불러오지 못했습니다.'
   } finally {
     isWeekLoading.value = false
   }
@@ -207,9 +211,13 @@ async function handleCompleteTask(taskId: string, status: TaskCompletionStatus):
         next.delete(taskId)
         justCompletedIds.value = next
       }, 800)
+      toastStore.pushToast('할 일을 완료했어요', '', 'success')
+    } else if (result.status === 'SKIPPED' && prev !== 'SKIPPED') {
+      toastStore.pushToast('할 일을 건너뛰었어요', '', 'info')
     }
   } catch (error) {
     taskError[taskId] = error instanceof ApiError ? error.message : '저장에 실패했습니다.'
+    toastStore.pushToast('저장 실패', taskError[taskId], 'error')
   } finally {
     updatingTaskId.value = null
   }
@@ -228,7 +236,9 @@ async function handleUpdateProgress(status: MemberWeekProgressStatus): Promise<v
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
+    new Date(value),
+  )
 }
 
 function formatDateTime(value: string): string {
@@ -303,7 +313,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
           <div
             ref="tabsRef"
             class="flex gap-0 overflow-x-auto scroll-smooth px-8"
-            style="scrollbar-width: none; -ms-overflow-style: none;"
+            style="scrollbar-width: none; -ms-overflow-style: none"
           >
             <button
               v-for="week in weekSummaries"
@@ -395,7 +405,9 @@ function scrollTabs(direction: 'left' | 'right'): void {
             class="flex items-start gap-4 rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)]"
             role="alert"
           >
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg text-white">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg text-white"
+            >
               📝
             </div>
             <div>
@@ -436,7 +448,9 @@ function scrollTabs(direction: 'left' | 'right'): void {
                   {{ WEEK_STATUS_LABEL[selectedWeek.status] }}
                 </span>
               </div>
-              <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedWeek.title }}</h2>
+              <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">
+                {{ selectedWeek.title }}
+              </h2>
               <p
                 v-if="selectedWeek.sprintGoal || selectedWeek.focus"
                 class="mt-2 text-sm leading-6 text-[var(--color-muted)]"
@@ -450,11 +464,15 @@ function scrollTabs(direction: 'left' | 'right'): void {
               >
                 <div v-if="selectedWeek.startsAt">
                   <dt class="text-xs text-[var(--color-muted)]">시작</dt>
-                  <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">{{ formatDate(selectedWeek.startsAt) }}</dd>
+                  <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">
+                    {{ formatDate(selectedWeek.startsAt) }}
+                  </dd>
                 </div>
                 <div v-if="selectedWeek.endsAt">
                   <dt class="text-xs text-[var(--color-muted)]">마감</dt>
-                  <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">{{ formatDate(selectedWeek.endsAt) }}</dd>
+                  <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">
+                    {{ formatDate(selectedWeek.endsAt) }}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -465,14 +483,15 @@ function scrollTabs(direction: 'left' | 'right'): void {
             <div class="flex items-center justify-between text-xs text-[var(--color-muted)]">
               <span>태스크 완료</span>
               <span class="font-semibold text-[var(--color-ink)]">
-                {{ tasks.filter((t) => completionMap[t.id] === 'DONE').length }} / {{ tasks.length }}
+                {{ tasks.filter((t) => completionMap[t.id] === 'DONE').length }} /
+                {{ tasks.length }}
               </span>
             </div>
             <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--color-card)]">
               <div
                 class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-500"
                 :style="{
-                  width: `${(tasks.filter((t) => completionMap[t.id] === 'DONE').length / tasks.length) * 100}%`
+                  width: `${(tasks.filter((t) => completionMap[t.id] === 'DONE').length / tasks.length) * 100}%`,
                 }"
               />
             </div>
@@ -537,10 +556,13 @@ function scrollTabs(direction: 'left' | 'right'): void {
                       ]"
                     >
                       {{
-                        getCompletionStatus(task) === 'DONE' ? '✓ 완료'
-                        : getCompletionStatus(task) === 'INCOMPLETE' ? '✕ 미완료'
-                        : getCompletionStatus(task) === 'SKIPPED' ? '— 스킵'
-                        : '미시작'
+                        getCompletionStatus(task) === 'DONE'
+                          ? '✓ 완료'
+                          : getCompletionStatus(task) === 'INCOMPLETE'
+                            ? '✕ 미완료'
+                            : getCompletionStatus(task) === 'SKIPPED'
+                              ? '— 스킵'
+                              : '미시작'
                       }}
                     </span>
                   </div>
@@ -559,7 +581,10 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     {{ task.title }}
                   </p>
 
-                  <p v-if="task.description" class="mt-1 text-sm leading-6 text-[var(--color-muted)]">
+                  <p
+                    v-if="task.description"
+                    class="mt-1 text-sm leading-6 text-[var(--color-muted)]"
+                  >
                     {{ task.description }}
                   </p>
                   <p v-if="task.dueAt" class="mt-1 text-xs text-[var(--color-muted)]">
@@ -576,9 +601,11 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     v-for="action in COMPLETION_ACTIONS"
                     :key="action.status"
                     type="button"
-                    :disabled="updatingTaskId === task.id || getCompletionStatus(task) === action.status"
+                    :disabled="
+                      updatingTaskId === task.id || getCompletionStatus(task) === action.status
+                    "
                     :class="[
-                      'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
+                      'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50',
                       getCompletionStatus(task) === action.status
                         ? action.status === 'DONE'
                           ? 'border-[rgba(35,165,90,0.5)] bg-[rgba(35,165,90,0.15)] text-[var(--color-success)]'
@@ -595,13 +622,19 @@ function scrollTabs(direction: 'left' | 'right'): void {
 
                 <!-- 예정 주차 안내 -->
                 <div v-else class="shrink-0">
-                  <span class="rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2.5 py-1 text-xs text-[var(--color-muted)]">
+                  <span
+                    class="rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2.5 py-1 text-xs text-[var(--color-muted)]"
+                  >
                     예정
                   </span>
                 </div>
               </div>
 
-              <p v-if="taskError[task.id]" role="alert" class="mt-2 text-xs font-semibold text-[var(--color-danger)]">
+              <p
+                v-if="taskError[task.id]"
+                role="alert"
+                class="mt-2 text-xs font-semibold text-[var(--color-danger)]"
+              >
                 {{ taskError[task.id] }}
               </p>
             </li>

@@ -94,7 +94,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
   <div ref="rootRef" class="relative inline-block w-full">
     <button
       type="button"
-      class="flex h-11 w-full items-center gap-2 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm transition focus:outline-none focus:ring-4 focus:ring-[rgba(88,101,242,0.12)]"
+      class="flex h-11 w-full items-center gap-2 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm transition focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
       :class="modelValue ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted)]'"
       @click="isOpen ? (isOpen = false) : open()"
     >
