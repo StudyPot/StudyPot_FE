@@ -34,6 +34,7 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   RETROSPECTIVE_REMINDER: '회고 리마인더',
   NEXT_WEEK_ADJUSTED: '다음 주 조정',
   NOTICE_POSTED: '새 공지',
+  LEADER_REPORT_POSTED: '새 팀장 리포트',
   GROUP_DELETED: '그룹 삭제',
 }
 

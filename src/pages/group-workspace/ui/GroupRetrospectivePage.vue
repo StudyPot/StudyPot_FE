@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
-import { listCurriculumWeeks, type CurriculumWeek } from '@/entities/curriculum'
 import {
   getMyRetrospective,
-  listMyRetrospectives,
-  requestRetrospective,
-  type Retrospective,
+  getRetrospectiveOverview,
+  submitRetrospective,
+  type RetrospectiveAnswer,
+  type RetrospectiveWeekOverview,
 } from '@/entities/retrospective'
 import { ApiError } from '@/shared/api'
-import type { JsonValue } from '@/shared/model/json'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
@@ -21,58 +19,49 @@ if (!workspaceContext) {
 }
 
 const { groupId } = workspaceContext
-const router = useRouter()
 
 type PageState = 'loading' | 'empty' | 'ready' | 'error'
 
+// 리커트 5점 척도 (5=매우 그렇다 … 1=매우 아니다)
+const LIKERT_OPTIONS = [
+  { score: 5, label: '매우 그렇다' },
+  { score: 4, label: '그렇다' },
+  { score: 3, label: '보통' },
+  { score: 2, label: '아니다' },
+  { score: 1, label: '매우 아니다' },
+]
+
 const pageState = ref<PageState>('loading')
 const errorMessage = ref('')
-const weeks = ref<CurriculumWeek[]>([])
-const retrospectives = ref<Retrospective[]>([])
+const weeks = ref<RetrospectiveWeekOverview[]>([])
 const selectedWeekId = ref<string | null>(null)
-const isRequesting = ref(false)
-const requestError = ref('')
 
-const selectedWeek = computed<CurriculumWeek | null>(
-  () => weeks.value.find((week) => week.id === selectedWeekId.value) ?? null,
+// 작성 폼 상태: questionId -> score(리커트) | text(서술)
+const scoreAnswers = ref<Record<string, number>>({})
+const textAnswers = ref<Record<string, string>>({})
+const submittedAnswers = ref<RetrospectiveAnswer[] | null>(null)
+const isSubmitting = ref(false)
+const submitError = ref('')
+
+const selectedWeek = computed<RetrospectiveWeekOverview | null>(
+  () => weeks.value.find((week) => week.weekId === selectedWeekId.value) ?? null,
 )
-
-const selectedRetrospective = computed<Retrospective | null>(
-  () => retrospectives.value.find((retro) => retro.weekId === selectedWeekId.value) ?? null,
-)
-
-// PENDING(아직 시작 전) 주차는 회고를 요청할 수 없다.
-const canRequest = computed(
-  () =>
-    !!selectedWeek.value && selectedWeek.value.status !== 'PENDING' && !selectedRetrospective.value,
-)
-
-function hasRetrospective(weekId: string): boolean {
-  return retrospectives.value.some((retro) => retro.weekId === weekId)
-}
 
 onMounted(() => {
-  void loadAll()
+  void loadOverview()
 })
 
-async function loadAll(): Promise<void> {
+async function loadOverview(): Promise<void> {
   pageState.value = 'loading'
   errorMessage.value = ''
-
   try {
-    const [weekList, retroList] = await Promise.all([
-      listCurriculumWeeks(groupId.value),
-      listMyRetrospectives(groupId.value),
-    ])
-    weeks.value = [...weekList].sort((a, b) => a.weekNumber - b.weekNumber)
-    retrospectives.value = retroList
-
+    const overview = await getRetrospectiveOverview(groupId.value)
+    weeks.value = [...overview].sort((a, b) => a.weekNumber - b.weekNumber)
     if (weeks.value.length === 0) {
       pageState.value = 'empty'
       return
     }
-
-    selectedWeekId.value = defaultWeekId()
+    await selectWeek(defaultWeek())
     pageState.value = 'ready'
   } catch (error) {
     errorMessage.value =
@@ -81,108 +70,80 @@ async function loadAll(): Promise<void> {
   }
 }
 
-// 진행 중 주차 우선, 없으면 회고가 있는 가장 최근 주차, 그것도 없으면 마지막 주차.
-function defaultWeekId(): string {
-  const inProgress = weeks.value.find((week) => week.status === 'IN_PROGRESS')
-  if (inProgress) return inProgress.id
-  const latestWithRetro = [...weeks.value].reverse().find((week) => hasRetrospective(week.id))
-  if (latestWithRetro) return latestWithRetro.id
-  const lastWeek = weeks.value[weeks.value.length - 1]
-  return lastWeek ? lastWeek.id : ''
+// 열려있고 미작성인 가장 최근 주차 우선, 없으면 열린 마지막 주차, 그것도 없으면 첫 주차.
+function defaultWeek(): RetrospectiveWeekOverview {
+  const openUnanswered = [...weeks.value].reverse().find((week) => week.unlocked && !week.answered)
+  if (openUnanswered) return openUnanswered
+  const openLatest = [...weeks.value].reverse().find((week) => week.unlocked)
+  return openLatest ?? weeks.value[0]!
 }
 
-function selectWeek(weekId: string): void {
-  selectedWeekId.value = weekId
-  requestError.value = ''
+async function selectWeek(week: RetrospectiveWeekOverview): Promise<void> {
+  selectedWeekId.value = week.weekId
+  submitError.value = ''
+  scoreAnswers.value = {}
+  textAnswers.value = {}
+  submittedAnswers.value = null
+  if (week.answered) {
+    await loadSubmitted(week.weekId)
+  }
 }
 
-async function handleRequest(): Promise<void> {
-  const weekId = selectedWeekId.value
-  if (!weekId) return
-
-  isRequesting.value = true
-  requestError.value = ''
-
+async function loadSubmitted(weekId: string): Promise<void> {
   try {
-    const created = await requestRetrospective(weekId)
-    upsertRetrospective(created, weekId)
+    const retro = await getMyRetrospective(weekId)
+    submittedAnswers.value = (retro.answers ?? []) as RetrospectiveAnswer[]
+  } catch {
+    submittedAnswers.value = []
+  }
+}
+
+function answerText(questionId: string): string {
+  const found = (submittedAnswers.value ?? []).find((answer) => answer.questionId === questionId)
+  if (!found) return '-'
+  if (found.score != null) {
+    return (
+      LIKERT_OPTIONS.find((option) => option.score === found.score)?.label ?? String(found.score)
+    )
+  }
+  return found.text ?? '-'
+}
+
+const canSubmit = computed(
+  () => !!selectedWeek.value && selectedWeek.value.unlocked && !selectedWeek.value.answered,
+)
+
+async function handleSubmit(): Promise<void> {
+  const week = selectedWeek.value
+  if (!week) return
+
+  const answers: RetrospectiveAnswer[] = week.questions.map((question) =>
+    question.type === 'LIKERT_5'
+      ? { questionId: question.id, score: scoreAnswers.value[question.id] ?? null }
+      : { questionId: question.id, text: (textAnswers.value[question.id] ?? '').trim() || null },
+  )
+
+  const unanswered = week.questions.some((question) =>
+    question.type === 'LIKERT_5'
+      ? scoreAnswers.value[question.id] == null
+      : !(textAnswers.value[question.id] ?? '').trim(),
+  )
+  if (unanswered) {
+    submitError.value = '모든 질문에 답해 주세요.'
+    return
+  }
+
+  isSubmitting.value = true
+  submitError.value = ''
+  try {
+    await submitRetrospective(week.weekId, answers)
+    week.answered = true
+    submittedAnswers.value = answers
   } catch (error) {
-    requestError.value = error instanceof ApiError ? error.message : '회고 요청에 실패했습니다.'
+    submitError.value = error instanceof ApiError ? error.message : '회고 제출에 실패했습니다.'
   } finally {
-    isRequesting.value = false
+    isSubmitting.value = false
   }
-}
-
-async function refreshSelected(): Promise<void> {
-  const weekId = selectedWeekId.value
-  if (!weekId) return
-  try {
-    const latest = await getMyRetrospective(weekId)
-    upsertRetrospective(latest, weekId)
-  } catch (error) {
-    if (!(error instanceof ApiError && error.status === 404)) {
-      requestError.value =
-        error instanceof ApiError ? error.message : '회고를 새로고침하지 못했습니다.'
-    }
-  }
-}
-
-function upsertRetrospective(retro: Retrospective, weekId: string): void {
-  const withWeek: Retrospective = { ...retro, weekId: retro.weekId ?? weekId }
-  const index = retrospectives.value.findIndex((item) => item.weekId === weekId)
-  if (index >= 0) {
-    retrospectives.value.splice(index, 1, withWeek)
-  } else {
-    retrospectives.value.push(withWeek)
-  }
-}
-
-function goToRetrospectiveChat(): void {
-  const retro = selectedRetrospective.value
-  if (!retro || !selectedWeekId.value) return
-  void router.push({
-    name: 'group-ai',
-    params: { groupId: groupId.value },
-    query: { retrospectiveId: retro.id, weekId: selectedWeekId.value },
-  })
-}
-
-function renderJsonValue(value: JsonValue, depth = 0): string {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return String(value)
-  }
-  if (Array.isArray(value)) {
-    return value.map((v) => renderJsonValue(v, depth + 1)).join('\n')
-  }
-  return Object.entries(value)
-    .map(([k, v]) => `${k}: ${renderJsonValue(v, depth + 1)}`)
-    .join('\n')
-}
-
-function isStringArray(value: JsonValue): value is string[] {
-  return Array.isArray(value) && value.every((v) => typeof v === 'string')
-}
-
-function isPrimitive(value: JsonValue): value is string | number | boolean {
-  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
-}
-
-// 회고 프롬프트는 줄바꿈으로 구분된 여러 질문일 수 있다.
-const promptLines = computed<string[]>(() => {
-  const prompt = selectedWeek.value?.retrospectivePrompt
-  if (!prompt) return []
-  return prompt
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-})
-
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: '대기 중',
-  PROCESSING: '생성 중',
-  COMPLETED: '완료',
-  FAILED: '실패',
 }
 </script>
 
@@ -201,7 +162,7 @@ const STATUS_LABEL: Record<string, string> = {
       title="회고를 불러오지 못했습니다."
       :description="errorMessage"
       action-label="다시 시도"
-      @action="loadAll"
+      @action="loadOverview"
     />
 
     <ScreenState
@@ -212,227 +173,133 @@ const STATUS_LABEL: Record<string, string> = {
     />
 
     <template v-else-if="pageState === 'ready'">
-      <!-- 주차 선택 -->
+      <!-- 주차 선택 (잠긴 주차는 비활성) -->
       <section
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-semibold text-[var(--color-primary)]">회고</p>
         <h2 class="mt-1 text-xl font-bold text-[var(--color-ink)]">주차별 회고</h2>
         <p class="mt-1 text-sm text-[var(--color-muted)]">
-          이번 주차와 지난 주차의 회고를 확인해 보세요.
+          그 주차의 TODO를 모두 완료하면 회고가 열려요.
         </p>
         <div class="mt-4 flex flex-wrap gap-2">
           <button
             v-for="week in weeks"
-            :key="week.id"
+            :key="week.weekId"
             type="button"
-            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition"
+            :disabled="!week.unlocked"
+            :title="week.unlocked ? '' : 'TODO를 모두 완료하면 열려요'"
+            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40"
             :class="
-              week.id === selectedWeekId
+              week.weekId === selectedWeekId
                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                 : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
             "
-            @click="selectWeek(week.id)"
+            @click="week.unlocked && selectWeek(week)"
           >
             {{ week.weekNumber }}주차
+            <span v-if="!week.unlocked" aria-hidden="true">🔒</span>
             <span
-              v-if="hasRetrospective(week.id)"
+              v-else-if="week.answered"
               class="h-1.5 w-1.5 rounded-full"
-              :class="week.id === selectedWeekId ? 'bg-white' : 'bg-[var(--color-primary)]'"
+              :class="week.weekId === selectedWeekId ? 'bg-white' : 'bg-[var(--color-success)]'"
               aria-hidden="true"
             />
           </button>
         </div>
       </section>
 
-      <!-- 회고 가이드 질문 (커리큘럼 생성 시 AI가 만든 프롬프트) -->
+      <!-- 잠김 -->
       <section
-        v-if="promptLines.length > 0"
+        v-if="selectedWeek && !selectedWeek.unlocked"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
-        <h3 class="text-base font-bold text-[var(--color-ink)]">회고 가이드 질문</h3>
-        <p class="mt-1 text-sm text-[var(--color-muted)]">
-          {{ selectedWeek?.weekNumber }}주차를 돌아보며 아래 질문에 답해 보세요.
+        <h2 class="text-lg font-bold text-[var(--color-ink)]">🔒 아직 잠겨 있어요</h2>
+        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+          {{ selectedWeek.weekNumber }}주차의 TODO를 모두 완료하면 회고를 작성할 수 있어요.
         </p>
-        <ul class="mt-3 grid gap-2">
-          <li
-            v-for="(line, i) in promptLines"
-            :key="i"
-            class="flex gap-2 text-sm leading-6 text-[var(--color-ink)]"
-          >
-            <span
-              class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]"
-              aria-hidden="true"
-            />
-            {{ line }}
-          </li>
-        </ul>
       </section>
 
-      <!-- 회고 없음: 요청 -->
+      <!-- 작성 폼 (열림 + 미작성) -->
       <section
-        v-if="!selectedRetrospective"
+        v-else-if="selectedWeek && canSubmit"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <h2 class="text-lg font-bold text-[var(--color-ink)]">
-          {{ selectedWeek?.weekNumber }}주차 회고가 아직 없어요
+          {{ selectedWeek.weekNumber }}주차 회고 작성
         </h2>
-        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
-          {{
-            canRequest
-              ? 'AI 팀장과 함께 이번 주차 회고를 시작할 수 있어요.'
-              : '주차가 시작되면 회고를 요청할 수 있어요.'
-          }}
-        </p>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">아래 질문에 솔직하게 답해 주세요.</p>
+
+        <div class="mt-5 grid gap-6">
+          <div v-for="(question, qi) in selectedWeek.questions" :key="question.id">
+            <p class="text-sm font-semibold text-[var(--color-ink)]">
+              {{ qi + 1 }}. {{ question.text }}
+            </p>
+
+            <div v-if="question.type === 'LIKERT_5'" class="mt-3 flex flex-wrap gap-2">
+              <button
+                v-for="option in LIKERT_OPTIONS"
+                :key="option.score"
+                type="button"
+                class="rounded-md border px-3 py-1.5 text-sm transition"
+                :class="
+                  scoreAnswers[question.id] === option.score
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                    : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] hover:border-[var(--color-primary)]'
+                "
+                @click="scoreAnswers[question.id] = option.score"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+
+            <textarea
+              v-else
+              v-model="textAnswers[question.id]"
+              rows="3"
+              placeholder="자유롭게 작성해 주세요."
+              class="mt-3 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] p-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-primary)] focus:outline-none"
+            />
+          </div>
+        </div>
 
         <p
-          v-if="requestError"
+          v-if="submitError"
           role="alert"
           class="mt-4 text-sm font-semibold text-[var(--color-danger)]"
         >
-          {{ requestError }}
+          {{ submitError }}
         </p>
 
         <button
-          v-if="canRequest"
           type="button"
-          :disabled="isRequesting"
+          :disabled="isSubmitting"
           class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
-          @click="handleRequest"
+          @click="handleSubmit"
         >
-          {{ isRequesting ? '요청 중…' : '회고 요청' }}
+          {{ isSubmitting ? '제출 중…' : '회고 제출' }}
         </button>
       </section>
 
-      <!-- 회고 상태 + 결과 -->
-      <template v-else>
-        <section
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-        >
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p class="text-sm font-semibold text-[var(--color-primary)]">
-                {{ selectedWeek?.weekNumber }}주차 회고
-              </p>
-              <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">
-                {{ STATUS_LABEL[selectedRetrospective.status] ?? selectedRetrospective.status }}
-              </h2>
-              <p
-                v-if="selectedRetrospective.status === 'PROCESSING'"
-                class="mt-3 text-sm leading-6 text-[var(--color-muted)]"
-              >
-                AI가 회고를 생성하고 있습니다.
-              </p>
-              <p
-                v-else-if="selectedRetrospective.status === 'FAILED'"
-                class="mt-3 text-sm leading-6 text-[var(--color-danger)]"
-              >
-                회고 생성에 실패했습니다. 다시 요청하거나 잠시 후 시도해 주세요.
-              </p>
-            </div>
-
-            <div class="flex shrink-0 gap-2">
-              <button
-                v-if="selectedRetrospective.status === 'PROCESSING'"
-                type="button"
-                class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                @click="refreshSelected"
-              >
-                새로고침
-              </button>
-              <button
-                type="button"
-                class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-                @click="goToRetrospectiveChat"
-              >
-                AI 팀장과 회고하기
-              </button>
-            </div>
+      <!-- 작성 완료 (읽기 전용) -->
+      <section
+        v-else-if="selectedWeek"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
+        <h2 class="text-lg font-bold text-[var(--color-ink)]">
+          {{ selectedWeek.weekNumber }}주차 회고 (제출 완료)
+        </h2>
+        <dl class="mt-4 grid gap-5">
+          <div v-for="(question, qi) in selectedWeek.questions" :key="question.id">
+            <dt class="text-sm font-semibold text-[var(--color-muted)]">
+              {{ qi + 1 }}. {{ question.text }}
+            </dt>
+            <dd class="mt-1 text-sm leading-6 text-[var(--color-ink)]">
+              {{ answerText(question.id) }}
+            </dd>
           </div>
-        </section>
-
-        <!-- AI 피드백 -->
-        <section
-          v-if="selectedRetrospective.status === 'COMPLETED' && selectedRetrospective.aiFeedback"
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-        >
-          <h3 class="text-base font-bold text-[var(--color-ink)]">AI 피드백</h3>
-          <dl class="mt-4 grid gap-5">
-            <template v-for="(value, key) in selectedRetrospective.aiFeedback" :key="key">
-              <div v-if="value !== null && value !== undefined">
-                <dt class="text-sm font-semibold text-[var(--color-muted)] capitalize">
-                  {{ key }}
-                </dt>
-                <dd class="mt-2">
-                  <p v-if="isPrimitive(value)" class="text-sm leading-6 text-[var(--color-ink)]">
-                    {{ value }}
-                  </p>
-                  <ul v-else-if="isStringArray(value)" class="grid gap-1.5">
-                    <li
-                      v-for="(item, i) in value"
-                      :key="i"
-                      class="flex gap-2 text-sm leading-6 text-[var(--color-ink)]"
-                    >
-                      <span
-                        class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]"
-                        aria-hidden="true"
-                      />
-                      {{ item }}
-                    </li>
-                  </ul>
-                  <pre
-                    v-else
-                    class="rounded-md bg-[var(--color-card)] p-3 text-xs leading-6 text-[var(--color-ink)] whitespace-pre-wrap break-words"
-                    >{{ renderJsonValue(value) }}</pre
-                  >
-                </dd>
-              </div>
-            </template>
-          </dl>
-        </section>
-
-        <!-- 다음 주 조정 -->
-        <section
-          v-if="
-            selectedRetrospective.status === 'COMPLETED' && selectedRetrospective.nextWeekAdjustment
-          "
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-        >
-          <h3 class="text-base font-bold text-[var(--color-ink)]">다음 주 조정 제안</h3>
-          <dl class="mt-4 grid gap-5">
-            <template v-for="(value, key) in selectedRetrospective.nextWeekAdjustment" :key="key">
-              <div v-if="value !== null && value !== undefined">
-                <dt class="text-sm font-semibold text-[var(--color-muted)] capitalize">
-                  {{ key }}
-                </dt>
-                <dd class="mt-2">
-                  <p v-if="isPrimitive(value)" class="text-sm leading-6 text-[var(--color-ink)]">
-                    {{ value }}
-                  </p>
-                  <ul v-else-if="isStringArray(value)" class="grid gap-1.5">
-                    <li
-                      v-for="(item, i) in value"
-                      :key="i"
-                      class="flex gap-2 text-sm leading-6 text-[var(--color-ink)]"
-                    >
-                      <span
-                        class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-primary)]"
-                        aria-hidden="true"
-                      />
-                      {{ item }}
-                    </li>
-                  </ul>
-                  <pre
-                    v-else
-                    class="rounded-md bg-[var(--color-card)] p-3 text-xs leading-6 text-[var(--color-ink)] whitespace-pre-wrap break-words"
-                    >{{ renderJsonValue(value) }}</pre
-                  >
-                </dd>
-              </div>
-            </template>
-          </dl>
-        </section>
-      </template>
+        </dl>
+      </section>
     </template>
   </div>
 </template>

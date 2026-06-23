@@ -39,7 +39,7 @@ export type CurriculumWeek = {
   weekNumber: number
   title: string
   sprintGoal?: string | null
-  retrospectivePrompt?: string | null
+  retrospectiveQuestions?: { id: string; text: string; type: 'LIKERT_5' | 'TEXT' }[] | null
   focus?: string | null
   status: CurriculumWeekStatus
   startsAt?: string | null
