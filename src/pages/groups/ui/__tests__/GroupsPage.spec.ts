@@ -170,7 +170,7 @@ describe('GroupsPage', () => {
 
     const articles = wrapper.findAll('article')
     expect(articles).toHaveLength(1)
-    expect(articles[0].text()).toContain('Spring Boot 실전 스터디')
+    expect(articles[0]!.text()).toContain('Spring Boot 실전 스터디')
     expect(wrapper.text()).not.toContain('Backend Interview Study')
   })
 

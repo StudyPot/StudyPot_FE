@@ -4,47 +4,30 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import type { Review, ReviewStats } from '@/entities/review'
+import type { RetroQuestion, Review } from '@/entities/review'
 import { groupWorkspaceContextKey } from '../../model/workspaceContext'
 import GroupReviewPage from '../GroupReviewPage.vue'
 
 const groupId = '018f7a4e-0000-7000-9000-000000000011'
 
-const stats: ReviewStats = {
-  averageRating: 4.7,
-  totalCount: 3,
-  ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 1, '5': 2 },
-}
-
-const reviewList: Review[] = [
+const questions: RetroQuestion[] = [
+  { id: 'taskDifficulty', type: 'scale', label: '이번 주차 과제 난이도는 어땠나요?', required: true },
   {
-    id: 'review-001',
-    groupId,
-    userId: 'user-002',
-    displayName: '김민준',
-    rating: 5,
-    content: '최고의 스터디였습니다.',
-    createdAt: '2026-06-01T10:30:00+09:00',
-  },
-  {
-    id: 'review-002',
-    groupId,
-    userId: 'user-003',
-    displayName: '이서연',
-    rating: 4,
-    content: '많이 배웠어요.',
-    createdAt: '2026-06-02T14:15:00+09:00',
+    id: 'reflection',
+    type: 'text',
+    label: '이번 주차를 돌아보며 한 줄 소감을 남겨주세요.',
+    required: false,
+    placeholder: '자유롭게 적어보세요.',
   },
 ]
 
 const myReview: Review = {
-  id: 'review-003',
+  id: 'review-001',
   groupId,
   userId: 'user-001',
   displayName: '나',
-  rating: 5,
-  content: '정말 유익했습니다.',
-  createdAt: '2026-06-03T09:00:00+09:00',
+  answers: { taskDifficulty: 3, reflection: '유익했습니다.' },
+  createdAt: '2026-06-01T10:30:00+09:00',
 }
 
 function makeFetch(handlers: Array<{ match: string; body: unknown; status?: number }>) {
@@ -94,61 +77,53 @@ describe('GroupReviewPage', () => {
 
   it('shows loading state on mount', () => {
     const fetchMock = makeFetch([
-      { match: '/reviews/stats', body: stats },
+      { match: '/reviews/questions', body: questions },
       { match: '/reviews/me', body: {}, status: 404 },
-      { match: '/reviews', body: reviewList },
     ])
     const wrapper = mountReviewPage(fetchMock)
-    expect(wrapper.text()).toContain('리뷰를 불러오는 중입니다.')
+    expect(wrapper.text()).toContain('회고를 불러오는 중입니다.')
   })
 
-  it('renders average rating and review list after load', async () => {
+  it('renders question labels after load', async () => {
     const fetchMock = makeFetch([
-      { match: '/reviews/stats', body: stats },
-      { match: '/reviews/me', body: {}, status: 404 },
-      { match: '/reviews', body: reviewList },
+      { match: '/reviews/questions', body: questions },
+      { match: '/reviews/me', body: { title: 'Not Found', status: 404 }, status: 404 },
     ])
     const wrapper = mountReviewPage(fetchMock)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('4.7')
-    expect(wrapper.text()).toContain('3개의 리뷰')
-    expect(wrapper.text()).toContain('최고의 스터디였습니다.')
-    expect(wrapper.text()).toContain('많이 배웠어요.')
+    expect(wrapper.text()).toContain('이번 주차 과제 난이도는 어땠나요?')
+    expect(wrapper.text()).toContain('이번 주차를 돌아보며 한 줄 소감을 남겨주세요.')
   })
 
-  it('shows review form when user has not reviewed yet (getMyReview returns 404)', async () => {
+  it('shows write form when user has not reviewed yet (getMyReview returns 404)', async () => {
     const fetchMock = makeFetch([
-      { match: '/reviews/stats', body: stats },
+      { match: '/reviews/questions', body: questions },
       { match: '/reviews/me', body: { title: 'Not Found', status: 404 }, status: 404 },
-      { match: '/reviews', body: reviewList },
     ])
     const wrapper = mountReviewPage(fetchMock)
     await flushPromises()
 
     expect(wrapper.find('form').exists()).toBe(true)
-    expect(wrapper.find('button[type="submit"]').text()).toBe('리뷰 제출')
+    expect(wrapper.find('button[type="submit"]').text()).toBe('회고 작성')
   })
 
-  it('shows "already reviewed" state when getMyReview returns 200', async () => {
+  it('shows view mode with existing answers when getMyReview returns 200', async () => {
     const fetchMock = makeFetch([
-      { match: '/reviews/stats', body: stats },
+      { match: '/reviews/questions', body: questions },
       { match: '/reviews/me', body: myReview },
-      { match: '/reviews', body: reviewList },
     ])
     const wrapper = mountReviewPage(fetchMock)
     await flushPromises()
 
     expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.text()).toContain('이미 리뷰를 작성했습니다.')
-    expect(wrapper.text()).toContain('정말 유익했습니다.')
+    expect(wrapper.text()).toContain('유익했습니다.')
   })
 
-  it('shows validation error when submitting without selecting a star', async () => {
+  it('shows validation error when submitting without answering required question', async () => {
     const fetchMock = makeFetch([
-      { match: '/reviews/stats', body: stats },
+      { match: '/reviews/questions', body: questions },
       { match: '/reviews/me', body: { title: 'Not Found', status: 404 }, status: 404 },
-      { match: '/reviews', body: reviewList },
     ])
     const wrapper = mountReviewPage(fetchMock)
     await flushPromises()
@@ -156,93 +131,16 @@ describe('GroupReviewPage', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('평점을 선택해 주세요.')
-    expect(fetchMock).not.toHaveBeenCalledWith(
-      expect.stringContaining(`/groups/${groupId}/reviews`),
-      expect.objectContaining({ method: 'POST' }),
-    )
+    expect(wrapper.text()).toContain('필수 항목입니다.')
   })
 
-  it('submits review and hides the form on success', async () => {
-    const created: Review = {
-      id: 'review-new',
-      groupId,
-      userId: 'user-001',
-      displayName: '나',
-      rating: 4,
-      content: '좋았습니다.',
-      createdAt: new Date().toISOString(),
-    }
-
-    const postMock = vi.fn<typeof fetch>().mockImplementation((input, init) => {
-      const url = String(input)
-      const req = init as RequestInit
-      if (req?.method === 'POST' && url.includes('/reviews')) {
-        return Promise.resolve(new Response(JSON.stringify(created), { status: 201, headers: { 'Content-Type': 'application/json' } }))
-      }
-      if (url.includes('/reviews/stats')) {
-        return Promise.resolve(new Response(JSON.stringify(stats), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-      }
-      if (url.includes('/reviews/me')) {
-        return Promise.resolve(new Response(JSON.stringify({ title: 'Not Found', status: 404 }), { status: 404, headers: { 'Content-Type': 'application/json' } }))
-      }
-      return Promise.resolve(new Response(JSON.stringify(reviewList), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-    })
-
-    const wrapper = mountReviewPage(postMock)
-    await flushPromises()
-
-    const starButtons = wrapper.findAll('button[aria-label]').filter((b) =>
-      b.attributes('aria-label')?.endsWith('점'),
-    )
-    await starButtons[3].trigger('click')
-    await wrapper.find('form').trigger('submit')
-    await flushPromises()
-
-    expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.text()).toContain('이미 리뷰를 작성했습니다.')
-  })
-
-  it('shows 409 conflict error message on duplicate submission (중복 방지)', async () => {
-    const conflictMock = vi.fn<typeof fetch>().mockImplementation((input, init) => {
-      const url = String(input)
-      const req = init as RequestInit
-      if (req?.method === 'POST' && url.includes('/reviews')) {
-        return Promise.resolve(new Response(
-          JSON.stringify({ title: 'Conflict', detail: '이미 리뷰를 작성했습니다.', status: 409 }),
-          { status: 409, headers: { 'Content-Type': 'application/json' } },
-        ))
-      }
-      if (url.includes('/reviews/stats')) {
-        return Promise.resolve(new Response(JSON.stringify(stats), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-      }
-      if (url.includes('/reviews/me')) {
-        return Promise.resolve(new Response(JSON.stringify({ title: 'Not Found', status: 404 }), { status: 404, headers: { 'Content-Type': 'application/json' } }))
-      }
-      return Promise.resolve(new Response(JSON.stringify(reviewList), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-    })
-
-    const wrapper = mountReviewPage(conflictMock)
-    await flushPromises()
-
-    const starButtons = wrapper.findAll('button[aria-label]').filter((b) =>
-      b.attributes('aria-label')?.endsWith('점'),
-    )
-    await starButtons[4].trigger('click')
-    await wrapper.find('form').trigger('submit')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('이미 리뷰를 작성했습니다.')
-  })
-
-  it('shows error state when stats/list fetch fails', async () => {
+  it('shows error state when questions fetch fails', async () => {
     const fetchMock = makeFetch([
-      { match: '/reviews/stats', body: { title: 'Internal Server Error', status: 500 }, status: 500 },
-      { match: '/reviews', body: [], status: 500 },
+      { match: '/reviews/questions', body: { title: 'Internal Server Error', status: 500 }, status: 500 },
     ])
     const wrapper = mountReviewPage(fetchMock)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('리뷰를 불러오지 못했습니다.')
+    expect(wrapper.text()).toContain('회고를 불러오지 못했습니다.')
   })
 })

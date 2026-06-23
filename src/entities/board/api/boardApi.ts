@@ -27,6 +27,21 @@ export function listBoards(groupId: string): Promise<GroupBoard[]> {
   return apiClient<GroupBoard[]>(`/groups/${groupId}/boards`)
 }
 
+export function listAllPosts(
+  groupId: string,
+  params?: ListBoardPostsParams,
+): Promise<CursorPageResponse<BoardPostSummary>> {
+  const searchParams = new URLSearchParams()
+  if (params?.cursor) searchParams.set('cursor', params.cursor)
+  if (params?.pageSize !== undefined) searchParams.set('pageSize', String(params.pageSize))
+  if (params?.sort) searchParams.set('sort', params.sort)
+  if (params?.order) searchParams.set('order', params.order)
+  const query = searchParams.toString()
+  return apiClient<CursorPageResponse<BoardPostSummary>>(
+    `/groups/${groupId}/posts${query ? `?${query}` : ''}`,
+  )
+}
+
 export function listBoardPosts(
   groupId: string,
   boardId: string,

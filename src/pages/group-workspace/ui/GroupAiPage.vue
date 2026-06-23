@@ -120,12 +120,12 @@ async function handleOpenConversation(): Promise<void> {
       messages.value = allMessages
       hasMoreMessages.value = false
       nextCursor.value = null
-      await scrollToBottom()
     } catch {
       // 히스토리 로드 실패 시 빈 상태로 시작
     }
     subscribeToStream(conversation.value.id)
     pageState.value = 'chat'
+    await scrollToBottom()
   } catch (error) {
     if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
       openError.value = '스터디가 시작된 후에 AI 팀장과 대화할 수 있어요.'

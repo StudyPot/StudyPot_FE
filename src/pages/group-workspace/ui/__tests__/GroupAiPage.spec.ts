@@ -86,7 +86,10 @@ describe('GroupAiPage', () => {
     vi.stubGlobal('EventSource', FakeEventSource)
     FakeEventSource.instances = []
     vi.mocked(openAiConversation).mockResolvedValue(conversation)
-    vi.mocked(listAiConversationMessages).mockResolvedValue(recoveredMessages)
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: recoveredMessages,
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
   })
 
   afterEach(() => {

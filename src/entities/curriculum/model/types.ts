@@ -39,6 +39,7 @@ export type CurriculumWeek = {
   weekNumber: number
   title: string
   sprintGoal?: string | null
+  retrospectivePrompt?: string | null
   focus?: string | null
   status: CurriculumWeekStatus
   startsAt?: string | null

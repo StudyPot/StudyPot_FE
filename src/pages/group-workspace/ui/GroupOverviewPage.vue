@@ -1,7 +1,20 @@
 <script setup lang="ts">
 
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from 'chart.js'
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
+import { Line } from 'vue-chartjs'
 import { useRouter } from 'vue-router'
+
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend)
 
 import {
   deleteGroup,
@@ -35,6 +48,14 @@ const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, reloadMe
   workspaceContext
 
 const isReadyToStart = computed(() => group.value?.status === 'READY_TO_START')
+
+const canStartStudy = computed(() => {
+  if (!group.value) return false
+  const active = members.value.filter((m) => m.status !== 'LEFT')
+  const allSubmitted = active.every((m) => m.onboardingStatus === 'SUBMITTED')
+  const isFull = active.length >= group.value.maxMembers
+  return allSubmitted && isFull
+})
 const router = useRouter()
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
@@ -170,46 +191,96 @@ async function loadGroupActivity(): Promise<void> {
   }
 }
 
-function activityLevel(count: number): number {
-  if (count === 0) return 0
-  if (count <= 2) return 1
-  if (count <= 5) return 2
-  return 3
-}
-
-// 잔디: 백엔드가 내려준 커리큘럼 기간(시작~종료) 날짜를 그대로 사용한다.
-// (멤버별 dailyActivity는 같은 날짜 축이지만, 안전하게 모든 행의 날짜를 합쳐 정렬한다.)
-const heatmapDays = computed(() => {
+const activityDays = computed(() => {
   const dates = new Set<string>()
   for (const row of activityRows.value) {
     for (const d of row.dailyActivity) dates.add(d.date)
   }
-  return Array.from(dates).sort()
+  return Array.from(dates).sort().slice(-14)
 })
 
-const heatmapData = computed(() =>
-  activityRows.value.map((row) => ({
-    name: row.memberNickname,
-    activity: heatmapDays.value.map((day) => {
-      const found = row.dailyActivity.find((d) => d.date === day)
-      return activityLevel(found?.count ?? 0)
-    }),
-  }))
+const MEMBER_COLORS = [
+  { border: 'rgba(180,190,254,1)',  background: 'rgba(180,190,254,0.15)' },
+  { border: 'rgba(252,165,165,1)',  background: 'rgba(252,165,165,0.15)' },
+  { border: 'rgba(110,231,183,1)',  background: 'rgba(110,231,183,0.15)' },
+  { border: 'rgba(253,213,130,1)',  background: 'rgba(253,213,130,0.15)' },
+  { border: 'rgba(216,180,254,1)',  background: 'rgba(216,180,254,0.15)' },
+  { border: 'rgba(147,223,200,1)',  background: 'rgba(147,223,200,0.15)' },
+]
+
+const chartRef = ref<{ chart: ChartJS } | null>(null)
+const hiddenDatasets = ref<boolean[]>([])
+
+watch(
+  () => activityRows.value,
+  (rows) => { hiddenDatasets.value = rows.map(() => false) },
+  { immediate: true },
 )
 
-const HEAT_COLORS = [
-  // 활동 없는 날도 GitHub 잔디처럼 회색 사각형이 보이도록 한다. (이전엔 카드색이라 배경과 섞여 안 보였음)
-  'bg-[var(--color-line-strong)]',
-  'bg-[rgba(54,92,255,0.25)]',
-  'bg-[rgba(54,92,255,0.55)]',
-  'bg-[var(--color-primary)]',
-]
+function toggleDataset(index: number): void {
+  const chart = chartRef.value?.chart
+  if (!chart) return
+  const meta = chart.getDatasetMeta(index)
+  meta.hidden = !meta.hidden
+  hiddenDatasets.value = hiddenDatasets.value.map((h, i) => (i === index ? !h : h))
+  chart.update()
+}
+
+const combinedChartData = computed(() => ({
+  labels: activityDays.value.map((d) => {
+    const date = new Date(d)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }),
+  datasets: activityRows.value.map((row, i) => {
+    const color = MEMBER_COLORS[i % MEMBER_COLORS.length]!
+    return {
+      label: row.memberNickname,
+      data: activityDays.value.map((day) => row.dailyActivity.find((d) => d.date === day)?.count ?? 0),
+      borderColor: color.border,
+      backgroundColor: color.background,
+      fill: true,
+      tension: 0.4,
+      borderWidth: 1.5,
+      pointBackgroundColor: '#ffffff',
+      pointBorderColor: color.border,
+      pointBorderWidth: 1.5,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+    }
+  }),
+}))
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index' as const, intersect: false },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (ctx: { dataset: { label?: string }; parsed: { y: number | null } }) =>
+          ` ${ctx.dataset.label ?? ''}: ${ctx.parsed.y ?? 0}건`,
+      },
+    },
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: 'rgba(148,155,164,0.8)', font: { size: 11 } },
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { stepSize: 1, color: 'rgba(148,155,164,0.8)', font: { size: 11 } },
+      grid: { color: 'rgba(148,155,164,0.08)' },
+    },
+  },
+}
 
 const quickLinks: QuickLink[] = [
   { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
   { routeName: 'group-ai', title: 'AI 팀장', caption: '학습 흐름을 함께 점검합니다.' },
   { routeName: 'group-board', title: '게시판', caption: '공지와 토론을 나눕니다.' },
-  { routeName: 'group-review', title: '스터디 리뷰', caption: '평균 평점과 중복 방지 상태를 확인하고 리뷰를 남깁니다.' },
+  { routeName: 'group-review', title: '스터디 회고', caption: '이번 스터디를 돌아보며 별점과 소감을 남겨보세요.' },
 ]
 
 function formatDateRange(startsAt: string, endsAt: string): string {
@@ -259,10 +330,7 @@ async function handleStartStudy(): Promise<void> {
   }
 }
 
-function getDayLabel(dayStr: string): string {
-  const d = new Date(dayStr)
-  return `${d.getMonth() + 1}/${d.getDate()}`
-}
+
 </script>
 
 <template>
@@ -286,7 +354,7 @@ function getDayLabel(dayStr: string): string {
     <template v-else-if="group && primaryEntry">
       <!-- 스터디 시작하기 배너 -->
       <section
-        v-if="isReadyToStart && isOwner"
+        v-if="isReadyToStart && isOwner && canStartStudy"
         class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -308,6 +376,16 @@ function getDayLabel(dayStr: string): string {
             {{ isStartingStudy ? '시작 중…' : '🚀 스터디 시작하기' }}
           </button>
         </div>
+      </section>
+
+      <section
+        v-else-if="isReadyToStart && !isOwner && canStartStudy"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
+        <p class="text-sm font-bold text-[var(--color-primary)]">🎉 모든 멤버가 온보딩을 완료했습니다!</p>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">
+          관리자가 스터디를 시작하면 커리큘럼이 생성됩니다. 잠시만 기다려 주세요.
+        </p>
       </section>
 
       <!-- 온보딩 진행 현황 -->
@@ -417,16 +495,6 @@ function getDayLabel(dayStr: string): string {
               확인하기
             </RouterLink>
           </div>
-
-          <!-- READY_TO_START 의 시작 액션은 오너 전용 상단 배너에서만 노출한다.
-               (메인 카드의 중복/오해 소지 '스터디 시작하기' 버튼은 숨긴다) -->
-          <RouterLink
-            v-else-if="!isReadyToStart"
-            :to="{ name: primaryEntry.routeName, params: { groupId } }"
-            class="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-          >
-            {{ primaryEntry.label }}
-          </RouterLink>
         </div>
 
         <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-4">
@@ -476,52 +544,45 @@ function getDayLabel(dayStr: string): string {
         </div>
       </section>
 
-      <!-- 활동 대시보드 (잔디) -->
+      <!-- 활동 대시보드 -->
       <section
-        v-if="group.status === 'ACTIVE' && heatmapData.length > 0"
+        v-if="group.status === 'ACTIVE' && activityRows.length > 0"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
-        <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
-        <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">최근 4주 학습 활동</h3>
-
-        <div class="mt-4 overflow-x-auto">
-          <div class="min-w-max">
-            <!-- 날짜 헤더 -->
-            <div class="mb-1 flex gap-1 pl-24">
-              <div
-                v-for="(day, idx) in heatmapDays"
-                :key="day"
-                class="w-5 text-center text-[10px] text-[var(--color-muted)]"
-              >
-                {{ idx % 7 === 0 ? getDayLabel(day) : '' }}
-              </div>
-            </div>
-
-            <!-- 멤버 행 -->
-            <div
-              v-for="row in heatmapData"
-              :key="row.name"
-              class="mb-1 flex items-center gap-1"
-            >
-              <span class="w-24 shrink-0 truncate text-right pr-2 text-xs font-medium text-[var(--color-muted)]">
-                {{ row.name }}
-              </span>
-              <div
-                v-for="(level, idx) in row.activity"
-                :key="idx"
-                class="h-5 w-5 rounded-sm transition-colors"
-                :class="HEAT_COLORS[level]"
-                :title="`${row.name} ${heatmapDays[idx]}`"
-              />
-            </div>
-
-            <!-- 범례 -->
-            <div class="mt-3 flex items-center gap-2 pl-24 text-xs text-[var(--color-muted)]">
-              <span>적음</span>
-              <div v-for="(cls, i) in HEAT_COLORS" :key="i" class="h-3 w-3 rounded-sm" :class="cls" />
-              <span>많음</span>
-            </div>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
+            <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
           </div>
+
+          <!-- 커스텀 범례 (우측 상단, 리스트 형식) -->
+          <div class="flex flex-col gap-2">
+            <p class="text-[10px] font-bold text-[var(--color-muted)]">그래프 활성화</p>
+            <button
+              v-for="(row, i) in activityRows"
+              :key="row.memberNickname"
+              type="button"
+              class="flex cursor-pointer items-center gap-2 transition-transform duration-150 hover:scale-105"
+              @click="toggleDataset(i)"
+            >
+              <span
+                class="inline-block h-3 w-3 shrink-0 rounded-full border-[1.5px] transition-colors duration-150"
+                :style="{
+                  borderColor: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
+                  backgroundColor: hiddenDatasets[i] ? 'transparent' : MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
+                }"
+              />
+              <span
+                class="text-xs font-semibold transition-opacity duration-150"
+                :style="{ color: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border }"
+                :class="{ 'opacity-40': hiddenDatasets[i] }"
+              >{{ row.memberNickname }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-3 h-96">
+          <Line ref="chartRef" :data="combinedChartData" :options="chartOptions" />
         </div>
       </section>
 

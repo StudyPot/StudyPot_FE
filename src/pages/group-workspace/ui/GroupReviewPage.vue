@@ -1,126 +1,132 @@
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
 
+import { getMyGroupMemberProfile } from '@/entities/group'
 import {
   createReview,
   getMyReview,
-  getReviewStats,
-  listReviews,
+  getRetroQuestions,
+  updateMyReview,
+  type RetroAnswers,
+  type RetroQuestion,
   type Review,
-  type ReviewStats,
 } from '@/entities/review'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
 const workspaceContext = inject(groupWorkspaceContextKey)
-
-if (!workspaceContext) {
-  throw new Error('GroupReviewPage must be used inside GroupWorkspacePage.')
-}
-
+if (!workspaceContext) throw new Error('GroupReviewPage must be used inside GroupWorkspacePage.')
 const { groupId } = workspaceContext
 
 type PageState = 'loading' | 'ready' | 'error'
+type FormMode = 'view' | 'write' | 'edit'
 
 const pageState = ref<PageState>('loading')
 const pageError = ref('')
+const formMode = ref<FormMode>('write')
+const hasPendingTodos = ref(false)
 
-const stats = ref<ReviewStats | null>(null)
-const reviews = ref<Review[]>([])
+const questions = ref<RetroQuestion[]>([])
 const myReview = ref<Review | null>(null)
-
-const selectedRating = ref(0)
-const hoverRating = ref(0)
-const reviewContent = ref('')
+const answers = ref<RetroAnswers>({})
 const isSubmitting = ref(false)
 const submitError = ref('')
-const submitFieldError = ref('')
-const submitSuccess = ref(false)
+const validationErrors = ref<Record<string, string>>({})
 
-
-onMounted(() => {
-  void loadPage()
-})
+onMounted(() => void loadPage())
 
 async function loadPage(): Promise<void> {
   pageState.value = 'loading'
   pageError.value = ''
 
   try {
-    const [statsResult, reviewsResult] = await Promise.all([
-      getReviewStats(groupId.value),
-      listReviews(groupId.value),
-    ])
-    stats.value = statsResult
-    reviews.value = reviewsResult
+    const profile = await getMyGroupMemberProfile(groupId.value)
+    hasPendingTodos.value = profile.taskCompletion.incompleteCount > 0
+  } catch {
+    hasPendingTodos.value = false
+  }
 
-    try {
-      myReview.value = await getMyReview(groupId.value)
-    } catch (err) {
-      if (!(err instanceof ApiError && err.status === 404)) throw err
+  try {
+    const [questionsRes, reviewRes] = await Promise.allSettled([
+      getRetroQuestions(groupId.value),
+      getMyReview(groupId.value),
+    ])
+
+    if (questionsRes.status === 'fulfilled') {
+      questions.value = questionsRes.value
+    } else {
+      throw questionsRes.reason
+    }
+
+    if (reviewRes.status === 'fulfilled') {
+      myReview.value = reviewRes.value
+      formMode.value = 'view'
+    } else if (reviewRes.reason instanceof ApiError && reviewRes.reason.status === 404) {
+      myReview.value = null
+      formMode.value = 'write'
+    } else {
+      throw reviewRes.reason
     }
 
     pageState.value = 'ready'
-  } catch (error) {
-    pageError.value =
-      error instanceof ApiError ? error.message : '리뷰 정보를 불러오지 못했습니다.'
+  } catch (err) {
+    pageError.value = err instanceof ApiError ? err.message : '회고 정보를 불러오지 못했습니다.'
     pageState.value = 'error'
   }
 }
 
-async function submitReview(): Promise<void> {
+function startEdit(): void {
+  if (!myReview.value) return
+  answers.value = { ...myReview.value.answers }
   submitError.value = ''
-  submitFieldError.value = ''
+  validationErrors.value = {}
+  formMode.value = 'edit'
+}
 
-  if (selectedRating.value === 0) {
-    submitFieldError.value = '평점을 선택해 주세요.'
-    return
+function cancelEdit(): void {
+  formMode.value = 'view'
+  submitError.value = ''
+  validationErrors.value = {}
+}
+
+function validate(): boolean {
+  const errors: Record<string, string> = {}
+  for (const q of questions.value) {
+    if (!q.required) continue
+    const val = answers.value[q.id]
+    if (val === undefined || val === '' || (q.type === 'scale' && val === 0)) {
+      errors[q.id] = '필수 항목입니다.'
+    }
   }
+  validationErrors.value = errors
+  return Object.keys(errors).length === 0
+}
+
+async function handleSubmit(): Promise<void> {
+  if (!validate()) return
 
   isSubmitting.value = true
+  submitError.value = ''
 
   try {
-    const created = await createReview(groupId.value, {
-      rating: selectedRating.value,
-      content: reviewContent.value.trim() || undefined,
-    })
+    const request = { answers: answers.value }
 
-    myReview.value = created
-    submitSuccess.value = true
-    reviews.value = [created, ...reviews.value]
-
-    if (stats.value) {
-      const newTotal = stats.value.totalCount + 1
-      const newAvg =
-        (stats.value.averageRating * stats.value.totalCount + created.rating) / newTotal
-      const dist = { ...stats.value.ratingDistribution }
-      const key = String(created.rating)
-      dist[key] = (dist[key] ?? 0) + 1
-      stats.value = {
-        averageRating: Math.round(newAvg * 10) / 10,
-        totalCount: newTotal,
-        ratingDistribution: dist,
-      }
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      if (error.status === 409) {
-        submitError.value = '이미 리뷰를 작성했습니다.'
-        void loadPage()
-      } else if (error.status === 400 || error.status === 422) {
-        const payload = error.payload as
-          | { fieldErrors?: { field?: string; message?: string }[]; errors?: Record<string, string> }
-          | null
-        const ratingError =
-          payload?.fieldErrors?.find((fieldError) => fieldError.field === 'rating')?.message ??
-          payload?.errors?.rating
-        submitFieldError.value = ratingError ?? '입력 값을 확인해 주세요.'
-      } else {
-        submitError.value = error.message
-      }
+    if (formMode.value === 'edit' && myReview.value) {
+      myReview.value = await updateMyReview(groupId.value, request)
     } else {
-      submitError.value = '리뷰 제출에 실패했습니다.'
+      myReview.value = await createReview(groupId.value, request)
+    }
+
+    formMode.value = 'view'
+    answers.value = {}
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      submitError.value = '이미 회고를 작성했습니다.'
+      void loadPage()
+    } else {
+      submitError.value =
+        error instanceof ApiError ? error.message : '저장에 실패했습니다. 다시 시도해 주세요.'
     }
   } finally {
     isSubmitting.value = false
@@ -128,20 +134,11 @@ async function submitReview(): Promise<void> {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(
-    new Date(value),
-  )
-}
-
-function ratingLabel(rating: number): string {
-  const labels: Record<number, string> = {
-    1: '별로예요',
-    2: '아쉬워요',
-    3: '보통이에요',
-    4: '좋아요',
-    5: '최고예요',
-  }
-  return labels[rating] ?? ''
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(value))
 }
 </script>
 
@@ -150,221 +147,202 @@ function ratingLabel(rating: number): string {
     <ScreenState
       v-if="pageState === 'loading'"
       variant="loading"
-      title="리뷰를 불러오는 중입니다."
+      title="회고를 불러오는 중입니다."
       description="잠시만 기다려 주세요."
     />
 
     <ScreenState
       v-else-if="pageState === 'error'"
       variant="error"
-      title="리뷰를 불러오지 못했습니다."
+      title="회고를 불러오지 못했습니다."
       :description="pageError"
       action-label="다시 시도"
       @action="loadPage"
     />
 
     <template v-else-if="pageState === 'ready'">
-      <!-- 평점 통계 -->
+      <!-- Todo 미완료 차단 메시지 -->
       <section
-        v-if="stats"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        v-if="hasPendingTodos"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-10 text-center shadow-[var(--shadow-soft)]"
       >
-        <p class="text-sm font-semibold text-[var(--color-primary)]">스터디 리뷰</p>
-        <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">평균 평점</h2>
-
-        <div class="mt-4 flex items-end gap-6">
-          <div class="text-center">
-            <p class="text-5xl font-bold text-[var(--color-ink)]">
-              {{ stats.averageRating.toFixed(1) }}
-            </p>
-            <div class="mt-2 flex justify-center gap-0.5" aria-label="평균 평점">
-              <span
-                v-for="star in 5"
-                :key="star"
-                :class="[
-                  'text-2xl',
-                  star <= Math.round(stats.averageRating)
-                    ? 'text-yellow-400'
-                    : 'text-[var(--color-line-strong)]',
-                ]"
-              >★</span>
-            </div>
-            <p class="mt-1 text-sm text-[var(--color-muted)]">{{ stats.totalCount }}개의 리뷰</p>
-          </div>
-
-          <dl class="flex-1 grid gap-1.5">
-            <div
-              v-for="star in [5, 4, 3, 2, 1]"
-              :key="star"
-              class="flex items-center gap-2 text-xs"
-            >
-              <dt class="w-6 shrink-0 text-right text-[var(--color-muted)]">{{ star }}점</dt>
-              <div class="h-2 flex-1 rounded-full bg-[var(--color-active)]">
-                <div
-                  class="h-full rounded-full bg-yellow-400 transition-all"
-                  :style="{
-                    width:
-                      stats.totalCount > 0
-                        ? `${((stats.ratingDistribution[String(star)] ?? 0) / stats.totalCount) * 100}%`
-                        : '0%',
-                  }"
-                />
-              </div>
-              <dd class="w-5 shrink-0 text-[var(--color-muted)]">
-                {{ stats.ratingDistribution[String(star)] ?? 0 }}
-              </dd>
-            </div>
-          </dl>
-        </div>
+        <p class="text-3xl">📝</p>
+        <p class="mt-4 text-base font-bold text-[var(--color-ink)]">아직 완료하지 않은 Todo가 있어요</p>
+        <p class="mt-2 text-sm text-[var(--color-muted)]">이번 주 할 일을 모두 완료한 뒤 회고를 작성할 수 있어요.</p>
+        <RouterLink
+          :to="{ name: 'group-todo', params: { groupId } }"
+          class="mt-5 inline-flex h-9 items-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)]"
+        >
+          Todo 완료하러 가기
+        </RouterLink>
       </section>
 
-      <!-- 내 리뷰 / 작성 폼 -->
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        v-else
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
       >
-        <h3 class="text-base font-bold text-[var(--color-ink)]">내 리뷰</h3>
-
-        <!-- 이미 작성한 경우 -->
-        <div v-if="myReview" class="mt-4">
-          <div class="flex items-center gap-1" aria-label="내 평점">
-            <span
-              v-for="star in 5"
-              :key="star"
-              :class="['text-xl', star <= myReview.rating ? 'text-yellow-400' : 'text-[var(--color-line-strong)]']"
-            >★</span>
-            <span class="ml-2 text-sm font-semibold text-[var(--color-ink)]">
-              {{ myReview.rating }}점
-            </span>
-          </div>
-          <p v-if="myReview.content" class="mt-3 text-sm leading-6 text-[var(--color-ink)]">
-            {{ myReview.content }}
-          </p>
-          <p class="mt-2 text-xs text-[var(--color-muted)]">{{ formatDate(myReview.createdAt) }}</p>
-          <p
-            class="mt-3 inline-flex items-center gap-1 rounded-md bg-[var(--color-active)] px-3 py-1.5 text-xs font-semibold text-[var(--color-muted)]"
-          >
-            이미 리뷰를 작성했습니다.
-          </p>
-        </div>
-
-        <!-- 작성 폼 -->
-        <form v-else class="mt-4" @submit.prevent="submitReview">
-          <!-- 별점 선택 -->
-          <fieldset>
-            <legend class="text-sm font-semibold text-[var(--color-ink)]">평점 <span class="text-[var(--color-danger)]">*</span></legend>
-            <div class="mt-2 flex items-center gap-1">
-              <button
-                v-for="star in 5"
-                :key="star"
-                type="button"
-                :aria-label="`${star}점`"
-                :aria-pressed="selectedRating === star"
-                class="text-3xl transition-transform hover:scale-110 focus:outline-none"
-                :class="
-                  star <= (hoverRating || selectedRating)
-                    ? 'text-yellow-400'
-                    : 'text-[var(--color-line-strong)]'
-                "
-                @mouseenter="hoverRating = star"
-                @mouseleave="hoverRating = 0"
-                @click="selectedRating = star"
-              >★</button>
-              <span
-                v-if="hoverRating || selectedRating"
-                class="ml-2 text-sm text-[var(--color-muted)]"
-              >
-                {{ ratingLabel(hoverRating || selectedRating) }}
-              </span>
-            </div>
-            <p
-              v-if="submitFieldError"
-              role="alert"
-              class="mt-1 text-xs font-semibold text-[var(--color-danger)]"
-            >
-              {{ submitFieldError }}
-            </p>
-          </fieldset>
-
-          <!-- 리뷰 내용 -->
-          <div class="mt-4">
-            <label for="review-content" class="text-sm font-semibold text-[var(--color-ink)]">
-              리뷰 내용 <span class="text-[var(--color-muted)]">(선택)</span>
-            </label>
-            <textarea
-              id="review-content"
-              v-model="reviewContent"
-              name="content"
-              rows="4"
-              maxlength="500"
-              placeholder="스터디 경험을 자유롭게 작성해 주세요."
-              class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
-            />
-            <p class="mt-1 text-right text-xs text-[var(--color-muted)]">
-              {{ reviewContent.length }} / 500
+        <!-- 헤더 -->
+        <div class="flex items-start justify-between border-b border-[var(--color-line)] px-6 py-5">
+          <div>
+            <p class="text-sm font-semibold text-[var(--color-primary)]">스터디 회고</p>
+            <h2 class="mt-0.5 text-xl font-bold text-[var(--color-ink)]">내 회고</h2>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">
+              이번 주차를 돌아보고 솔직한 회고를 남겨보세요.
             </p>
           </div>
-
-          <p
-            v-if="submitError"
-            role="alert"
-            class="mt-3 text-sm font-semibold text-[var(--color-danger)]"
-          >
-            {{ submitError }}
-          </p>
-
           <button
-            type="submit"
-            :disabled="isSubmitting"
-            class="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+            v-if="formMode === 'view'"
+            type="button"
+            class="shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 py-1.5 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            @click="startEdit"
           >
-            {{ isSubmitting ? '제출 중…' : '리뷰 제출' }}
+            수정
           </button>
-        </form>
-      </section>
+        </div>
 
-      <!-- 전체 리뷰 목록 -->
-      <section
-        v-if="reviews.length > 0"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <h3 class="text-base font-bold text-[var(--color-ink)]">
-          전체 리뷰 <span class="ml-1 text-sm font-normal text-[var(--color-muted)]">{{ reviews.length }}개</span>
-        </h3>
+        <!-- 뷰 모드 -->
+        <div v-if="formMode === 'view' && myReview" class="divide-y divide-[var(--color-line)]">
+          <div v-for="q in questions" :key="q.id" class="px-6 py-5">
+            <p class="text-sm font-semibold text-[var(--color-ink)]">{{ q.label }}</p>
 
-        <ul class="mt-4 grid gap-4">
-          <li
-            v-for="review in reviews"
-            :key="review.id"
-            class="border-t border-[var(--color-line)] pt-4 first:border-t-0 first:pt-0"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-[var(--color-ink)]">
-                  {{ review.displayName ?? '익명' }}
-                </span>
-                <div class="flex gap-0.5" :aria-label="`${review.rating}점`">
+            <!-- scale 답변 표시 -->
+            <template v-if="q.type === 'scale'">
+              <div class="mt-3 flex flex-col gap-1.5">
+                <div class="flex items-center gap-4">
+                  <div
+                    v-for="(size, idx) in ['h-9 w-9', 'h-7 w-7', 'h-6 w-6', 'h-7 w-7', 'h-9 w-9']"
+                    :key="idx"
+                    class="flex w-9 justify-center"
+                  >
+                    <span
+                      class="rounded-full border-2"
+                      :class="[
+                        size,
+                        myReview.answers[q.id] === idx + 1
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                          : 'border-[var(--color-line-strong)] bg-[var(--color-card)]'
+                      ]"
+                    />
+                  </div>
+                </div>
+                <div class="flex gap-4">
                   <span
-                    v-for="star in 5"
-                    :key="star"
-                    :class="['text-sm', star <= review.rating ? 'text-yellow-400' : 'text-[var(--color-line-strong)]']"
-                  >★</span>
+                    v-for="idx in 5"
+                    :key="idx"
+                    class="flex w-9 justify-center text-[10px] text-[var(--color-muted)]"
+                  >{{ idx }}</span>
                 </div>
               </div>
-              <time class="text-xs text-[var(--color-muted)]">{{ formatDate(review.createdAt) }}</time>
-            </div>
-            <p v-if="review.content" class="mt-2 text-sm leading-6 text-[var(--color-ink)]">
-              {{ review.content }}
-            </p>
-          </li>
-        </ul>
-      </section>
+            </template>
 
-      <p
-        v-else
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-10 text-center text-sm text-[var(--color-muted)]"
-      >
-        아직 작성된 리뷰가 없어요.
-      </p>
+            <!-- text 답변 표시 -->
+            <template v-else-if="q.type === 'text'">
+              <p
+                v-if="myReview.answers[q.id]"
+                class="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--color-ink)]"
+              >
+                {{ myReview.answers[q.id] }}
+              </p>
+              <p v-else class="mt-2 text-sm text-[var(--color-muted-deep)]">작성하지 않음</p>
+            </template>
+          </div>
+
+          <div class="px-6 py-4">
+            <p class="text-xs text-[var(--color-muted)]">{{ formatDate(myReview.createdAt) }} 작성</p>
+          </div>
+        </div>
+
+        <!-- 작성 / 수정 폼 -->
+        <form v-else class="divide-y divide-[var(--color-line)]" @submit.prevent="handleSubmit">
+          <div v-for="q in questions" :key="q.id" class="px-6 py-5">
+            <label class="block text-sm font-semibold text-[var(--color-ink)]">
+              {{ q.label }}
+              <span v-if="q.required" class="ml-0.5 text-[var(--color-danger)]">*</span>
+            </label>
+
+            <!-- scale 선택 -->
+            <template v-if="q.type === 'scale'">
+              <div class="mt-3 flex flex-col gap-1.5">
+                <div class="flex items-center gap-4">
+                  <div
+                    v-for="(size, idx) in ['h-9 w-9', 'h-7 w-7', 'h-6 w-6', 'h-7 w-7', 'h-9 w-9']"
+                    :key="idx"
+                    class="flex w-9 justify-center"
+                  >
+                    <button
+                      type="button"
+                      class="rounded-full border-2 transition-colors focus:outline-none"
+                      :class="[
+                        size,
+                        answers[q.id] === idx + 1
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                          : 'border-[var(--color-line-strong)] bg-[var(--color-card)] hover:border-[var(--color-primary)]'
+                      ]"
+                      @click="answers[q.id] = idx + 1"
+                    />
+                  </div>
+                </div>
+                <div class="flex gap-4">
+                  <span
+                    v-for="idx in 5"
+                    :key="idx"
+                    class="flex w-9 justify-center text-[10px] text-[var(--color-muted)]"
+                  >{{ idx }}</span>
+                </div>
+              </div>
+              <p
+                v-if="validationErrors[q.id]"
+                class="mt-1.5 text-xs font-semibold text-[var(--color-danger)]"
+              >
+                {{ validationErrors[q.id] }}
+              </p>
+            </template>
+
+            <!-- text 입력 -->
+            <template v-else-if="q.type === 'text'">
+              <textarea
+                v-model="(answers[q.id] as string)"
+                :placeholder="'placeholder' in q ? q.placeholder : ''"
+                rows="3"
+                maxlength="500"
+                class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              />
+              <p
+                v-if="validationErrors[q.id]"
+                class="mt-1 text-xs font-semibold text-[var(--color-danger)]"
+              >
+                {{ validationErrors[q.id] }}
+              </p>
+            </template>
+          </div>
+
+          <!-- 제출 -->
+          <div class="flex items-center justify-end gap-3 px-6 py-5">
+            <p
+              v-if="submitError"
+              role="alert"
+              class="flex-1 text-sm font-semibold text-[var(--color-danger)]"
+            >
+              {{ submitError }}
+            </p>
+            <button
+              v-if="formMode === 'edit'"
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] px-5 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              @click="cancelEdit"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              :disabled="isSubmitting"
+              class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+            >
+              {{ isSubmitting ? '저장 중…' : formMode === 'edit' ? '수정 완료' : '회고 작성' }}
+            </button>
+          </div>
+        </form>
+      </section>
     </template>
   </div>
 </template>
