@@ -23,7 +23,13 @@ export type StudyGroup = {
   endsAt: string
   // 목록 카드용(있으면 사용, 없으면 graceful 처리). 백엔드 보강 예정.
   memberCount?: number
+  progressPct?: number
   progressPercent?: number
+}
+
+export type GroupSummary = {
+  groupCount: number
+  weeklyActivityCount: number
 }
 
 export type GroupSortField = 'name' | 'startsAt' | 'endsAt' | 'createdAt'

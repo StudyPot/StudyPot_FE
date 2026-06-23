@@ -4,6 +4,9 @@ import { mockMswData } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
 
 export const groupHandlers = [
+  http.get(`${apiBaseUrl}/groups/summary`, () => {
+    return HttpResponse.json(mockMswData.groups.groupSummary)
+  }),
   http.get(`${apiBaseUrl}/groups`, ({ request }) => {
     const url = new URL(request.url)
     const q = url.searchParams.get('q')?.toLowerCase() ?? ''
@@ -75,6 +78,26 @@ export const groupHandlers = [
       .slice(0, maxCandidates)
 
     return HttpResponse.json({ keywords })
+  }),
+  http.post(`${apiBaseUrl}/groups/join`, async ({ request }) => {
+    const body = (await request.json()) as { inviteCode: string }
+    const group = mockMswData.groups.groupList.find((g) => g.inviteCode === body.inviteCode)
+
+    if (!group) {
+      return HttpResponse.json(
+        { title: 'Not Found', detail: '유효하지 않은 초대 코드입니다.', status: 404 },
+        { status: 404 },
+      )
+    }
+
+    return HttpResponse.json({
+      id: '018f7a4e-1000-7000-9000-000000000099',
+      groupId: group.id,
+      userId: '018f7a4e-0000-7000-9000-000000000001',
+      permission: 'MEMBER',
+      status: 'PENDING_ONBOARDING',
+      displayName: 'user1',
+    })
   }),
   http.post(`${apiBaseUrl}/groups/:groupId/join`, ({ params }) => {
     return HttpResponse.json({

@@ -650,6 +650,51 @@ function escapeAttribute(value: string): string {
   return escapeHtml(value)
 }
 
+function formatRelativeDate(value: string): string {
+  const now = new Date()
+  const date = new Date(value)
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+  if (diffMins < 1) return '방금'
+  if (diffMins < 60) return `${diffMins}분 전`
+  if (diffHours < 24) return `${diffHours}시간 전`
+  if (diffDays === 1) return '어제'
+  if (diffDays < 7) return `${diffDays}일 전`
+  return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(date)
+}
+
+function formatMonthDay(value: string): string {
+  return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(new Date(value))
+}
+
+const avatarPalette = [
+  'bg-emerald-500',
+  'bg-violet-500',
+  'bg-sky-500',
+  'bg-orange-400',
+  'bg-rose-400',
+  'bg-cyan-500',
+]
+
+function getAvatarColor(name: string): string {
+  if (!name) return 'bg-gray-400'
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return avatarPalette[Math.abs(hash) % avatarPalette.length] ?? 'bg-gray-400'
+}
+
+function isLeaderReport(boardId: string): boolean {
+  return boardMap.value[boardId]?.boardType === 'LEADER_REPORT'
+}
+
+function getCommentLabel(boardId: string): string {
+  return boardMap.value[boardId]?.boardType === 'QUESTION' ? '답변' : '댓글'
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'short',
@@ -661,176 +706,253 @@ function formatDate(value: string): string {
 </script>
 
 <template>
-  <div class="grid gap-5">
-    <!-- 게시판 탭 -->
-    <div
-      v-if="boards.length > 0"
-      class="flex flex-wrap gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-2 shadow-[var(--shadow-soft)]"
-    >
-      <!-- 전체 탭 -->
-      <button
-        type="button"
-        :class="[
-          'rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
-          isAllBoards
-            ? 'bg-[var(--color-primary)] text-white'
-            : 'bg-[var(--color-card)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
-        ]"
-        @click="selectAllBoards"
-      >
-        전체
-      </button>
-      <button
-        v-for="board in boards"
-        :key="board.id"
-        type="button"
-        :class="[
-          'rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
-          !isAllBoards && selectedBoard?.id === board.id
-            ? 'bg-[var(--color-primary)] text-white'
-            : 'bg-[var(--color-card)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
-        ]"
-        @click="selectBoard(board)"
-      >
-        {{ board.name }}
-      </button>
-    </div>
-
+  <div class="flex flex-col gap-4">
     <!-- 목록 -->
     <template v-if="viewMode === 'list'">
-      <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
-      >
-        <div
-          class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-line)] px-5 py-4"
-        >
-          <div>
-            <p class="text-sm font-semibold text-[var(--color-primary)]">게시판</p>
-            <h2 class="mt-1 text-lg font-bold text-[var(--color-ink)]">
-              {{ isAllBoards ? '전체 게시글' : (selectedBoard?.name ?? '그룹 게시판') }}
-            </h2>
-          </div>
-          <div class="flex items-center gap-2">
-            <!-- 정렬 -->
-            <SelectDropdown v-model="sortValue" :options="sortOptions" aria-label="정렬 기준" />
-            <button
-              type="button"
-              class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)]"
-              @click="openCreatePost"
-            >
-              글 쓰기
-            </button>
-          </div>
-        </div>
-
-        <ScreenState
-          v-if="isLoadingBoards || isLoading"
-          variant="loading"
-          title="게시글을 불러오는 중입니다."
-          class="p-8"
-        />
-        <ScreenState
-          v-else-if="errorMessage"
-          variant="error"
-          :title="errorMessage"
-          action-label="다시 시도"
-          class="p-8"
-          @action="loadBoards"
-        />
-
-        <ul v-else-if="posts.length > 0" class="divide-y divide-[var(--color-line)]">
-          <li
-            v-for="post in posts"
-            :key="post.id"
-            class="flex cursor-pointer items-start gap-3 px-5 py-4 transition hover:bg-[var(--color-active)]"
-            @click="openPost(post)"
+      <!-- 탭 바 + 글쓰기 버튼 -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            :class="[
+              'rounded-full px-4 py-1.5 text-sm font-semibold transition focus:outline-none',
+              isAllBoards
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'border border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+            ]"
+            @click="selectAllBoards"
           >
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <!-- 카테고리 뱃지 -->
-                <span
-                  class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
-                  :class="{
-                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
-                      boardMap[post.boardId]?.boardType === 'NOTICE',
-                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400':
-                      boardMap[post.boardId]?.boardType === 'QUESTION',
-                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
-                      boardMap[post.boardId]?.boardType === 'RESOURCE',
-                    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400':
-                      boardMap[post.boardId]?.boardType === 'RETROSPECTIVE',
-                    'bg-[var(--color-active)] text-[var(--color-muted)]':
-                      !boardMap[post.boardId]?.boardType,
-                  }"
-                >
-                  {{ getBoardBadgeLabel(post.boardId) }}
-                </span>
-                <span class="font-semibold text-[var(--color-ink)]">{{ post.title }}</span>
-              </div>
-              <div class="mt-1 flex flex-wrap gap-3 text-xs text-[var(--color-muted)]">
-                <span>{{ post.author.displayName }}</span>
-                <span>{{ formatDate(post.createdAt) }}</span>
-                <span v-if="post.commentCount > 0">댓글 {{ post.commentCount }}</span>
-              </div>
-            </div>
-          </li>
-        </ul>
+            전체
+          </button>
+          <button
+            v-for="board in boards"
+            :key="board.id"
+            type="button"
+            :class="[
+              'inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-sm font-semibold transition focus:outline-none',
+              !isAllBoards && selectedBoard?.id === board.id
+                ? 'bg-[var(--color-primary)] text-white'
+                : board.boardType === 'LEADER_REPORT'
+                  ? 'border border-[rgba(25,195,125,0.3)] bg-[rgba(25,195,125,0.08)] text-[var(--color-primary)] hover:bg-[rgba(25,195,125,0.15)]'
+                  : 'border border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+            ]"
+            @click="selectBoard(board)"
+          >
+            <span v-if="board.boardType === 'LEADER_REPORT'" class="text-xs">✦</span>
+            {{ board.name }}
+          </button>
+        </div>
+        <button
+          type="button"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none"
+          @click="openCreatePost"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          글쓰기
+        </button>
+      </div>
 
-        <p v-else class="px-5 py-8 text-center text-sm text-[var(--color-muted)]">
-          게시글이 없어요.
-        </p>
-      </section>
+      <ScreenState
+        v-if="isLoadingBoards || isLoading"
+        variant="loading"
+        title="게시글을 불러오는 중입니다."
+      />
+      <ScreenState
+        v-else-if="errorMessage"
+        variant="error"
+        :title="errorMessage"
+        action-label="다시 시도"
+        @action="loadBoards"
+      />
+
+      <ul v-else-if="posts.length > 0" class="flex flex-col gap-3">
+        <li
+          v-for="post in posts"
+          :key="post.id"
+          class="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-sm transition hover:shadow-md"
+          @click="openPost(post)"
+        >
+          <!-- 아바타 -->
+          <div
+            v-if="isLeaderReport(post.boardId)"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              />
+            </svg>
+          </div>
+          <div
+            v-else
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+            :class="getAvatarColor(post.author.displayName)"
+          >
+            {{ post.author.displayName[0] }}
+          </div>
+
+          <!-- 내용 -->
+          <div class="min-w-0 flex-1">
+            <!-- 뱃지 -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span
+                v-if="post.pinned"
+                class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                >고정</span
+              >
+              <span
+                v-if="isLeaderReport(post.boardId)"
+                class="rounded-full bg-[rgba(25,195,125,0.12)] px-2 py-0.5 text-xs font-semibold text-[var(--color-primary)]"
+                >AI 팀장</span
+              >
+              <span
+                v-else-if="boardMap[post.boardId]?.boardType === 'NOTICE'"
+                class="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-600 dark:bg-teal-900/20 dark:text-teal-400"
+                >공지</span
+              >
+              <span
+                v-else-if="boardMap[post.boardId]?.boardType === 'QUESTION'"
+                class="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
+                >질문</span
+              >
+              <span
+                v-else-if="boardMap[post.boardId]?.boardType === 'RESOURCE'"
+                class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                >자료 공유</span
+              >
+              <span
+                v-else-if="boardMap[post.boardId]?.boardType === 'RETROSPECTIVE'"
+                class="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600 dark:bg-orange-900/20 dark:text-orange-400"
+                >회고</span
+              >
+            </div>
+
+            <!-- 제목 -->
+            <p class="mt-1.5 font-semibold text-[var(--color-ink)]">{{ post.title }}</p>
+
+            <!-- 미리보기 -->
+            <p
+              v-if="post.contentPreview"
+              class="mt-0.5 line-clamp-1 text-sm text-[var(--color-muted)]"
+            >
+              {{ post.contentPreview }}
+            </p>
+
+            <!-- 푸터 -->
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted)]">
+              <template v-if="isLeaderReport(post.boardId)">
+                <span>AI 팀장</span>
+                <span>·</span>
+                <span>자동 발행</span>
+                <span>·</span>
+                <span>{{ formatMonthDay(post.createdAt) }}</span>
+              </template>
+              <template v-else>
+                <span>{{ post.author.displayName }}</span>
+                <span>·</span>
+                <span>{{ formatRelativeDate(post.createdAt) }}</span>
+                <template v-if="post.commentCount > 0">
+                  <span>·</span>
+                  <span>{{ getCommentLabel(post.boardId) }} {{ post.commentCount }}</span>
+                </template>
+              </template>
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <p v-else class="py-12 text-center text-sm text-[var(--color-muted)]">게시글이 없어요.</p>
     </template>
 
     <!-- 상세 -->
     <template v-else-if="viewMode === 'detail'">
-      <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
+      <button
+        type="button"
+        class="self-start text-sm text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
+        @click="backToList"
       >
-        <div class="border-b border-[var(--color-line)] px-5 py-4">
-          <button
-            type="button"
-            class="mb-3 text-sm font-semibold text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
-            @click="backToList"
-          >
-            ← 목록으로
-          </button>
-          <ScreenState
-            v-if="!selectedPost && isLoadingComments"
-            variant="loading"
-            title="게시글을 불러오는 중입니다."
-            class="py-4"
-          />
-          <template v-else-if="selectedPost">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <!-- 카테고리 뱃지 -->
-                  <span
-                    v-if="boardMap[selectedPost.boardId]"
-                    class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
-                    :class="{
-                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
-                        boardMap[selectedPost.boardId]?.boardType === 'NOTICE',
-                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400':
-                        boardMap[selectedPost.boardId]?.boardType === 'QUESTION',
-                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
-                        boardMap[selectedPost.boardId]?.boardType === 'RESOURCE',
-                      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400':
-                        boardMap[selectedPost.boardId]?.boardType === 'RETROSPECTIVE',
-                    }"
-                  >
-                    {{ getBoardBadgeLabel(selectedPost.boardId) }}
-                  </span>
+        ← 목록으로
+      </button>
+
+      <div class="rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-sm">
+        <ScreenState
+          v-if="!selectedPost && isLoadingComments"
+          variant="loading"
+          title="게시글을 불러오는 중입니다."
+          class="p-8"
+        />
+
+        <template v-else-if="selectedPost">
+          <!-- 헤더 -->
+          <div class="px-6 pt-6">
+            <!-- 뱃지 -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span
+                v-if="selectedPost.pinned"
+                class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                >고정</span
+              >
+              <span
+                v-if="isLeaderReport(selectedPost.boardId)"
+                class="rounded-full bg-[rgba(25,195,125,0.12)] px-2 py-0.5 text-xs font-semibold text-[var(--color-primary)]"
+                >AI 팀장</span
+              >
+              <span
+                v-else-if="boardMap[selectedPost.boardId]?.boardType === 'NOTICE'"
+                class="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-600 dark:bg-teal-900/20 dark:text-teal-400"
+                >공지</span
+              >
+              <span
+                v-else-if="boardMap[selectedPost.boardId]?.boardType === 'QUESTION'"
+                class="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
+                >질문</span
+              >
+              <span
+                v-else-if="boardMap[selectedPost.boardId]?.boardType === 'RESOURCE'"
+                class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                >자료 공유</span
+              >
+              <span
+                v-else-if="boardMap[selectedPost.boardId]?.boardType === 'RETROSPECTIVE'"
+                class="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600 dark:bg-orange-900/20 dark:text-orange-400"
+                >회고</span
+              >
+            </div>
+
+            <!-- 제목 -->
+            <h2 class="mt-3 text-xl font-bold text-[var(--color-ink)]">
+              {{ selectedPost.title }}
+            </h2>
+
+            <!-- 작성자 행 -->
+            <div class="mt-4 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <div
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                  :class="getAvatarColor(selectedPost.author.displayName)"
+                >
+                  {{ selectedPost.author.displayName[0] }}
                 </div>
-                <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">
-                  {{ selectedPost.title }}
-                </h2>
-                <p class="mt-1 text-xs text-[var(--color-muted)]">
-                  {{ selectedPost.author.displayName }} · {{ formatDate(selectedPost.createdAt) }}
-                </p>
+                <div>
+                  <p class="text-sm font-semibold text-[var(--color-ink)]">
+                    {{ selectedPost.author.displayName }}
+                  </p>
+                  <p class="text-xs text-[var(--color-muted)]">
+                    {{ formatRelativeDate(selectedPost.createdAt) }}
+                  </p>
+                </div>
               </div>
-              <!-- 작성자 권한 버튼 -->
               <div v-if="isMyPost(selectedPost)" class="flex shrink-0 gap-2">
                 <button
                   type="button"
@@ -851,114 +973,119 @@ function formatDate(value: string): string {
                 </button>
               </div>
             </div>
-          </template>
-        </div>
-
-        <div v-if="selectedPost" class="px-5 py-4">
-          <article class="markdown-body" v-html="renderMarkdown(selectedPost.content)" />
-        </div>
-
-        <!-- 댓글 -->
-        <div v-if="selectedPost" class="border-t border-[var(--color-line)] px-5 py-4">
-          <h3 class="text-sm font-bold text-[var(--color-ink)]">댓글 {{ comments.length }}</h3>
-
-          <ScreenState v-if="isLoadingComments" variant="loading" title="댓글을 불러오는 중…" />
-
-          <ul v-else-if="comments.length > 0" class="mt-3 grid gap-3">
-            <li
-              v-for="comment in comments"
-              :key="comment.id"
-              class="rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <p class="font-semibold text-[var(--color-ink)]">
-                  {{ comment.author.displayName }}
-                  <span class="ml-2 text-xs font-normal text-[var(--color-muted)]">{{
-                    formatDate(comment.createdAt)
-                  }}</span>
-                </p>
-                <!-- 댓글 작성자 권한 버튼 -->
-                <div v-if="isMyComment(comment)" class="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    class="text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
-                    :aria-label="`${comment.author.displayName} 댓글 수정`"
-                    @click="startEditComment(comment)"
-                  >
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    :disabled="isDeletingCommentId === comment.id"
-                    class="text-xs text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none disabled:opacity-50"
-                    :aria-label="`${comment.author.displayName} 댓글 삭제`"
-                    @click="deleteComment(comment.id)"
-                  >
-                    삭제
-                  </button>
-                </div>
-              </div>
-
-              <!-- 댓글 인라인 수정 -->
-              <template v-if="editingCommentId === comment.id">
-                <textarea
-                  v-model="editingCommentText"
-                  rows="2"
-                  class="mt-2 w-full resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
-                />
-                <div class="mt-1 flex gap-2">
-                  <button
-                    type="button"
-                    :disabled="isSavingComment"
-                    class="text-xs font-semibold text-[var(--color-primary)] hover:underline focus:outline-none disabled:opacity-50"
-                    @click="saveEditComment(comment.id)"
-                  >
-                    저장
-                  </button>
-                  <button
-                    type="button"
-                    class="text-xs text-[var(--color-muted)] hover:underline focus:outline-none"
-                    @click="cancelEditComment"
-                  >
-                    취소
-                  </button>
-                </div>
-              </template>
-              <p v-else class="mt-1 leading-6 text-[var(--color-muted)]">{{ comment.content }}</p>
-            </li>
-          </ul>
-
-          <p v-else class="mt-3 text-sm text-[var(--color-muted)]">첫 댓글을 남겨보세요.</p>
-
-          <div class="mt-4 flex gap-2">
-            <textarea
-              v-model="newCommentText"
-              rows="2"
-              placeholder="댓글을 입력하세요"
-              class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
-            />
-            <button
-              type="button"
-              :disabled="isSubmittingComment || !newCommentText.trim()"
-              class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
-              @click="submitComment"
-            >
-              등록
-            </button>
           </div>
-        </div>
 
-        <!-- 하단 목록 복귀 CTA -->
-        <div class="border-t border-[var(--color-line)] px-5 py-4">
-          <button
-            type="button"
-            class="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)]"
-            @click="backToList"
-          >
-            ← 목록으로 돌아가기
-          </button>
-        </div>
-      </section>
+          <div class="mt-5 border-t border-[var(--color-line)]" />
+
+          <!-- 본문 -->
+          <div class="px-6 py-5">
+            <article class="markdown-body" v-html="renderMarkdown(selectedPost.content)" />
+          </div>
+
+          <!-- 댓글 -->
+          <div class="border-t border-[var(--color-line)] px-6 pb-6 pt-5">
+            <h3 class="text-base font-bold text-[var(--color-primary)]">
+              댓글 {{ comments.length }}
+            </h3>
+
+            <ScreenState v-if="isLoadingComments" variant="loading" title="댓글을 불러오는 중…" />
+
+            <ul v-else-if="comments.length > 0" class="mt-4 flex flex-col gap-3">
+              <li
+                v-for="comment in comments"
+                :key="comment.id"
+                class="rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] p-4"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <div
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                      :class="getAvatarColor(comment.author.displayName)"
+                    >
+                      {{ comment.author.displayName[0] }}
+                    </div>
+                    <p class="text-sm font-semibold text-[var(--color-ink)]">
+                      {{ comment.author.displayName }}
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <span class="text-xs text-[var(--color-muted)]">{{
+                      formatRelativeDate(comment.createdAt)
+                    }}</span>
+                    <template v-if="isMyComment(comment)">
+                      <button
+                        type="button"
+                        class="text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
+                        :aria-label="`${comment.author.displayName} 댓글 수정`"
+                        @click="startEditComment(comment)"
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        :disabled="isDeletingCommentId === comment.id"
+                        class="text-xs text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none disabled:opacity-50"
+                        :aria-label="`${comment.author.displayName} 댓글 삭제`"
+                        @click="deleteComment(comment.id)"
+                      >
+                        삭제
+                      </button>
+                    </template>
+                  </div>
+                </div>
+
+                <!-- 댓글 인라인 수정 -->
+                <template v-if="editingCommentId === comment.id">
+                  <textarea
+                    v-model="editingCommentText"
+                    rows="2"
+                    class="mt-3 w-full resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
+                  />
+                  <div class="mt-1 flex gap-2">
+                    <button
+                      type="button"
+                      :disabled="isSavingComment"
+                      class="text-xs font-semibold text-[var(--color-primary)] hover:underline focus:outline-none disabled:opacity-50"
+                      @click="saveEditComment(comment.id)"
+                    >
+                      저장
+                    </button>
+                    <button
+                      type="button"
+                      class="text-xs text-[var(--color-muted)] hover:underline focus:outline-none"
+                      @click="cancelEditComment"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </template>
+                <p v-else class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+                  {{ comment.content }}
+                </p>
+              </li>
+            </ul>
+
+            <!-- 댓글 입력 -->
+            <div class="mt-4 flex gap-2">
+              <input
+                v-model="newCommentText"
+                type="text"
+                placeholder="댓글남기기..."
+                class="flex-1 rounded-full border border-[var(--color-line)] bg-[var(--color-input)] px-4 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
+                @keydown.enter.prevent="submitComment"
+              />
+              <button
+                type="button"
+                :disabled="isSubmittingComment || !newCommentText.trim()"
+                class="inline-flex items-center justify-center rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none disabled:opacity-50"
+                @click="submitComment"
+              >
+                등록
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
     </template>
 
     <!-- 글쓰기 -->

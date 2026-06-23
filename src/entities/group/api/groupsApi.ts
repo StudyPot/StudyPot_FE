@@ -9,6 +9,7 @@ import type {
   GroupMemberRetrospectiveSummary,
   GroupMemberStatus,
   GroupMemberTaskCompletionSummary,
+  GroupSummary,
   JoinGroupRequest,
   ListGroupsParams,
   StudyGroup,
@@ -97,6 +98,10 @@ export function joinGroupByInviteCode(inviteCode: string): Promise<GroupMember> 
     method: 'POST',
     body: { inviteCode },
   })
+}
+
+export function getGroupSummary(): Promise<GroupSummary> {
+  return apiClient<GroupSummary>('/groups/summary')
 }
 
 export function listGroupMembers(groupId: string): Promise<GroupMember[]> {

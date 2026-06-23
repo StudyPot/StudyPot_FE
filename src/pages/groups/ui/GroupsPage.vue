@@ -4,7 +4,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   getGroupCategoryColor,
   getGroupStatusLabel,
+  getGroupSummary,
   listGroups,
+  type GroupSummary,
   type ListGroupsParams,
   type StudyGroup,
   type StudyGroupStatus,
@@ -34,6 +36,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const hasGroups = computed(() => groups.value.length > 0)
 const activeCount = computed(() => groups.value.filter((g) => g.status === 'ACTIVE').length)
+const summary = ref<GroupSummary | null>(null)
 
 function buildParams(): ListGroupsParams {
   const params: ListGroupsParams = { sort: 'startsAt', order: 'desc' }
@@ -45,7 +48,16 @@ function buildParams(): ListGroupsParams {
 onMounted(() => {
   void loadGroups()
   void loadBookmarkIds()
+  void loadSummary()
 })
+
+async function loadSummary(): Promise<void> {
+  try {
+    summary.value = await getGroupSummary()
+  } catch {
+    // summary 로딩 실패 시 fallback 표기 사용
+  }
+}
 
 async function loadBookmarkIds(): Promise<void> {
   try {
@@ -157,7 +169,10 @@ const STATUS_DOT: Record<StudyGroupStatus, string> = {
       <div>
         <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">참여 중인 스터디</h1>
         <p class="mt-1 text-sm text-[var(--color-muted)]">
-          {{ groups.length }}개 그룹 · 진행 중 {{ activeCount }}개
+          <template v-if="summary">
+            {{ summary.groupCount }}개 그룹 · 이번 주 활동 {{ summary.weeklyActivityCount }}회
+          </template>
+          <template v-else>{{ groups.length }}개 그룹 · 진행 중 {{ activeCount }}개</template>
         </p>
       </div>
       <RouterLink
