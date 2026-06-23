@@ -184,12 +184,12 @@ const activityDays = computed(() => {
 })
 
 const MEMBER_COLORS = [
-  { border: 'rgba(88,101,242,1)',   background: 'rgba(88,101,242,0.15)'  },
-  { border: 'rgba(237,66,69,1)',    background: 'rgba(237,66,69,0.15)'   },
-  { border: 'rgba(0,200,180,1)',    background: 'rgba(0,200,180,0.15)'   },
-  { border: 'rgba(250,168,26,1)',   background: 'rgba(250,168,26,0.15)'  },
-  { border: 'rgba(149,88,242,1)',   background: 'rgba(149,88,242,0.15)'  },
-  { border: 'rgba(35,165,90,1)',    background: 'rgba(35,165,90,0.15)'   },
+  { border: 'rgba(180,190,254,1)',  background: 'rgba(180,190,254,0.15)' },
+  { border: 'rgba(252,165,165,1)',  background: 'rgba(252,165,165,0.15)' },
+  { border: 'rgba(110,231,183,1)',  background: 'rgba(110,231,183,0.15)' },
+  { border: 'rgba(253,213,130,1)',  background: 'rgba(253,213,130,0.15)' },
+  { border: 'rgba(216,180,254,1)',  background: 'rgba(216,180,254,0.15)' },
+  { border: 'rgba(147,223,200,1)',  background: 'rgba(147,223,200,0.15)' },
 ]
 
 const combinedChartData = computed(() => ({
@@ -206,11 +206,12 @@ const combinedChartData = computed(() => ({
       backgroundColor: color.background,
       fill: true,
       tension: 0.4,
+      borderWidth: 1.5,
       pointBackgroundColor: '#ffffff',
       pointBorderColor: color.border,
-      pointBorderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
+      pointBorderWidth: 1.5,
+      pointRadius: 3,
+      pointHoverRadius: 5,
     }
   }),
 }))
@@ -227,8 +228,31 @@ const chartOptions = {
         color: 'rgba(148,155,164,0.9)',
         font: { size: 11 },
         usePointStyle: true,
-        pointStyleWidth: 10,
+        pointStyle: 'circle' as const,
+        boxWidth: 8,
+        boxHeight: 8,
         padding: 16,
+        generateLabels: (chart: ChartJS) =>
+          chart.data.datasets.map((dataset, i) => {
+            const meta = chart.getDatasetMeta(i)
+            const borderColor = dataset.borderColor as string
+            return {
+              text: dataset.label ?? '',
+              fillStyle: meta.hidden ? 'transparent' : borderColor,
+              strokeStyle: borderColor,
+              lineWidth: 1.5,
+              hidden: false,
+              datasetIndex: i,
+              pointStyle: 'circle' as const,
+            }
+          }),
+      },
+      onClick: (_e: unknown, legendItem: { datasetIndex?: number }, legend: { chart: ChartJS }) => {
+        const index = legendItem.datasetIndex
+        if (index === undefined) return
+        const meta = legend.chart.getDatasetMeta(index)
+        meta.hidden = !meta.hidden
+        legend.chart.update()
       },
     },
     tooltip: {
@@ -528,7 +552,7 @@ async function handleStartStudy(): Promise<void> {
         <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
         <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
 
-        <div class="mt-4 h-64">
+        <div class="mt-4 h-96">
           <Line :data="combinedChartData" :options="chartOptions" />
         </div>
       </section>
