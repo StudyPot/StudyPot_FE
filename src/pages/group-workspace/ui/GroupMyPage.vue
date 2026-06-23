@@ -24,7 +24,7 @@ const workspaceContext = inject(groupWorkspaceContextKey)
 if (!workspaceContext) {
   throw new Error('GroupMyPage must be used inside GroupWorkspacePage.')
 }
-const { groupId, group, members } = workspaceContext
+const { groupId, group, members, reloadMembers } = workspaceContext
 
 const sessionStore = useSessionStore()
 const toastStore = useInAppNotificationStore()
@@ -42,22 +42,72 @@ const isOwner = computed(() => {
   return members.value.some((m) => m.userId === myUserId && m.permission === 'OWNER')
 })
 
-function isMe(member: MemberOnboardingResponse): boolean {
+// 화면에 그릴 통합 멤버(로스터 기준이라 방장·미온보딩 멤버도 항상 포함).
+type DisplayMember = {
+  memberId: string
+  userId: string
+  memberNickname: string
+  permission: 'OWNER' | 'MEMBER'
+  joinedAt?: string | null
+  status: 'SUBMITTED' | 'NOT_SUBMITTED'
+  skillLevel: number
+  additionalNote?: string | null
+  availabilitySlots: MemberOnboardingResponse['availabilitySlots']
+}
+
+function isMe(member: DisplayMember): boolean {
   return member.memberId === myMemberId.value
 }
 
-// 정렬: 내 카드 → 방장 → 나머지
-const orderedMembers = computed<MemberOnboardingResponse[]>(() => {
-  const mine: MemberOnboardingResponse[] = []
-  const owners: MemberOnboardingResponse[] = []
-  const rest: MemberOnboardingResponse[] = []
-  for (const m of memberList.value) {
-    if (isMe(m)) mine.push(m)
-    else if (m.permission === 'OWNER') owners.push(m)
-    else rest.push(m)
+const onboardingByMemberId = computed(() => {
+  const map = new Map<string, MemberOnboardingResponse>()
+  for (const o of memberList.value) map.set(o.memberId, o)
+  return map
+})
+
+// 정렬: 내 카드 → 방장 → 나머지. 로스터(members)가 있으면 그것을 기준으로,
+// 없으면 온보딩 응답만으로 fallback.
+const orderedMembers = computed<DisplayMember[]>(() => {
+  const roster = members.value.filter((m) => m.status !== 'LEFT')
+  let merged: DisplayMember[]
+
+  if (roster.length > 0) {
+    merged = roster.map((gm) => {
+      const o = onboardingByMemberId.value.get(gm.id)
+      const submitted = o?.status === 'SUBMITTED' || gm.onboardingStatus === 'SUBMITTED'
+      return {
+        memberId: gm.id,
+        userId: gm.userId,
+        memberNickname: o?.memberNickname ?? gm.nickname ?? gm.displayName ?? '멤버',
+        permission: gm.permission,
+        joinedAt: o?.joinedAt ?? null,
+        status: submitted ? 'SUBMITTED' : 'NOT_SUBMITTED',
+        skillLevel: o?.skillLevel ?? 0,
+        additionalNote: o?.additionalNote ?? null,
+        availabilitySlots: o?.availabilitySlots ?? [],
+      }
+    })
+  } else {
+    merged = memberList.value.map((o) => ({
+      memberId: o.memberId,
+      userId: '',
+      memberNickname: o.memberNickname,
+      permission: o.permission,
+      joinedAt: o.joinedAt ?? null,
+      status: o.status === 'SUBMITTED' ? 'SUBMITTED' : 'NOT_SUBMITTED',
+      skillLevel: o.skillLevel,
+      additionalNote: o.additionalNote ?? null,
+      availabilitySlots: o.availabilitySlots,
+    }))
   }
+
+  const mine = merged.filter((m) => m.memberId === myMemberId.value)
+  const owners = merged.filter((m) => m.memberId !== myMemberId.value && m.permission === 'OWNER')
+  const rest = merged.filter((m) => m.memberId !== myMemberId.value && m.permission !== 'OWNER')
   return [...mine, ...owners, ...rest]
 })
+
+const hasMembers = computed(() => orderedMembers.value.length > 0)
 
 type PageState = 'loading' | 'view' | 'error'
 
@@ -123,6 +173,7 @@ async function loadPage(): Promise<void> {
   const results = await Promise.allSettled([
     getAiManager(groupId.value),
     group.value?.status === 'ACTIVE' ? getGroupMembersActivity(groupId.value) : Promise.resolve([]),
+    reloadMembers(), // 방장 포함 로스터 확보
   ])
   aiManager.value = results[0].status === 'fulfilled' ? results[0].value : null
   activityRows.value =
@@ -318,8 +369,8 @@ function formatDate(value?: string | null): string {
         </p>
       </div>
 
-      <p v-if="memberList.length === 0" class="mt-8 text-center text-sm text-[var(--color-muted)]">
-        아직 온보딩 정보가 없어요.
+      <p v-if="!hasMembers" class="mt-8 text-center text-sm text-[var(--color-muted)]">
+        아직 팀원이 없어요.
       </p>
 
       <ul v-else class="mt-4 grid gap-4">
@@ -391,8 +442,11 @@ function formatDate(value?: string | null): string {
             </span>
           </div>
 
-          <!-- 활동 통계 (진행 중인 그룹) -->
-          <div v-if="isActiveGroup" class="mt-4 grid grid-cols-3 gap-2.5 text-center">
+          <!-- 활동 통계 (진행 중 + 온보딩 제출 멤버만) -->
+          <div
+            v-if="isActiveGroup && member.status === 'SUBMITTED'"
+            class="mt-4 grid grid-cols-3 gap-2.5 text-center"
+          >
             <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
               <p class="text-xl font-extrabold text-[var(--color-ink)]">
                 {{ thisWeekCount(member.memberId) }}
