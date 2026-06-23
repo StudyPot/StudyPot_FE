@@ -9,7 +9,12 @@ import {
   type Notification,
   type NotificationType,
 } from '@/entities/notification'
-import { listGroupLlmUsage, type LlmUsage, type LlmUsagePurpose, type LlmUsageStatus } from '@/entities/operation'
+import {
+  listGroupLlmUsage,
+  type LlmUsage,
+  type LlmUsagePurpose,
+  type LlmUsageStatus,
+} from '@/entities/operation'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -28,6 +33,7 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   RETROSPECTIVE_READY: '회고 준비 완료',
   RETROSPECTIVE_REMINDER: '회고 리마인더',
   NEXT_WEEK_ADJUSTED: '다음 주 조정',
+  NOTICE_POSTED: '새 공지',
   GROUP_DELETED: '그룹 삭제',
 }
 
@@ -209,7 +215,9 @@ function formatNumber(value: number): string {
 
 <template>
   <div class="grid gap-5">
-    <section class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]">
+    <section
+      class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-[var(--shadow-soft)]"
+    >
       <!-- 탭 헤더 -->
       <div class="flex border-b border-[var(--color-line)] px-5 pt-5">
         <p class="mb-4 text-sm font-semibold text-[var(--color-primary)]">알림</p>
@@ -217,7 +225,11 @@ function formatNumber(value: number): string {
 
       <nav class="flex border-b border-[var(--color-line)]" aria-label="알림 탭">
         <button
-          v-for="tab in ([{ id: 'my', label: '내 알림' }, { id: 'group', label: '그룹 알림' }, { id: 'llm', label: 'LLM 사용량' }] as const)"
+          v-for="tab in [
+            { id: 'my', label: '내 알림' },
+            { id: 'group', label: '그룹 알림' },
+            { id: 'llm', label: 'LLM 사용량' },
+          ] as const"
           :key="tab.id"
           type="button"
           :class="[
@@ -291,10 +303,14 @@ function formatNumber(value: number): string {
 
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-muted)]">
+                  <span
+                    class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-muted)]"
+                  >
                     {{ NOTIFICATION_TYPE_LABEL[notification.notificationType] }}
                   </span>
-                  <span class="font-semibold text-[var(--color-ink)]">{{ notification.title }}</span>
+                  <span class="font-semibold text-[var(--color-ink)]">{{
+                    notification.title
+                  }}</span>
                 </div>
                 <p class="mt-1 leading-6 text-[var(--color-muted)]">{{ notification.body }}</p>
                 <p class="mt-1 text-xs text-[var(--color-muted)]">
@@ -350,7 +366,9 @@ function formatNumber(value: number): string {
               class="rounded-md border border-[var(--color-line)] bg-[var(--color-card)] p-3 text-sm"
             >
               <div class="flex flex-wrap items-center gap-2">
-                <span class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-muted)]">
+                <span
+                  class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-muted)]"
+                >
                   {{ NOTIFICATION_TYPE_LABEL[notification.notificationType] }}
                 </span>
                 <span
@@ -406,7 +424,9 @@ function formatNumber(value: number): string {
           <div v-if="llmUsages.length > 0" class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
-                <tr class="border-b border-[var(--color-line)] text-left text-xs font-semibold text-[var(--color-muted)]">
+                <tr
+                  class="border-b border-[var(--color-line)] text-left text-xs font-semibold text-[var(--color-muted)]"
+                >
                   <th class="pb-2 pr-4">목적</th>
                   <th class="pb-2 pr-4">모델</th>
                   <th class="pb-2 pr-4 text-right">입력 토큰</th>
@@ -417,11 +437,7 @@ function formatNumber(value: number): string {
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--color-line)]">
-                <tr
-                  v-for="usage in llmUsages"
-                  :key="usage.id"
-                  class="text-[var(--color-ink)]"
-                >
+                <tr v-for="usage in llmUsages" :key="usage.id" class="text-[var(--color-ink)]">
                   <td class="py-2.5 pr-4 font-medium">
                     {{ LLM_PURPOSE_LABEL[usage.purpose] ?? usage.purpose }}
                   </td>
