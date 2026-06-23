@@ -58,14 +58,16 @@ const isDeletingPost = ref(false)
 const sortField = ref<BoardSortField>('createdAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
-const sortOptions = [
+type SortValue = 'createdAt:desc' | 'createdAt:asc' | 'commentCount:desc'
+
+const sortOptions: { value: SortValue; label: string }[] = [
   { value: 'createdAt:desc', label: '최신순' },
   { value: 'createdAt:asc', label: '오래된순' },
   { value: 'commentCount:desc', label: '댓글 많은순' },
-] as const
+]
 
 const sortValue = computed({
-  get: () => `${sortField.value}:${sortOrder.value}` as (typeof sortOptions)[number]['value'],
+  get: () => `${sortField.value}:${sortOrder.value}` as SortValue,
   set: (val: string) => {
     const [f, o] = val.split(':')
     void changeSort(f as BoardSortField, o as 'asc' | 'desc')

@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps<{
   modelValue: T
-  options: { value: T; label: string }[]
+  options: readonly { value: T; label: string }[]
   ariaLabel?: string
 }>()
 
