@@ -367,7 +367,7 @@ function startGoogleLogin(): void {
                 ? 'text-[#e0953a] hover:bg-[var(--color-hover)] hover:text-[#f0a04b]'
                 : 'text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]',
             ]"
-            :active-class="
+            :exact-active-class="
               ch.type === 'onboard'
                 ? 'bg-[var(--color-hover)] !text-[#f0a04b]'
                 : 'bg-[var(--color-active)] !text-[var(--color-ink)]'
@@ -375,7 +375,7 @@ function startGoogleLogin(): void {
           >
             <!-- Channel icon -->
             <svg
-              class="h-4 w-4 shrink-0 opacity-60 group-[&.router-link-active]:opacity-100"
+              class="h-4 w-4 shrink-0 opacity-60 group-[&.router-link-exact-active]:opacity-100"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
