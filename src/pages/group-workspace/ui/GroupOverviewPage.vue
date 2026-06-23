@@ -1,11 +1,20 @@
 <script setup lang="ts">
 
-import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, Tooltip } from 'chart.js'
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from 'chart.js'
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Bar } from 'vue-chartjs'
+import { Line } from 'vue-chartjs'
 import { useRouter } from 'vue-router'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend)
 
 import {
   deleteGroup,
@@ -171,55 +180,76 @@ const activityDays = computed(() => {
   for (const row of activityRows.value) {
     for (const d of row.dailyActivity) dates.add(d.date)
   }
-  return Array.from(dates).sort()
+  return Array.from(dates).sort().slice(-14)
 })
 
-const activityCharts = computed(() =>
-  activityRows.value.map((row) => ({
-    name: row.memberNickname,
-    data: {
-      labels: activityDays.value.map((d) => {
-        const date = new Date(d)
-        return `${date.getMonth() + 1}/${date.getDate()}`
-      }),
-      datasets: [
-        {
-          data: activityDays.value.map((day) => {
-            return row.dailyActivity.find((d) => d.date === day)?.count ?? 0
-          }),
-          backgroundColor: 'rgba(88,101,242,0.7)',
-          hoverBackgroundColor: 'rgba(88,101,242,1)',
-          borderRadius: 3,
-          borderSkipped: false,
-        },
-      ],
-    },
-  }))
-)
+const MEMBER_COLORS = [
+  { border: 'rgba(88,101,242,1)',   background: 'rgba(88,101,242,0.15)'  },
+  { border: 'rgba(237,66,69,1)',    background: 'rgba(237,66,69,0.15)'   },
+  { border: 'rgba(0,200,180,1)',    background: 'rgba(0,200,180,0.15)'   },
+  { border: 'rgba(250,168,26,1)',   background: 'rgba(250,168,26,0.15)'  },
+  { border: 'rgba(149,88,242,1)',   background: 'rgba(149,88,242,0.15)'  },
+  { border: 'rgba(35,165,90,1)',    background: 'rgba(35,165,90,0.15)'   },
+]
+
+const combinedChartData = computed(() => ({
+  labels: activityDays.value.map((d) => {
+    const date = new Date(d)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }),
+  datasets: activityRows.value.map((row, i) => {
+    const color = MEMBER_COLORS[i % MEMBER_COLORS.length]!
+    return {
+      label: row.memberNickname,
+      data: activityDays.value.map((day) => row.dailyActivity.find((d) => d.date === day)?.count ?? 0),
+      borderColor: color.border,
+      backgroundColor: color.background,
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#ffffff',
+      pointBorderColor: color.border,
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }
+  }),
+}))
 
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  interaction: { mode: 'index' as const, intersect: false },
   plugins: {
-    legend: { display: false },
+    legend: {
+      display: true,
+      position: 'top' as const,
+      labels: {
+        color: 'rgba(148,155,164,0.9)',
+        font: { size: 11 },
+        usePointStyle: true,
+        pointStyleWidth: 10,
+        padding: 16,
+      },
+    },
     tooltip: {
       callbacks: {
-        label: (ctx: { parsed: { y: number | null } }) => ` ${ctx.parsed.y ?? 0}건`,
+        label: (ctx: { dataset: { label?: string }; parsed: { y: number | null } }) =>
+          ` ${ctx.dataset.label ?? ''}: ${ctx.parsed.y ?? 0}건`,
       },
     },
   },
   scales: {
     x: {
       grid: { display: false },
-      ticks: { color: 'rgba(148,155,164,0.8)', font: { size: 10 } },
+      ticks: { color: 'rgba(148,155,164,0.8)', font: { size: 11 } },
     },
     y: {
       beginAtZero: true,
-      ticks: { stepSize: 1, color: 'rgba(148,155,164,0.8)', font: { size: 10 } },
-      grid: { color: 'rgba(255,255,255,0.05)' },
+      ticks: { stepSize: 1, color: 'rgba(148,155,164,0.8)', font: { size: 11 } },
+      grid: { color: 'rgba(148,155,164,0.08)' },
     },
   },
-} as const
+}
 
 const quickLinks: QuickLink[] = [
   { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
@@ -441,13 +471,6 @@ async function handleStartStudy(): Promise<void> {
             </RouterLink>
           </div>
 
-          <RouterLink
-            v-else
-            :to="{ name: primaryEntry.routeName, params: { groupId } }"
-            class="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-          >
-            {{ primaryEntry.label }}
-          </RouterLink>
         </div>
 
         <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-4">
@@ -499,23 +522,14 @@ async function handleStartStudy(): Promise<void> {
 
       <!-- 활동 대시보드 -->
       <section
-        v-if="group.status === 'ACTIVE' && activityCharts.length > 0"
+        v-if="group.status === 'ACTIVE' && activityRows.length > 0"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
         <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
 
-        <div class="mt-4 grid gap-5 sm:grid-cols-2">
-          <div
-            v-for="member in activityCharts"
-            :key="member.name"
-            class="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-4"
-          >
-            <p class="mb-3 text-sm font-semibold text-[var(--color-ink)]">{{ member.name }}</p>
-            <div class="h-32">
-              <Bar :data="member.data" :options="chartOptions" />
-            </div>
-          </div>
+        <div class="mt-4 h-64">
+          <Line :data="combinedChartData" :options="chartOptions" />
         </div>
       </section>
 
