@@ -75,9 +75,6 @@ const countableTotal = computed(
 const progressPercent = computed(() =>
   countableTotal.value > 0 ? Math.round((doneCount.value / countableTotal.value) * 100) : 0,
 )
-const allTasksDone = computed(
-  () => countableTotal.value > 0 && doneCount.value === countableTotal.value,
-)
 
 const sortedTasks = computed(() =>
   [...tasks.value].sort((a, b) => {
@@ -193,17 +190,6 @@ const weekRangeLabel = computed(() => {
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(new Date(value))
-}
-
-function formatDueShort(value: string): string {
-  const d = new Date(value)
-  const wd = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(d)
-  const t = new Intl.DateTimeFormat('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(d)
-  return `${wd} ${t}`
 }
 </script>
 
@@ -359,39 +345,6 @@ function formatDueShort(value: string): string {
           할 일을 완료하면 학습 인증이 자동으로 기록돼요.
         </div>
 
-        <!-- 모두 완료 → 회고 안내 -->
-        <RouterLink
-          v-if="allTasksDone && selectedWeek?.status === 'IN_PROGRESS'"
-          :to="{ name: 'group-retrospective', params: { groupId } }"
-          class="mt-3 flex items-center justify-between gap-3 rounded-[var(--radius-card)] border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)]"
-        >
-          <span class="flex items-center gap-3">
-            <span
-              class="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-white"
-              >📝</span
-            >
-            <span>
-              <span class="block font-bold text-[var(--color-ink)]"
-                >이번 주 할 일을 모두 완료했어요!</span
-              >
-              <span class="block text-sm text-[var(--color-muted)]"
-                >회고를 작성하고 이번 주를 마무리해 보세요.</span
-              >
-            </span>
-          </span>
-          <svg
-            class="h-5 w-5 shrink-0 text-[var(--color-primary)]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </RouterLink>
-
         <!-- ── 태스크 목록 ── -->
         <ul v-if="tasks.length > 0" class="mt-4 grid gap-2.5">
           <li
@@ -458,14 +411,7 @@ function formatDueShort(value: string): string {
                 v-if="statusOf(task) === 'SKIPPED'"
                 class="mt-0.5 text-xs text-[var(--color-muted)]"
               >
-                <template v-if="task.dueAt">{{ formatDueShort(task.dueAt) }} · </template>이번 주
-                건너뜀
-              </p>
-              <p
-                v-else-if="statusOf(task) !== 'DONE' && task.dueAt"
-                class="mt-0.5 text-xs text-[var(--color-muted)]"
-              >
-                마감 {{ formatDueShort(task.dueAt) }}
+                이번 주 건너뜀
               </p>
             </div>
 
