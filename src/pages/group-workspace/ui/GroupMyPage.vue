@@ -248,7 +248,7 @@ function formatDate(value?: string | null): string {
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div>
     <!-- 헤더 -->
     <div class="flex items-start justify-between gap-4">
       <div>

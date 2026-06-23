@@ -194,7 +194,7 @@ function formatDate(value: string): string {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl">
+  <div>
     <ScreenState
       v-if="pageState === 'loading'"
       variant="loading"

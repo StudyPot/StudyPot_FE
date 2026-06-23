@@ -151,7 +151,7 @@ const STATUS_DOT: Record<StudyGroupStatus, string> = {
 </script>
 
 <template>
-  <div class="mx-auto grid max-w-5xl gap-5">
+  <div class="grid gap-5">
     <!-- 헤더 -->
     <div class="flex items-start justify-between gap-4">
       <div>
