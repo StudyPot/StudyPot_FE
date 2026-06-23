@@ -191,7 +191,7 @@ function formatDate(value?: string | null): string {
 
     <template v-else>
       <!-- AI 팀장 카드 -->
-      <div class="mt-6 rounded-lg border border-[var(--color-primary)]/30 bg-gradient-to-br from-[rgba(25, 195, 125,0.06)] to-[rgba(25, 195, 125,0.02)] p-5 shadow-[var(--shadow-soft)]">
+      <div class="mt-6 rounded-lg border border-[var(--color-primary)]/30 bg-gradient-to-br from-[rgba(25,195,125,0.06)] to-[rgba(25,195,125,0.02)] p-5 shadow-[var(--shadow-soft)]">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
             <div
@@ -203,7 +203,7 @@ function formatDate(value?: string | null): string {
             <div class="flex flex-col">
               <div class="flex items-center gap-2">
                 <span class="font-semibold text-[var(--color-ink)]">AI 팀장</span>
-                <span class="inline-flex h-5 items-center rounded-full bg-[rgba(25, 195, 125,0.15)] px-2 text-[11px] font-bold text-[var(--color-primary)]">
+                <span class="inline-flex h-5 items-center rounded-full bg-[rgba(25,195,125,0.15)] px-2 text-[11px] font-bold text-[var(--color-primary)]">
                   AI
                 </span>
               </div>
@@ -263,7 +263,7 @@ function formatDate(value?: string | null): string {
                     :class="[
                       'inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold',
                       member.permission === 'OWNER'
-                        ? 'bg-[rgba(25, 195, 125,0.15)] text-[var(--color-primary)]'
+                        ? 'bg-[rgba(25,195,125,0.15)] text-[var(--color-primary)]'
                         : 'bg-[var(--color-hover)] text-[var(--color-muted)]',
                     ]"
                   >
@@ -386,7 +386,7 @@ function formatDate(value?: string | null): string {
               v-model="personaDraft"
               rows="5"
               placeholder="예) 넌 따뜻한 멘토야. 팀원들을 항상 격려하고 작은 성취도 크게 칭찬해줘. 어려운 개념은 쉬운 비유로 설명하고, 실패해도 긍정적인 시각으로 바라봐."
-              class="mt-1.5 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
+              class="mt-1.5 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
             />
             <p v-if="personaSaveError" role="alert" class="mt-1.5 text-xs font-semibold text-[var(--color-danger)]">
               {{ personaSaveError }}

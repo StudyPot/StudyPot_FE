@@ -52,7 +52,7 @@ function startGoogleLogin(): void {
 
       <button
         type="button"
-        class="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-md bg-[var(--color-primary)] px-5 py-4 text-base font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)]"
+        class="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-md bg-[var(--color-primary)] px-5 py-4 text-base font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)]"
         @click="startGoogleLogin"
       >
         <svg

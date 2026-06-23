@@ -255,7 +255,7 @@ function formatSubmittedAt(value: string): string {
             v-model="form.additionalNote"
             rows="3"
             placeholder="학습 방향, 목표, 요청 사항 등"
-            class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
+            class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
           />
         </div>
 
@@ -264,7 +264,7 @@ function formatSubmittedAt(value: string): string {
             <p class="text-sm font-semibold text-[var(--color-ink)]">가능한 시간</p>
             <button
               type="button"
-              class="inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
+              class="inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
               @click="addSlot"
             >
               + 시간 추가
@@ -279,7 +279,7 @@ function formatSubmittedAt(value: string): string {
             >
               <select
                 v-model.number="slot.dayOfWeek"
-                class="rounded border border-[var(--color-line)] bg-[var(--color-input)] px-2 py-1 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
+                class="rounded border border-[var(--color-line)] bg-[var(--color-input)] px-2 py-1 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
               >
                 <option v-for="(label, d) in DAY_LABELS" :key="d" :value="d">{{ label }}요일</option>
               </select>
@@ -311,7 +311,7 @@ function formatSubmittedAt(value: string): string {
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
+            class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
           >
             {{ isSubmitting ? '제출 중…' : '온보딩 제출' }}
           </button>

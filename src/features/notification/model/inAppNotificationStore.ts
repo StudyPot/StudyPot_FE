@@ -9,11 +9,14 @@ import {
 import type { Notification } from '@/entities/notification'
 import { apiBaseUrl } from '@/shared/config/api'
 
+export type ToastVariant = 'success' | 'info' | 'warning' | 'error'
+
 export type ToastItem = {
   id: string
   title: string
   body: string
   notificationType: string
+  variant: ToastVariant
 }
 
 const POLL_INTERVAL_MS = 30_000
@@ -223,9 +226,20 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
       title: notification.title,
       body: notification.body,
       notificationType: notification.notificationType,
+      variant: 'info',
     }
     toasts.value.push(toast)
     setTimeout(() => dismissToast(toast.id), 5000)
+  }
+
+  // 액션 피드백용 범용 토스트(성공/정보/경고/오류).
+  function pushToast(title: string, body = '', variant: ToastVariant = 'success'): void {
+    const id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `toast-${title}-${toasts.value.length}-${performance.now()}`
+    toasts.value.push({ id, title, body, notificationType: 'ACTION', variant })
+    setTimeout(() => dismissToast(id), 4000)
   }
 
   function dismissToast(id: string): void {
@@ -246,6 +260,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     stopSse,
     startPolling,
     stopPolling,
+    pushToast,
     dismissToast,
     markRead,
     markAllRead,

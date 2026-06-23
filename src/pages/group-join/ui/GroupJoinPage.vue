@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { joinGroupByInviteCode, useGroupListStore } from '@/entities/group'
+import { useInAppNotificationStore } from '@/features/notification'
 import { ApiError } from '@/shared/api'
 
 type GroupJoinForm = {
@@ -12,6 +13,7 @@ type GroupJoinForm = {
 const route = useRoute()
 const router = useRouter()
 const groupListStore = useGroupListStore()
+const toastStore = useInAppNotificationStore()
 
 const form = reactive<GroupJoinForm>({
   inviteCode: getInitialInviteCode(),
@@ -37,9 +39,13 @@ async function submitJoin(): Promise<void> {
     void groupListStore.loadGroups()
     joinedGroupId.value = member.groupId
     showSuccessModal.value = true
+    toastStore.pushToast('그룹에 참여했어요', '온보딩을 작성하면 시작할 수 있어요.', 'success')
   } catch (error) {
     errorMessage.value =
-      error instanceof ApiError ? error.message : '그룹에 참여하지 못했어요. 초대 코드를 확인해 주세요.'
+      error instanceof ApiError
+        ? error.message
+        : '그룹에 참여하지 못했어요. 초대 코드를 확인해 주세요.'
+    toastStore.pushToast('참여 실패', errorMessage.value, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -73,7 +79,7 @@ function getInitialInviteCode(): string {
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
-        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
+        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)]"
       >
         그룹 목록
       </RouterLink>
@@ -94,10 +100,13 @@ function getInitialInviteCode(): string {
             v-model="form.inviteCode"
             name="inviteCode"
             type="text"
-            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
             placeholder="초대 코드를 입력해주세요."
           />
-          <span v-if="fieldErrors.inviteCode" class="text-xs font-semibold text-[var(--color-danger)]">
+          <span
+            v-if="fieldErrors.inviteCode"
+            class="text-xs font-semibold text-[var(--color-danger)]"
+          >
             {{ fieldErrors.inviteCode }}
           </span>
         </label>
@@ -114,13 +123,13 @@ function getInitialInviteCode(): string {
       <div class="flex flex-wrap justify-end gap-3">
         <RouterLink
           :to="{ name: 'groups' }"
-          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
+          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)]"
         >
           취소
         </RouterLink>
         <button
           type="submit"
-          class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="isSubmitting"
         >
           {{ isSubmitting ? '참여 중' : '그룹 참여' }}
@@ -153,15 +162,27 @@ function getInitialInviteCode(): string {
         >
           <!-- 아이콘 -->
           <div class="flex justify-center">
-            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(35,165,90,0.15)]">
-              <svg class="h-8 w-8 text-[var(--color-success)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <div
+              class="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(35,165,90,0.15)]"
+            >
+              <svg
+                class="h-8 w-8 text-[var(--color-success)]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
           </div>
 
           <!-- 텍스트 -->
-          <h2 class="mt-5 text-center text-xl font-bold text-[var(--color-ink)]">스터디 참여 완료!</h2>
+          <h2 class="mt-5 text-center text-xl font-bold text-[var(--color-ink)]">
+            스터디 참여 완료!
+          </h2>
           <p class="mt-2 text-center text-sm leading-6 text-[var(--color-muted)]">
             그룹에 성공적으로 참여했어요.<br />온보딩을 완료하면 스터디가 시작됩니다.
           </p>
@@ -169,7 +190,7 @@ function getInitialInviteCode(): string {
           <!-- 버튼 -->
           <button
             type="button"
-            class="mt-6 w-full rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.25)]"
+            class="mt-6 w-full rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.25)]"
             @click="goToOnboarding"
           >
             온보딩 시작하기

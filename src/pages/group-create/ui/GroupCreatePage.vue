@@ -249,7 +249,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
-        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
+        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)]"
       >
         그룹 목록
       </RouterLink>
@@ -271,7 +271,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             name="name"
             type="text"
             maxlength="120"
-            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
             placeholder="Backend Interview Study"
           />
           <span v-if="fieldErrors.name" class="text-xs font-semibold text-[var(--color-danger)]">
@@ -286,7 +286,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             name="topic"
             type="text"
             maxlength="120"
-            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
             placeholder="Spring Boot"
           />
           <span v-if="fieldErrors.topic" class="text-xs font-semibold text-[var(--color-danger)]">
@@ -303,7 +303,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             </div>
             <button
               type="button"
-              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="isSuggestingKeywords"
               @click="requestKeywordSuggestions"
             >
@@ -322,7 +322,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               :key="keyword"
               type="button"
               :class="[
-                'inline-flex h-8 items-center rounded-md border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]',
+                'inline-flex h-8 items-center rounded-md border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]',
                 form.selectedKeywords.includes(keyword)
                   ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                   : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
@@ -342,7 +342,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
                   type="text"
                   maxlength="30"
                   placeholder="키워드 입력"
-                  class="h-8 w-28 rounded-md border border-[var(--color-primary)] bg-[var(--color-card)] px-2 text-xs text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
+                  class="h-8 w-28 rounded-md border border-[var(--color-primary)] bg-[var(--color-card)] px-2 text-xs text-[var(--color-ink)] outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
                   @keydown.enter.prevent="confirmCustomKeyword"
                   @keydown.escape="cancelCustomInput"
                 />
@@ -367,7 +367,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             <button
               v-else
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
               aria-label="키워드 직접 추가"
               @click="openCustomInput"
             >
@@ -388,7 +388,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               name="maxMembers"
               type="number"
               min="1"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
             />
             <span v-if="fieldErrors.maxMembers" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.maxMembers }}
@@ -418,7 +418,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             v-model="form.description"
             name="description"
             rows="4"
-            class="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 text-sm leading-6 text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
+            class="rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 text-sm leading-6 text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
             placeholder="스터디 운영 방식이나 기대하는 참여 방식을 적어주세요."
           />
         </label>
@@ -435,13 +435,13 @@ function toCreateGroupRequest(): CreateGroupRequest {
       <div class="flex flex-wrap justify-end gap-3">
         <RouterLink
           :to="{ name: 'groups' }"
-          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
+          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)]"
         >
           취소
         </RouterLink>
         <button
           type="submit"
-          class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="isSubmitting"
         >
           그룹 생성
@@ -497,14 +497,14 @@ function toCreateGroupRequest(): CreateGroupRequest {
         <div class="mt-6 grid gap-2">
           <button
             type="button"
-            class="inline-flex w-full h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)]"
+            class="inline-flex w-full h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)]"
             @click="goToOnboarding"
           >
             온보딩 하러 가기
           </button>
           <button
             type="button"
-            class="inline-flex w-full h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
+            class="inline-flex w-full h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.16)]"
             @click="goToGroupList"
           >
             그룹 목록으로

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -26,6 +25,7 @@ import {
 import { getGroupMembersActivity, startStudy, type MemberActivityRow } from '@/entities/curriculum'
 import { getMyOnboarding } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
+import { useInAppNotificationStore } from '@/features/notification'
 import { useGroupListStore } from '@/entities/group'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
@@ -71,15 +71,14 @@ const deleteError = ref('')
 
 const sessionStore = useSessionStore()
 const groupListStore = useGroupListStore()
+const toastStore = useInAppNotificationStore()
 
 const isOwner = computed(() => {
   const myUserId = sessionStore.user?.id
   if (!myUserId) {
     return false
   }
-  return members.value.some(
-    (member) => member.userId === myUserId && member.permission === 'OWNER',
-  )
+  return members.value.some((member) => member.userId === myUserId && member.permission === 'OWNER')
 })
 
 function handleGroupUpdated(updated: StudyGroup): void {
@@ -124,15 +123,25 @@ function startProgressAnimation(): void {
 }
 
 function clearProgressTimers(): void {
-  if (progressTimer) { clearInterval(progressTimer); progressTimer = null }
-  if (timeoutTimer) { clearTimeout(timeoutTimer); timeoutTimer = null }
+  if (progressTimer) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
+  if (timeoutTimer) {
+    clearTimeout(timeoutTimer)
+    timeoutTimer = null
+  }
 }
 
-onUnmounted(() => { clearProgressTimers() })
+onUnmounted(() => {
+  clearProgressTimers()
+})
 
 // 워크스페이스(부모)는 온보딩↔개요 이동 시 재마운트되지 않아 members가 stale 해진다.
 // 개요가 보일 때마다 멤버 목록만 다시 불러 온보딩 현황(본인 포함)이 최신으로 표시되게 한다.
-onMounted(() => { void reloadMembers?.() })
+onMounted(() => {
+  void reloadMembers?.()
+})
 
 watch(
   () => group.value,
@@ -219,12 +228,12 @@ const chartStartDate = computed<Date | null>(() => {
 })
 
 const MEMBER_COLORS = [
-  { border: 'rgba(180,190,254,1)',  background: 'rgba(180,190,254,0.15)' },
-  { border: 'rgba(252,165,165,1)',  background: 'rgba(252,165,165,0.15)' },
-  { border: 'rgba(110,231,183,1)',  background: 'rgba(110,231,183,0.15)' },
-  { border: 'rgba(253,213,130,1)',  background: 'rgba(253,213,130,0.15)' },
-  { border: 'rgba(216,180,254,1)',  background: 'rgba(216,180,254,0.15)' },
-  { border: 'rgba(147,223,200,1)',  background: 'rgba(147,223,200,0.15)' },
+  { border: 'rgba(180,190,254,1)', background: 'rgba(180,190,254,0.15)' },
+  { border: 'rgba(252,165,165,1)', background: 'rgba(252,165,165,0.15)' },
+  { border: 'rgba(110,231,183,1)', background: 'rgba(110,231,183,0.15)' },
+  { border: 'rgba(253,213,130,1)', background: 'rgba(253,213,130,0.15)' },
+  { border: 'rgba(216,180,254,1)', background: 'rgba(216,180,254,0.15)' },
+  { border: 'rgba(147,223,200,1)', background: 'rgba(147,223,200,0.15)' },
 ]
 
 const chartRef = ref<{ chart: ChartJS } | null>(null)
@@ -232,7 +241,9 @@ const hiddenDatasets = ref<boolean[]>([])
 
 watch(
   () => activityRows.value,
-  (rows) => { hiddenDatasets.value = rows.map(() => false) },
+  (rows) => {
+    hiddenDatasets.value = rows.map(() => false)
+  },
   { immediate: true },
 )
 
@@ -303,10 +314,18 @@ const chartOptions = {
 }
 
 const quickLinks: QuickLink[] = [
-  { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
+  {
+    routeName: 'group-todo',
+    title: '커리큘럼 · Todo',
+    caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.',
+  },
   { routeName: 'group-ai', title: 'AI 팀장', caption: '학습 흐름을 함께 점검합니다.' },
   { routeName: 'group-board', title: '게시판', caption: '공지와 토론을 나눕니다.' },
-  { routeName: 'group-retrospective', title: '회고', caption: '주차별 회고를 작성하고 지난 주차 회고를 확인하세요.' },
+  {
+    routeName: 'group-retrospective',
+    title: '회고',
+    caption: '주차별 회고를 작성하고 지난 주차 회고를 확인하세요.',
+  },
 ]
 
 function formatDateRange(startsAt: string, endsAt: string): string {
@@ -314,7 +333,9 @@ function formatDateRange(startsAt: string, endsAt: string): string {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
+    new Date(value),
+  )
 }
 
 async function copyInviteCode(): Promise<void> {
@@ -346,17 +367,18 @@ async function handleStartStudy(): Promise<void> {
     await Promise.all([reloadGroup(), groupListStore.loadGroups()])
     await new Promise<void>((resolve) => setTimeout(resolve, 600))
     showStartModal.value = false
+    toastStore.pushToast('스터디를 시작했어요', '1주차 커리큘럼이 곧 준비됩니다.', 'success')
     await router.push({ name: 'group-todo', params: { groupId: groupId.value } })
   } catch (error) {
     clearProgressTimers()
     showStartModal.value = false
-    startStudyError.value = error instanceof ApiError ? error.message : '스터디 시작에 실패했습니다.'
+    startStudyError.value =
+      error instanceof ApiError ? error.message : '스터디 시작에 실패했습니다.'
+    toastStore.pushToast('스터디 시작 실패', startStudyError.value, 'error')
   } finally {
     isStartingStudy.value = false
   }
 }
-
-
 </script>
 
 <template>
@@ -385,18 +407,24 @@ async function handleStartStudy(): Promise<void> {
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-sm font-bold text-[var(--color-primary)]">🎉 모든 멤버가 온보딩을 완료했습니다!</p>
+            <p class="text-sm font-bold text-[var(--color-primary)]">
+              🎉 모든 멤버가 온보딩을 완료했습니다!
+            </p>
             <p class="mt-1 text-sm text-[var(--color-muted)]">
               이제 스터디를 시작할 수 있습니다. AI가 커리큘럼을 생성합니다.
             </p>
-            <p v-if="startStudyError" role="alert" class="mt-2 text-sm font-semibold text-[var(--color-danger)]">
+            <p
+              v-if="startStudyError"
+              role="alert"
+              class="mt-2 text-sm font-semibold text-[var(--color-danger)]"
+            >
               {{ startStudyError }}
             </p>
           </div>
           <button
             type="button"
             :disabled="isStartingStudy"
-            class="shrink-0 inline-flex h-12 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-base font-bold text-white shadow-md transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.3)] disabled:opacity-60"
+            class="shrink-0 inline-flex h-12 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-base font-bold text-white shadow-md transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.3)] disabled:opacity-60"
             @click="handleStartStudy"
           >
             {{ isStartingStudy ? '시작 중…' : '🚀 스터디 시작하기' }}
@@ -408,7 +436,9 @@ async function handleStartStudy(): Promise<void> {
         v-else-if="isReadyToStart && !isOwner && canStartStudy"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
-        <p class="text-sm font-bold text-[var(--color-primary)]">🎉 모든 멤버가 온보딩을 완료했습니다!</p>
+        <p class="text-sm font-bold text-[var(--color-primary)]">
+          🎉 모든 멤버가 온보딩을 완료했습니다!
+        </p>
         <p class="mt-1 text-sm text-[var(--color-muted)]">
           관리자가 스터디를 시작하면 커리큘럼이 생성됩니다. 잠시만 기다려 주세요.
         </p>
@@ -431,7 +461,9 @@ async function handleStartStudy(): Promise<void> {
             <div class="h-2 overflow-hidden rounded-full bg-[var(--color-card)]">
               <div
                 class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-500"
-                :style="{ width: `${(onboardingProgress.submitted / onboardingProgress.total) * 100}%` }"
+                :style="{
+                  width: `${(onboardingProgress.submitted / onboardingProgress.total) * 100}%`,
+                }"
               />
             </div>
           </div>
@@ -470,12 +502,27 @@ async function handleStartStudy(): Promise<void> {
           <div v-if="isOwner" class="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
+              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
               @click="showEditModal = true"
             >
-              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path
+                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
               편집
             </button>
@@ -484,9 +531,20 @@ async function handleStartStudy(): Promise<void> {
               class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[rgba(237,66,69,0.4)] bg-[rgba(237,66,69,0.06)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[rgba(237,66,69,0.12)] focus:outline-none focus:ring-4 focus:ring-[rgba(237,66,69,0.14)]"
               @click="showDeleteDialog = true"
             >
-              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
               삭제
             </button>
@@ -549,12 +607,16 @@ async function handleStartStudy(): Promise<void> {
         <div class="mt-5 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
             @click="copyInviteCode"
           >
             초대 코드 복사
           </button>
-          <span v-if="copyStatusMessage" role="status" class="text-xs font-semibold text-[var(--color-primary-deep)]">
+          <span
+            v-if="copyStatusMessage"
+            role="status"
+            class="text-xs font-semibold text-[var(--color-primary-deep)]"
+          >
             {{ copyStatusMessage }}
           </span>
         </div>
@@ -595,14 +657,17 @@ async function handleStartStudy(): Promise<void> {
                 class="inline-block h-3 w-3 shrink-0 rounded-full border-[1.5px] transition-colors duration-150"
                 :style="{
                   borderColor: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
-                  backgroundColor: hiddenDatasets[i] ? 'transparent' : MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
+                  backgroundColor: hiddenDatasets[i]
+                    ? 'transparent'
+                    : MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
                 }"
               />
               <span
                 class="text-xs font-semibold transition-opacity duration-150"
                 :style="{ color: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border }"
                 :class="{ 'opacity-40': hiddenDatasets[i] }"
-              >{{ row.memberNickname }}</span>
+                >{{ row.memberNickname }}</span
+              >
             </button>
           </div>
         </div>
@@ -618,10 +683,12 @@ async function handleStartStudy(): Promise<void> {
           v-for="link in quickLinks"
           :key="link.routeName"
           :to="{ name: link.routeName, params: { groupId } }"
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
+          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
         >
           <span class="text-base font-bold text-[var(--color-ink)]">{{ link.title }}</span>
-          <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">{{ link.caption }}</span>
+          <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">{{
+            link.caption
+          }}</span>
         </RouterLink>
       </section>
     </template>
@@ -654,12 +721,28 @@ async function handleStartStudy(): Promise<void> {
         aria-modal="true"
         aria-labelledby="delete-dialog-title"
       >
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showDeleteDialog = false" />
+        <div
+          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          @click="showDeleteDialog = false"
+        />
         <div class="relative w-full max-w-sm rounded-xl bg-[var(--color-card)] p-6 shadow-2xl">
-          <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+          <div
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              aria-hidden="true"
+            >
+              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </div>
           <h2 id="delete-dialog-title" class="mt-4 text-lg font-bold text-[var(--color-ink)]">
@@ -721,7 +804,9 @@ async function handleStartStudy(): Promise<void> {
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
         <!-- 모달 카드 -->
-        <div class="relative w-full max-w-sm rounded-2xl bg-[var(--color-card)] p-8 shadow-2xl text-center mx-4">
+        <div
+          class="relative w-full max-w-sm rounded-2xl bg-[var(--color-card)] p-8 shadow-2xl text-center mx-4"
+        >
           <div class="orbit-spinner mx-auto mb-5" aria-hidden="true">
             <div v-for="i in 6" :key="i" class="orbit-arm" :style="`--i: ${i - 1}`">
               <div class="orbit-dot" />
@@ -732,7 +817,7 @@ async function handleStartStudy(): Promise<void> {
             스터디 생성 중
           </h2>
           <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
-            AI가 커리큘럼을 만들고 있어요.<br>잠시만 기다려 주세요.
+            AI가 커리큘럼을 만들고 있어요.<br />잠시만 기다려 주세요.
           </p>
 
           <!-- 프로그레스 바 -->
@@ -752,8 +837,7 @@ async function handleStartStudy(): Promise<void> {
           <p
             v-if="startProgress >= 99 && startProgress < 100"
             class="mt-0 text-xs text-[var(--color-muted)]"
-          >
-          </p>
+          ></p>
           <p
             v-else-if="startProgress === 100"
             class="mt-4 text-xs font-semibold text-[var(--color-primary)]"
@@ -796,7 +880,11 @@ async function handleStartStudy(): Promise<void> {
 }
 
 @keyframes orbit {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

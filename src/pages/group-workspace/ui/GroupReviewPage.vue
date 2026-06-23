@@ -305,7 +305,7 @@ function formatDate(value: string): string {
                 :placeholder="'placeholder' in q ? q.placeholder : ''"
                 rows="3"
                 maxlength="500"
-                class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
+                class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
               />
               <p
                 v-if="validationErrors[q.id]"
@@ -336,7 +336,7 @@ function formatDate(value: string): string {
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
+              class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
             >
               {{ isSubmitting ? '저장 중…' : formMode === 'edit' ? '수정 완료' : '회고 작성' }}
             </button>
