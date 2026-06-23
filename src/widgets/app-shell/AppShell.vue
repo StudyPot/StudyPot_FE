@@ -11,6 +11,7 @@ import { useTheme } from '@/shared/theme/useTheme'
 
 type StatusPhase = 'before' | 'active' | 'done'
 type ChannelDef = { routeName: string; label: string; type: 'home' | 'todo' | 'ai' | 'board' | 'person' | 'onboard' | 'review' }
+type ChannelSection = { label: string; channels: ChannelDef[] }
 
 const route = useRoute()
 const router = useRouter()
@@ -30,14 +31,19 @@ const loginNotice = computed(() => {
   return ''
 })
 
-const baseChannels: ChannelDef[] = [
-  { routeName: 'group-overview', label: '홈', type: 'home' },
-  { routeName: 'group-todo',     label: 'Todo', type: 'todo' },
-  { routeName: 'group-ai',       label: 'AI 팀장', type: 'ai' },
+const PUBLIC_CHANNELS: ChannelDef[] = [
+  { routeName: 'group-overview', label: '홈',    type: 'home' },
   { routeName: 'group-board',    label: '게시판', type: 'board' },
-  { routeName: 'group-my',       label: '팀원', type: 'person' },
-  { routeName: 'group-review',   label: '회고', type: 'review' },
+  { routeName: 'group-my',       label: '팀원',   type: 'person' },
 ]
+
+const PRIVATE_CHANNELS: ChannelDef[] = [
+  { routeName: 'group-todo',   label: 'Todo',   type: 'todo' },
+  { routeName: 'group-ai',     label: 'AI 팀장', type: 'ai' },
+  { routeName: 'group-review', label: '회고',    type: 'review' },
+]
+
+const ONBOARD_CHANNEL: ChannelDef = { routeName: 'group-onboarding', label: '온보딩', type: 'onboard' }
 
 const showOnboarding = computed(() => {
   if (!currentGroup.value) return false
@@ -46,23 +52,28 @@ const showOnboarding = computed(() => {
   return !myOnboardingSubmitted.value
 })
 
-const channels = computed<ChannelDef[]>(() => {
+const channelSections = computed<ChannelSection[]>(() => {
   const isActive = currentGroup.value?.status === 'ACTIVE'
-  const home = baseChannels[0]!
-  const onboardChannel: ChannelDef = { routeName: 'group-onboarding', label: '온보딩', type: 'onboard' }
 
-  if (showOnboarding.value) {
-    return isActive
-      ? [home, onboardChannel, ...baseChannels.slice(1)]
-      : [home, onboardChannel]
+  if (!isActive) {
+    const nonActiveChannels = showOnboarding.value
+      ? [PUBLIC_CHANNELS[0]!, ONBOARD_CHANNEL, PUBLIC_CHANNELS[2]!]
+      : [PUBLIC_CHANNELS[0]!, PUBLIC_CHANNELS[2]!]
+    return [{ label: '', channels: nonActiveChannels }]
   }
 
-  return isActive ? baseChannels : [home]
+  return [
+    { label: '공용 공간', channels: [...PUBLIC_CHANNELS] },
+    { label: '개인 공간', channels: PRIVATE_CHANNELS },
+  ]
 })
 
-const activeChannelLabel = computed(() =>
-  channels.value.find((c) => c.routeName === String(route.name ?? ''))?.label ?? '',
-)
+const allChannels = computed(() => channelSections.value.flatMap((s) => s.channels))
+
+const activeChannelLabel = computed(() => {
+  const name = String(route.name ?? '')
+  return allChannels.value.find((c) => c.routeName === name)?.label ?? ''
+})
 
 const currentGroupPhase = computed<StatusPhase | null>(() =>
   currentGroup.value ? getStatusPhase(currentGroup.value.status) : null,
@@ -359,11 +370,16 @@ function startGoogleLogin(): void {
       <!-- Navigation -->
       <nav class="flex-1 overflow-y-auto px-2 py-2" :aria-label="currentGroupId ? '채널' : '메뉴'">
         <template v-if="currentGroupId">
-          <!-- Section label -->
-          <p class="mb-1 mt-1 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]">채널</p>
+          <template v-for="section in channelSections" :key="section.label">
+            <p
+              v-if="section.label"
+              class="mb-1 mt-3 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]"
+            >
+              {{ section.label }}
+            </p>
 
           <RouterLink
-            v-for="ch in channels"
+            v-for="ch in section.channels"
             :key="ch.routeName"
             :to="{ name: ch.routeName, params: { groupId: currentGroupId } }"
             :class="[
@@ -431,6 +447,7 @@ function startGoogleLogin(): void {
               class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[#e0953a]"
             />
           </RouterLink>
+          </template>
         </template>
 
         <!-- No group selected: simple links -->
@@ -542,11 +559,11 @@ function startGoogleLogin(): void {
             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
             stroke-linecap="round" stroke-linejoin="round"
           >
-            <template v-if="channels.find(c => c.routeName === String(route.name))?.type === 'home'">
+            <template v-if="allChannels.find(c => c.routeName === String(route.name))?.type === 'home'">
               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </template>
-            <template v-else-if="channels.find(c => c.routeName === String(route.name))?.type === 'ai'">
+            <template v-else-if="allChannels.find(c => c.routeName === String(route.name))?.type === 'ai'">
               <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
             </template>
             <template v-else>

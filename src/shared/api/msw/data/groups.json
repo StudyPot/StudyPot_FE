@@ -1,37 +1,64 @@
 {
   "groupList": [
     {
-      "id": "018f7a4e-0000-7000-9000-000000000010",
-      "name": "Backend Interview Study",
-      "topic": "Spring Boot",
-      "detailKeywords": ["JPA", "Security", "Testing"],
-      "status": "ONBOARDING",
-      "maxMembers": 6,
-      "inviteCode": "sb-onboarding-2026",
-      "startsAt": "2026-05-12",
-      "endsAt": "2026-06-30"
-    },
-    {
-      "id": "018f7a4e-0000-7000-9000-000000000012",
-      "name": "스터디 시작 대기 중 (테스트용)",
-      "topic": "Java",
-      "detailKeywords": ["Stream", "Concurrency", "GC"],
-      "status": "READY_TO_START",
-      "maxMembers": 4,
-      "inviteCode": "java-ready-2026",
-      "startsAt": "2026-06-01",
-      "endsAt": "2026-07-31"
-    },
-    {
-      "id": "018f7a4e-0000-7000-9000-000000000011",
-      "name": "Spring Boot 실전 스터디",
-      "topic": "Spring Boot",
-      "detailKeywords": ["JPA", "Spring Security", "테스트 코드", "REST API", "배포"],
+      "id": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+      "name": "Algorithm monkey 🐒",
+      "topic": "알고리즘",
+      "detailKeywords": ["알고리즘"],
       "status": "ACTIVE",
-      "maxMembers": 6,
-      "inviteCode": "sb-active-2026",
-      "startsAt": "2026-04-22",
-      "endsAt": "2026-06-30"
+      "maxMembers": 2,
+      "inviteCode": "ViN03q9sIbinsfUx",
+      "startsAt": "2026-06-24",
+      "endsAt": "2026-08-31"
+    },
+    {
+      "id": "019ef1ca-8fa7-7be0-8453-0c079a9da842",
+      "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+      "name": "Algorithm monkey 🐒",
+      "topic": "알고리즘",
+      "detailKeywords": ["탐색 알고리즘", "데이타 구조 비교 분석", "동적 계획법", "그래프 이론 핵심", "정렬 알고리즘"],
+      "status": "ACTIVE",
+      "maxMembers": 2,
+      "inviteCode": "N7oTsN6CWQwsrbAx",
+      "startsAt": "2026-06-23",
+      "endsAt": "2026-08-06"
+    },
+    {
+      "id": "019ef1c9-9164-7549-927b-59479312c1ef",
+      "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+      "name": "양지훈",
+      "topic": "엽떡",
+      "detailKeywords": ["엽떡"],
+      "status": "READY_TO_START",
+      "maxMembers": 1,
+      "inviteCode": "c4LqTYNkq7qEee44",
+      "startsAt": "2026-06-24",
+      "endsAt": "2026-07-09"
+    },
+    {
+      "id": "019eee94-dbbe-70e9-b482-38c3313c49f7",
+      "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+      "name": "양지훈",
+      "topic": "엽떡",
+      "detailKeywords": ["떡볶이 만드는 법"],
+      "status": "READY_TO_START",
+      "maxMembers": 2,
+      "inviteCode": "XxTSBepPiVSrPzXw",
+      "startsAt": "2026-07-01",
+      "endsAt": "2026-08-08"
+    },
+    {
+      "id": "019ea56e-b68c-7329-a210-cf829988beb1",
+      "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+      "name": "양지훈",
+      "topic": "병원",
+      "detailKeywords": ["성형외과"],
+      "status": "ACTIVE",
+      "maxMembers": 2,
+      "inviteCode": "UVS1nqvaD0w7rskX",
+      "startsAt": "2026-06-08",
+      "endsAt": "2026-06-22"
     }
   ],
   "createGroupRequest": {
@@ -43,15 +70,16 @@
     "endsAt": "2026-06-30"
   },
   "createGroupResponse": {
-    "id": "018f7a4e-0000-7000-9000-000000000010",
-    "name": "Backend Interview Study",
-    "topic": "Spring Boot",
-    "detailKeywords": ["JPA", "Security", "Testing"],
+    "id": "019ef229-895f-70dc-88af-ae592049d5c9",
+    "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+    "name": "Algorithm monkey 🐒",
+    "topic": "알고리즘",
+    "detailKeywords": ["알고리즘"],
     "status": "ONBOARDING",
-    "maxMembers": 6,
-    "inviteCode": "sb-onboarding-2026",
-    "startsAt": "2026-05-12",
-    "endsAt": "2026-06-30"
+    "maxMembers": 2,
+    "inviteCode": "ViN03q9sIbinsfUx",
+    "startsAt": "2026-06-24",
+    "endsAt": "2026-08-31"
   },
   "detailKeywordSuggestionRequest": {
     "topic": "Spring Boot",
@@ -62,15 +90,16 @@
     "keywords": ["JPA", "Spring Security", "Spring Batch", "Spring Data JPA", "JUnit"]
   },
   "groupDetail": {
-    "id": "018f7a4e-0000-7000-9000-000000000011",
-    "name": "Spring Boot 실전 스터디",
-    "topic": "Spring Boot",
-    "detailKeywords": ["JPA", "Spring Security", "테스트 코드", "REST API", "배포"],
+    "id": "019ef229-895f-70dc-88af-ae592049d5c9",
+    "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+    "name": "Algorithm monkey 🐒",
+    "topic": "알고리즘",
+    "detailKeywords": ["알고리즘"],
     "status": "ACTIVE",
-    "maxMembers": 6,
-    "inviteCode": "sb-active-2026",
-    "startsAt": "2026-04-22",
-    "endsAt": "2026-06-30"
+    "maxMembers": 2,
+    "inviteCode": "ViN03q9sIbinsfUx",
+    "startsAt": "2026-06-24",
+    "endsAt": "2026-08-31"
   },
   "updateGroupRequest": {
     "name": "Spring Boot 실전 스터디",
@@ -109,15 +138,16 @@
     "inviteCode": "sb-onboarding-2026"
   },
   "joinGroupResponse": {
-    "id": "018f7a4e-0000-7000-9000-000000000010",
-    "name": "Backend Interview Study",
-    "topic": "Spring Boot",
-    "detailKeywords": ["JPA", "Security", "Testing"],
+    "id": "019ef229-895f-70dc-88af-ae592049d5c9",
+    "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+    "name": "Algorithm monkey 🐒",
+    "topic": "알고리즘",
+    "detailKeywords": ["알고리즘"],
     "status": "ONBOARDING",
-    "maxMembers": 6,
-    "inviteCode": "sb-onboarding-2026",
-    "startsAt": "2026-05-12",
-    "endsAt": "2026-06-30"
+    "maxMembers": 2,
+    "inviteCode": "ViN03q9sIbinsfUx",
+    "startsAt": "2026-06-24",
+    "endsAt": "2026-08-31"
   },
   "groupMembers": [
     {
@@ -167,15 +197,15 @@
     }
   ],
   "startStudyResponse": {
-    "groupId": "018f7a4e-0000-7000-9000-000000000010",
+    "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
     "status": "ACTIVE",
     "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
-    "startedAt": "2026-05-12T20:00:00+09:00"
+    "startedAt": "2026-06-24T20:00:00+09:00"
   },
   "myMemberProfile": {
     "memberId": "018f7a4e-1000-7000-9000-000000000001",
-    "groupId": "018f7a4e-0000-7000-9000-000000000010",
-    "userId": "018f7a4e-0000-7000-9000-000000000001",
+    "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+    "userId": "019e6322-392b-7272-9215-01af91d62178",
     "permission": "OWNER",
     "status": "ACTIVE",
     "displayName": "user1",
