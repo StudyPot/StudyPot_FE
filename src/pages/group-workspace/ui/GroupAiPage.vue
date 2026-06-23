@@ -365,7 +365,7 @@ function renderMarkdown(content: string): string {
 
       <!-- 입력창 -->
       <div class="border-t border-[var(--color-line)] p-4">
-        <div class="flex gap-2">
+        <div class="flex gap-2 justify-center items-center">
           <textarea
             v-model="inputText"
             rows="2"
@@ -377,7 +377,7 @@ function renderMarkdown(content: string): string {
           <button
             type="button"
             :disabled="isSending || !inputText.trim()"
-            class="inline-flex h-full items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+            class="inline-flex h-full items-center py-2 justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
             @click="handleSendMessage"
           >
             전송
