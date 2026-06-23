@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getGroup, type StudyGroup, type StudyGroupStatus, useGroupListStore } from '@/entities/group'
 import { getMyOnboarding, useOnboardingStatusStore } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
-import { NotificationBell } from '@/features/notification'
+import { NotificationBell, useInAppNotificationStore } from '@/features/notification'
 import { apiOrigin } from '@/shared/config/api'
 import { useTheme } from '@/shared/theme/useTheme'
 
@@ -18,6 +18,7 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const groupListStore = useGroupListStore()
 const onboardingStatusStore = useOnboardingStatusStore()
+const notificationStore = useInAppNotificationStore()
 
 const currentGroupId = computed(() => String(route.params.groupId ?? ''))
 const currentGroup = ref<StudyGroup | null>(null)
@@ -109,6 +110,31 @@ watch(() => sessionStore.isAuthenticated, (ok) => {
 })
 
 watch(currentGroupId, () => { void loadCurrentGroup() }, { immediate: true })
+
+// 실시간 알림(SSE)으로 스터디 시작/주차 시작 등 현재 그룹 이벤트가 오면
+// 그룹 상태를 다시 불러와 사이드바 탭(Todo·AI 팀장·회고 등)이 새로고침 없이 즉시 나타나게 한다.
+const LIVE_REFRESH_TYPES = new Set([
+  'MEMBER_JOINED',
+  'ONBOARDING_REQUESTED',
+  'ONBOARDING_SUBMITTED',
+  'ONBOARDING_COMPLETED',
+  'STUDY_STARTED',
+  'WEEK_STARTED',
+])
+
+watch(
+  () => notificationStore.lastEvent,
+  (event) => {
+    if (!event) return
+    const eventGroupId =
+      event.groupId ??
+      (event.payload?.groupId as string | undefined) ??
+      event.relatedResourceIds?.groupId
+    if (eventGroupId === currentGroupId.value && LIVE_REFRESH_TYPES.has(event.notificationType)) {
+      void loadCurrentGroup()
+    }
+  },
+)
 
 async function loadCurrentGroup(): Promise<void> {
   if (!currentGroupId.value) { currentGroup.value = null; return }
