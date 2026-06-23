@@ -53,7 +53,7 @@ const tasks: WeeklyTask[] = [
 
 function makeFetch(
   handlers: Array<{ match: string; body: unknown; status?: number }>,
-): typeof vi.fn {
+) {
   return vi.fn<typeof fetch>().mockImplementation((input) => {
     const url = String(input)
     const handler = handlers.find((h) => url.includes(h.match))
@@ -164,7 +164,7 @@ describe('GroupCurriculumPage', () => {
     expect(wrapper.text()).toContain('필수')
 
     const detailCalls = fetchMock.mock.calls
-      .map(([url]: [string]) => url)
+      .map(([url]) => String(url))
       .filter((u: string) => u.includes(`/weeks/${weekId}`))
     expect(detailCalls.some((u: string) => u.endsWith(`/weeks/${weekId}`))).toBe(true)
     expect(detailCalls.some((u: string) => u.endsWith(`/weeks/${weekId}/tasks`))).toBe(true)

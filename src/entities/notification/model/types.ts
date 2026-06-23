@@ -14,6 +14,7 @@ export type NotificationType =
   | 'RETROSPECTIVE_REMINDER'
   | 'RETROSPECTIVE_READY'
   | 'NEXT_WEEK_ADJUSTED'
+  | 'NOTICE_POSTED'
   | 'GROUP_DELETED'
 
 export type NotificationChannel = 'IN_APP'

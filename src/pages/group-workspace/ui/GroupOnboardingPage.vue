@@ -9,7 +9,7 @@ import {
   type OnboardingResponse,
 } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
-import { ScreenState } from '@/shared/ui'
+import { ScreenState, TimeInput } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -279,17 +279,8 @@ function formatSubmittedAt(value: string): string {
                 <option v-for="(label, d) in DAY_LABELS" :key="d" :value="d">{{ label }}요일</option>
               </select>
 
-              <input
-                v-model="slot.startTime"
-                type="time"
-                class="rounded border border-[var(--color-line)] bg-[var(--color-input)] px-2 py-1 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
-              />
-
-              <input
-                v-model="slot.endTime"
-                type="time"
-                class="rounded border border-[var(--color-line)] bg-[var(--color-input)] px-2 py-1 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
-              />
+              <TimeInput v-model="slot.startTime" />
+              <TimeInput v-model="slot.endTime" />
 
               <button
                 type="button"

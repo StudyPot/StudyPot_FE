@@ -396,18 +396,18 @@ function scrollTabs(direction: 'left' | 'right'): void {
             role="alert"
           >
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg text-white">
-              💬
+              📝
             </div>
             <div>
-              <p class="font-bold text-[var(--color-ink)]">AI 팀장에게 회고가 도착했어요</p>
+              <p class="font-bold text-[var(--color-ink)]">이번 주 할 일을 모두 완료했어요!</p>
               <p class="mt-1 text-sm text-[var(--color-muted)]">
-                이번 주 할 일을 모두 완료했습니다. AI 팀장이 회고를 보냈습니다.
+                회고를 작성하고 이번 주를 마무리해 보세요.
               </p>
               <RouterLink
-                :to="{ name: 'group-ai', params: { groupId } }"
+                :to="{ name: 'group-review', params: { groupId } }"
                 class="mt-2 inline-flex h-8 items-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none"
               >
-                AI 팀장과 회고하기
+                회고하러 가기
               </RouterLink>
             </div>
           </section>

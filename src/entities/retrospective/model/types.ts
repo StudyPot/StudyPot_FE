@@ -4,6 +4,7 @@ export type RetrospectiveStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAIL
 
 export type Retrospective = {
   id: string
+  weekId?: string
   status: RetrospectiveStatus
   aiFeedback?: JsonObject | null
   nextWeekAdjustment?: JsonObject | null

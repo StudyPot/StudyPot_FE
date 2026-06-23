@@ -20,6 +20,8 @@ const form = reactive<GroupJoinForm>({
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const fieldErrors = ref<Record<string, string>>({})
+const showSuccessModal = ref(false)
+const joinedGroupId = ref('')
 
 async function submitJoin(): Promise<void> {
   errorMessage.value = ''
@@ -33,12 +35,8 @@ async function submitJoin(): Promise<void> {
   try {
     const member = await joinGroupByInviteCode(form.inviteCode.trim())
     void groupListStore.loadGroups()
-    await router.replace({
-      name: 'group-onboarding',
-      params: {
-        groupId: member.groupId,
-      },
-    })
+    joinedGroupId.value = member.groupId
+    showSuccessModal.value = true
   } catch (error) {
     errorMessage.value =
       error instanceof ApiError ? error.message : '그룹에 참여하지 못했어요. 초대 코드를 확인해 주세요.'
@@ -57,6 +55,10 @@ function validateForm(): boolean {
   fieldErrors.value = errors
 
   return Object.keys(errors).length === 0
+}
+
+async function goToOnboarding(): Promise<void> {
+  await router.replace({ name: 'group-onboarding', params: { groupId: joinedGroupId.value } })
 }
 
 function getInitialInviteCode(): string {
@@ -93,7 +95,7 @@ function getInitialInviteCode(): string {
             name="inviteCode"
             type="text"
             class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
-            placeholder="SPRING-AB12"
+            placeholder="초대 코드를 입력해주세요."
           />
           <span v-if="fieldErrors.inviteCode" class="text-xs font-semibold text-[var(--color-danger)]">
             {{ fieldErrors.inviteCode }}
@@ -126,4 +128,54 @@ function getInitialInviteCode(): string {
       </div>
     </form>
   </main>
+
+  <!-- 참여 완료 모달 -->
+  <Transition
+    enter-active-class="transition-opacity duration-200 ease-out"
+    enter-from-class="opacity-0"
+    leave-active-class="transition-opacity duration-150 ease-in"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-if="showSuccessModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      @click.self="showSuccessModal = false"
+    >
+      <Transition
+        enter-active-class="transition-all duration-200 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        leave-active-class="transition-all duration-150 ease-in"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="showSuccessModal"
+          class="w-full max-w-sm rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-8 shadow-[var(--shadow-strong)]"
+        >
+          <!-- 아이콘 -->
+          <div class="flex justify-center">
+            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(35,165,90,0.15)]">
+              <svg class="h-8 w-8 text-[var(--color-success)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- 텍스트 -->
+          <h2 class="mt-5 text-center text-xl font-bold text-[var(--color-ink)]">스터디 참여 완료!</h2>
+          <p class="mt-2 text-center text-sm leading-6 text-[var(--color-muted)]">
+            그룹에 성공적으로 참여했어요.<br />온보딩을 완료하면 스터디가 시작됩니다.
+          </p>
+
+          <!-- 버튼 -->
+          <button
+            type="button"
+            class="mt-6 w-full rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(88,101,242,0.25)]"
+            @click="goToOnboarding"
+          >
+            온보딩 시작하기
+          </button>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
 </template>
