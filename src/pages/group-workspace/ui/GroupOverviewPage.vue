@@ -1,29 +1,19 @@
 <script setup lang="ts">
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  Filler,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Tooltip,
-} from 'chart.js'
-import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Line } from 'vue-chartjs'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend)
 
 import {
   deleteGroup,
-  getGroupOverviewPrimaryEntry,
+  getGroupCategoryColor,
   getGroupStatusLabel,
-  type GroupEntryAction,
   type StudyGroup,
 } from '@/entities/group'
-import { getGroupMembersActivity, startStudy, type MemberActivityRow } from '@/entities/curriculum'
-import { getMyOnboarding } from '@/entities/onboarding'
+import {
+  getCurriculum,
+  getGroupMembersActivity,
+  startStudy,
+  type MemberActivityRow,
+} from '@/entities/curriculum'
 import { useSessionStore } from '@/features/auth/session'
 import { useInAppNotificationStore } from '@/features/notification'
 import { useGroupListStore } from '@/entities/group'
@@ -32,54 +22,183 @@ import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 import GroupEditModal from './GroupEditModal.vue'
 
-type QuickLink = {
-  routeName: string
-  title: string
-  caption: string
-}
-
 const workspaceContext = inject(groupWorkspaceContextKey)
-
-if (!workspaceContext) {
-  throw new Error('GroupOverviewPage must be used inside GroupWorkspacePage.')
-}
+if (!workspaceContext) throw new Error('GroupOverviewPage must be used inside GroupWorkspacePage.')
 
 const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, reloadMembers, members } =
   workspaceContext
 
-const isReadyToStart = computed(() => group.value?.status === 'READY_TO_START')
-
-const canStartStudy = computed(() => {
-  if (!group.value) return false
-  const active = members.value.filter((m) => m.status !== 'LEFT')
-  const allSubmitted = active.every((m) => m.onboardingStatus === 'SUBMITTED')
-  const isFull = active.length >= group.value.maxMembers
-  return allSubmitted && isFull
-})
 const router = useRouter()
-const copyStatusMessage = ref('')
-const onboardingSubmitted = ref(false)
-const isStartingStudy = ref(false)
-const startStudyError = ref('')
-const showStartModal = ref(false)
-const startProgress = ref(0)
+const sessionStore = useSessionStore()
+const groupListStore = useGroupListStore()
+const toastStore = useInAppNotificationStore()
 
+const isActive = computed(() => group.value?.status === 'ACTIVE')
+
+const myUserId = computed(() => sessionStore.user?.id ?? null)
+const myMemberId = computed(
+  () => members.value.find((m) => m.userId === myUserId.value)?.id ?? null,
+)
+const isOwner = computed(() =>
+  members.value.some((m) => m.userId === myUserId.value && m.permission === 'OWNER'),
+)
+
+const activeMembers = computed(() => members.value.filter((m) => m.status !== 'LEFT'))
+
+// ── 시작 전: 온보딩 현황 ─────────────────────────────────────────
+const onboardingDone = computed(
+  () => activeMembers.value.filter((m) => m.onboardingStatus === 'SUBMITTED').length,
+)
+// 정원과 실제 멤버 수 중 큰 값(데이터 불일치 시 음수 방지)
+const onboardingTotal = computed(() =>
+  Math.max(group.value?.maxMembers ?? 0, activeMembers.value.length),
+)
+const onboardingWaiting = computed(() => Math.max(0, onboardingTotal.value - onboardingDone.value))
+const onboardingPct = computed(() =>
+  onboardingTotal.value > 0 ? Math.round((onboardingDone.value / onboardingTotal.value) * 100) : 0,
+)
+const canStartStudy = computed(
+  () =>
+    activeMembers.value.length > 0 &&
+    activeMembers.value.length >= (group.value?.maxMembers ?? 0) &&
+    activeMembers.value.every((m) => m.onboardingStatus === 'SUBMITTED'),
+)
+
+// ── 활성: 활동 데이터 ────────────────────────────────────────────
+const activityRows = ref<MemberActivityRow[]>([])
+const curriculumPct = ref(0)
+const barView = ref<'team' | 'me'>('team')
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+function shiftIso(iso: string, delta: number): string {
+  const d = new Date(iso)
+  d.setDate(d.getDate() + delta)
+  return d.toISOString().slice(0, 10)
+}
+function countMapFor(memberId: string): Map<string, number> {
+  const row = activityRows.value.find((r) => r.memberId === memberId)
+  const map = new Map<string, number>()
+  if (row) for (const d of row.dailyActivity) map.set(d.date, d.count)
+  return map
+}
+function rangeCount(memberId: string, startOffset: number, len: number): number {
+  const map = countMapFor(memberId)
+  const today = todayIso()
+  let sum = 0
+  for (let i = 0; i < len; i += 1) sum += map.get(shiftIso(today, -(startOffset + i))) ?? 0
+  return sum
+}
+function memberWeekCount(memberId: string): number {
+  return rangeCount(memberId, 0, 7)
+}
+function memberActiveDays(memberId: string): number {
+  const map = countMapFor(memberId)
+  const today = todayIso()
+  let days = 0
+  for (let i = 0; i < 7; i += 1) if ((map.get(shiftIso(today, -i)) ?? 0) > 0) days += 1
+  return days
+}
+
+const weeklyTotal = computed(() =>
+  activityRows.value.reduce((s, r) => s + memberWeekCount(r.memberId), 0),
+)
+const lastWeekTotal = computed(() =>
+  activityRows.value.reduce((s, r) => s + rangeCount(r.memberId, 7, 7), 0),
+)
+const weekDelta = computed(() => weeklyTotal.value - lastWeekTotal.value)
+
+const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토']
+function weekdayLabel(iso?: string): string {
+  if (!iso) return ''
+  return WEEKDAY_KO[new Date(iso).getDay()] ?? ''
+}
+// 최근 7일(today-6 … today) — 주중에도 항상 채워지도록 롤링 윈도우 사용
+const weekDates = computed(() =>
+  Array.from({ length: 7 }, (_, i) => shiftIso(todayIso(), -(6 - i))),
+)
+function teamCountOn(date: string): number {
+  return activityRows.value.reduce((s, r) => {
+    const found = r.dailyActivity.find((d) => d.date === date)
+    return s + (found?.count ?? 0)
+  }, 0)
+}
+function myCountOn(date: string): number {
+  if (!myMemberId.value) return 0
+  return countMapFor(myMemberId.value).get(date) ?? 0
+}
+const barValues = computed(() =>
+  weekDates.value.map((d) => (barView.value === 'team' ? teamCountOn(d) : myCountOn(d))),
+)
+const maxBar = computed(() => Math.max(1, ...barValues.value))
+
+type Participation = { memberId: string; nickname: string; pct: number }
+const participation = computed<Participation[]>(() =>
+  activityRows.value
+    .map((r) => ({
+      memberId: r.memberId,
+      nickname: r.memberNickname,
+      pct: Math.round((memberActiveDays(r.memberId) / 7) * 100),
+    }))
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 6),
+)
+
+type Mvp = { memberId: string; nickname: string; count: number; streak: number } | null
+const mvp = computed<Mvp>(() => {
+  if (activityRows.value.length === 0) return null
+  let best = activityRows.value[0]!
+  let bestCount = memberWeekCount(best.memberId)
+  for (const r of activityRows.value) {
+    const c = memberWeekCount(r.memberId)
+    if (c > bestCount) {
+      best = r
+      bestCount = c
+    }
+  }
+  // 연속일: 가장 최근 활동일부터 거꾸로 이어진 일수
+  const map = countMapFor(best.memberId)
+  let cursor = todayIso()
+  if ((map.get(cursor) ?? 0) === 0) cursor = shiftIso(cursor, -1)
+  let streak = 0
+  while ((map.get(cursor) ?? 0) > 0) {
+    streak += 1
+    cursor = shiftIso(cursor, -1)
+  }
+  return { memberId: best.memberId, nickname: best.memberNickname, count: bestCount, streak }
+})
+
+type RecentItem = { memberId: string; nickname: string; date: string }
+const recentActivity = computed<RecentItem[]>(() => {
+  const items: RecentItem[] = []
+  for (const r of activityRows.value) {
+    let latest: string | null = null
+    for (const d of r.dailyActivity) {
+      if (d.count > 0 && (latest === null || d.date > latest)) latest = d.date
+    }
+    if (latest) items.push({ memberId: r.memberId, nickname: r.memberNickname, date: latest })
+  }
+  return items.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4)
+})
+
+// ── 진행률 링(SVG) ───────────────────────────────────────────────
+const RING_R = 40
+const RING_C = 2 * Math.PI * RING_R
+const ringOffset = computed(() => RING_C * (1 - curriculumPct.value / 100))
+
+// ── 편집 / 삭제 / 시작 모달 ─────────────────────────────────────
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 const deleteError = ref('')
 
-const sessionStore = useSessionStore()
-const groupListStore = useGroupListStore()
-const toastStore = useInAppNotificationStore()
-
-const isOwner = computed(() => {
-  const myUserId = sessionStore.user?.id
-  if (!myUserId) {
-    return false
-  }
-  return members.value.some((member) => member.userId === myUserId && member.permission === 'OWNER')
-})
+const showStartModal = ref(false)
+const isStartingStudy = ref(false)
+const startStudyError = ref('')
+const startProgress = ref(0)
+let progressTimer: ReturnType<typeof setInterval> | null = null
+let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 
 function handleGroupUpdated(updated: StudyGroup): void {
   group.value = updated
@@ -94,22 +213,12 @@ async function handleDeleteGroup(): Promise<void> {
     groupListStore.removeGroup(groupId.value)
     await router.replace({ name: 'groups' })
   } catch (error) {
-    if (error instanceof ApiError) {
-      if (error.status === 404) {
-        deleteError.value = '그룹을 찾을 수 없어요. 이미 삭제되었을 수 있어요.'
-      } else {
-        deleteError.value = error.message
-      }
-    } else {
-      deleteError.value = '그룹 삭제에 실패했어요. 다시 시도해 주세요.'
-    }
+    deleteError.value =
+      error instanceof ApiError ? error.message : '그룹 삭제에 실패했어요. 다시 시도해 주세요.'
   } finally {
     isDeleting.value = false
   }
 }
-
-let progressTimer: ReturnType<typeof setInterval> | null = null
-let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 
 function startProgressAnimation(): void {
   startProgress.value = 0
@@ -121,7 +230,6 @@ function startProgressAnimation(): void {
     startProgress.value = 99
   }, 30000)
 }
-
 function clearProgressTimers(): void {
   if (progressTimer) {
     clearInterval(progressTimer)
@@ -133,237 +241,15 @@ function clearProgressTimers(): void {
   }
 }
 
-onUnmounted(() => {
-  clearProgressTimers()
-})
-
-// 워크스페이스(부모)는 온보딩↔개요 이동 시 재마운트되지 않아 members가 stale 해진다.
-// 개요가 보일 때마다 멤버 목록만 다시 불러 온보딩 현황(본인 포함)이 최신으로 표시되게 한다.
-onMounted(() => {
-  void reloadMembers?.()
-})
-
-watch(
-  () => group.value,
-  async (newGroup) => {
-    if (newGroup?.status !== 'ONBOARDING') {
-      onboardingSubmitted.value = false
-      return
-    }
-    try {
-      const data = await getMyOnboarding(groupId.value)
-      onboardingSubmitted.value = data.status === 'SUBMITTED'
-    } catch {
-      onboardingSubmitted.value = false
-    }
-  },
-  { immediate: true },
-)
-
-const primaryEntry = computed<GroupEntryAction | null>(() =>
-  group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
-)
-
-// 비(非)오너 멤버에게는 READY_TO_START 에서 '스터디를 시작하세요' 문구가 오해를 주므로 대기 안내로 바꾼다.
-const mainSummary = computed(() => {
-  if (isReadyToStart.value && !isOwner.value) {
-    return '관리자가 스터디를 시작하면 커리큘럼이 생성됩니다. 잠시만 기다려 주세요.'
-  }
-  return primaryEntry.value?.summary ?? ''
-})
-
-const onboardingProgress = computed(() => {
-  if (!group.value) return null
-  const active = members.value.filter((m) => m.status !== 'LEFT')
-  const submitted = active.filter((m) => m.onboardingStatus === 'SUBMITTED').length
-  // 분모는 정원(maxMembers) 기준으로 표시한다. (가입 인원이 아닌 그룹 정원)
-  const total = group.value.maxMembers
-  return { submitted, total }
-})
-
-const activityRows = ref<MemberActivityRow[]>([])
-
-watch(
-  () => group.value?.status,
-  (status) => {
-    if (status === 'ACTIVE') void loadGroupActivity()
-    else activityRows.value = []
-  },
-  { immediate: true },
-)
-
-async function loadGroupActivity(): Promise<void> {
-  try {
-    activityRows.value = await getGroupMembersActivity(groupId.value)
-  } catch {
-    activityRows.value = []
-  }
-}
-
-const MAX_CHART_DAYS = 28
-
-function toLocalDateStr(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
-// X축은 항상 28일 고정 (today-27 ~ today)
-const activityDays = computed(() => {
-  const msPerDay = 24 * 60 * 60 * 1000
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const result: string[] = []
-  for (let i = MAX_CHART_DAYS - 1; i >= 0; i--) {
-    result.push(toLocalDateStr(new Date(today.getTime() - i * msPerDay)))
-  }
-  return result
-})
-
-// 스터디 시작일 (자정 기준)
-const chartStartDate = computed<Date | null>(() => {
-  if (!group.value?.startsAt) return null
-  const d = new Date(group.value.startsAt)
-  if (isNaN(d.getTime())) return null
-  d.setHours(0, 0, 0, 0)
-  return d
-})
-
-const MEMBER_COLORS = [
-  { border: 'rgba(180,190,254,1)', background: 'rgba(180,190,254,0.15)' },
-  { border: 'rgba(252,165,165,1)', background: 'rgba(252,165,165,0.15)' },
-  { border: 'rgba(110,231,183,1)', background: 'rgba(110,231,183,0.15)' },
-  { border: 'rgba(253,213,130,1)', background: 'rgba(253,213,130,0.15)' },
-  { border: 'rgba(216,180,254,1)', background: 'rgba(216,180,254,0.15)' },
-  { border: 'rgba(147,223,200,1)', background: 'rgba(147,223,200,0.15)' },
-]
-
-const chartRef = ref<{ chart: ChartJS } | null>(null)
-const hiddenDatasets = ref<boolean[]>([])
-
-watch(
-  () => activityRows.value,
-  (rows) => {
-    hiddenDatasets.value = rows.map(() => false)
-  },
-  { immediate: true },
-)
-
-function toggleDataset(index: number): void {
-  const chart = chartRef.value?.chart
-  if (!chart) return
-  const meta = chart.getDatasetMeta(index)
-  meta.hidden = !meta.hidden
-  hiddenDatasets.value = hiddenDatasets.value.map((h, i) => (i === index ? !h : h))
-  chart.update()
-}
-
-const combinedChartData = computed(() => ({
-  labels: activityDays.value.map((d) => {
-    const date = new Date(d)
-    return `${date.getMonth() + 1}/${date.getDate()}`
-  }),
-  datasets: activityRows.value.map((row, i) => {
-    const color = MEMBER_COLORS[i % MEMBER_COLORS.length]!
-    return {
-      label: row.memberNickname,
-      data: activityDays.value.map((day) => {
-        if (chartStartDate.value) {
-          const d = new Date(day)
-          d.setHours(0, 0, 0, 0)
-          if (d < chartStartDate.value) return null
-        }
-        return row.dailyActivity.find((d) => d.date === day)?.count ?? 0
-      }),
-      borderColor: color.border,
-      backgroundColor: color.background,
-      fill: true,
-      tension: 0.4,
-      borderWidth: 1.5,
-      pointBackgroundColor: '#ffffff',
-      pointBorderColor: color.border,
-      pointBorderWidth: 1.5,
-      pointRadius: 3,
-      pointHoverRadius: 5,
-    }
-  }),
-}))
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: { mode: 'index' as const, intersect: false },
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: (ctx: { dataset: { label?: string }; parsed: { y: number | null } }) =>
-          ` ${ctx.dataset.label ?? ''}: ${ctx.parsed.y ?? 0}건`,
-      },
-    },
-  },
-  scales: {
-    x: {
-      grid: { display: false },
-      ticks: { color: 'rgba(148,155,164,0.8)', font: { size: 11 } },
-    },
-    y: {
-      beginAtZero: true,
-      ticks: { stepSize: 1, color: 'rgba(148,155,164,0.8)', font: { size: 11 } },
-      grid: { color: 'rgba(148,155,164,0.08)' },
-    },
-  },
-}
-
-const quickLinks: QuickLink[] = [
-  {
-    routeName: 'group-todo',
-    title: '커리큘럼 · Todo',
-    caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.',
-  },
-  { routeName: 'group-ai', title: 'AI 팀장', caption: '학습 흐름을 함께 점검합니다.' },
-  { routeName: 'group-board', title: '게시판', caption: '공지와 토론을 나눕니다.' },
-  {
-    routeName: 'group-retrospective',
-    title: '회고',
-    caption: '주차별 회고를 작성하고 지난 주차 회고를 확인하세요.',
-  },
-]
-
-function formatDateRange(startsAt: string, endsAt: string): string {
-  return `${formatDate(startsAt)} - ${formatDate(endsAt)}`
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
-    new Date(value),
-  )
-}
-
-async function copyInviteCode(): Promise<void> {
-  if (!group.value?.inviteCode) return
-  await copyToClipboard(group.value.inviteCode, '초대 코드를 복사했습니다.')
-}
-
-async function copyToClipboard(value: string, successMessage: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(value)
-    copyStatusMessage.value = successMessage
-  } catch {
-    copyStatusMessage.value = '복사하지 못했습니다.'
-  }
-}
-
 async function handleStartStudy(): Promise<void> {
   isStartingStudy.value = true
   startStudyError.value = ''
   showStartModal.value = true
   startProgressAnimation()
-
   try {
     await startStudy(groupId.value)
     clearProgressTimers()
     startProgress.value = 100
-    // 시작 직후 공유 group 상태와 좌측 사이드바 그룹 목록을 함께 갱신해
-    // 새로고침 없이 상태 태그/점이 ACTIVE(초록)로 바뀌도록 한다.
     await Promise.all([reloadGroup(), groupListStore.loadGroups()])
     await new Promise<void>((resolve) => setTimeout(resolve, 600))
     showStartModal.value = false
@@ -379,17 +265,51 @@ async function handleStartStudy(): Promise<void> {
     isStartingStudy.value = false
   }
 }
+
+onMounted(() => {
+  void reloadMembers?.()
+})
+
+watch(
+  () => group.value?.status,
+  (status) => {
+    if (status === 'ACTIVE') void loadDashboard()
+    else activityRows.value = []
+  },
+  { immediate: true },
+)
+
+async function loadDashboard(): Promise<void> {
+  const [activity, curriculum] = await Promise.allSettled([
+    getGroupMembersActivity(groupId.value),
+    getCurriculum(groupId.value),
+  ])
+  activityRows.value = activity.status === 'fulfilled' ? activity.value : []
+  const weeks = curriculum.status === 'fulfilled' ? (curriculum.value.weeks ?? []) : []
+  if (weeks.length > 0) {
+    const done = weeks.filter((w) => w.status === 'COMPLETED').length
+    const inProgress = weeks.filter((w) => w.status === 'IN_PROGRESS').length
+    // 완료 주차 + 진행 중 주차 절반으로 진행률 근사
+    curriculumPct.value = Math.round(((done + inProgress * 0.5) / weeks.length) * 100)
+  }
+}
+
+function formatRelative(date: string): string {
+  const today = todayIso()
+  if (date === today) return '오늘'
+  if (date === shiftIso(today, -1)) return '어제'
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(date))
+}
 </script>
 
 <template>
-  <div class="grid gap-5">
+  <div class="grid gap-4">
     <ScreenState
       v-if="isGroupLoading"
       variant="loading"
       title="그룹 홈을 준비하는 중입니다."
       description="그룹 상태와 다음 작업을 확인하고 있습니다."
     />
-
     <ScreenState
       v-else-if="groupErrorMessage"
       variant="error"
@@ -399,297 +319,404 @@ async function handleStartStudy(): Promise<void> {
       @action="reloadGroup"
     />
 
-    <template v-else-if="group && primaryEntry">
-      <!-- 스터디 시작하기 배너 -->
-      <section
-        v-if="isReadyToStart && isOwner && canStartStudy"
-        class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm font-bold text-[var(--color-primary)]">
-              🎉 모든 멤버가 온보딩을 완료했습니다!
-            </p>
-            <p class="mt-1 text-sm text-[var(--color-muted)]">
-              이제 스터디를 시작할 수 있습니다. AI가 커리큘럼을 생성합니다.
-            </p>
-            <p
-              v-if="startStudyError"
-              role="alert"
-              class="mt-2 text-sm font-semibold text-[var(--color-danger)]"
-            >
-              {{ startStudyError }}
-            </p>
-          </div>
+    <!-- ════════ 활성: 대시보드 ════════ -->
+    <template v-else-if="group && isActive">
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">{{ group.name }}</h1>
+          <p class="mt-0.5 text-sm text-[var(--color-muted)]">이번 주 학습 현황을 확인하세요.</p>
+        </div>
+        <div v-if="isOwner" class="flex shrink-0 gap-2">
           <button
             type="button"
-            :disabled="isStartingStudy"
-            class="shrink-0 inline-flex h-12 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-base font-bold text-white shadow-md transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.3)] disabled:opacity-60"
-            @click="handleStartStudy"
+            class="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+            @click="showEditModal = true"
           >
-            {{ isStartingStudy ? '시작 중…' : '🚀 스터디 시작하기' }}
+            편집
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-button)] border border-[rgba(255,82,71,0.4)] bg-[rgba(255,82,71,0.06)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[rgba(255,82,71,0.12)]"
+            @click="showDeleteDialog = true"
+          >
+            삭제
           </button>
         </div>
-      </section>
+      </div>
 
-      <section
-        v-else-if="isReadyToStart && !isOwner && canStartStudy"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <p class="text-sm font-bold text-[var(--color-primary)]">
-          🎉 모든 멤버가 온보딩을 완료했습니다!
-        </p>
-        <p class="mt-1 text-sm text-[var(--color-muted)]">
-          관리자가 스터디를 시작하면 커리큘럼이 생성됩니다. 잠시만 기다려 주세요.
-        </p>
-      </section>
+      <!-- Row1: 통계 카드 3개 -->
+      <div class="grid gap-4 sm:grid-cols-3">
+        <!-- 이번 주 그룹 활동 -->
+        <div
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <p class="text-sm text-[var(--color-muted)]">이번 주 그룹 활동</p>
+          <p class="mt-1 text-4xl font-extrabold text-[var(--color-ink)]">
+            {{ weeklyTotal
+            }}<span class="ml-1 text-lg font-bold text-[var(--color-muted)]">회</span>
+          </p>
+          <span
+            class="mt-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] bg-[var(--color-tint-50)] px-2.5 py-1 text-xs font-bold text-[var(--color-primary-text)]"
+          >
+            <template v-if="weekDelta > 0">▲ {{ weekDelta }} · 지난주 대비</template>
+            <template v-else-if="weekDelta < 0">▼ {{ -weekDelta }} · 지난주 대비</template>
+            <template v-else>지난주와 동일</template>
+          </span>
+        </div>
 
-      <!-- 온보딩 진행 현황 -->
-      <section
-        v-else-if="group.status === 'ONBOARDING' && onboardingProgress"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <p class="text-sm font-semibold text-[var(--color-primary)]">온보딩 현황</p>
-        <div class="mt-3 flex items-center gap-4">
-          <div class="flex-1">
-            <div class="flex items-center justify-between text-xs text-[var(--color-muted)] mb-1">
-              <span>온보딩 완료</span>
-              <span class="font-semibold text-[var(--color-ink)]">
-                {{ onboardingProgress.submitted }} / {{ onboardingProgress.total }}명
+        <!-- 커리큘럼 진행률 -->
+        <div
+          class="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <svg viewBox="0 0 100 100" class="h-28 w-28 -rotate-90">
+            <circle
+              cx="50"
+              cy="50"
+              :r="RING_R"
+              fill="none"
+              stroke="var(--color-active)"
+              stroke-width="10"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              :r="RING_R"
+              fill="none"
+              stroke="var(--color-primary)"
+              stroke-width="10"
+              stroke-linecap="round"
+              :stroke-dasharray="RING_C"
+              :stroke-dashoffset="ringOffset"
+              style="transition: stroke-dashoffset 0.6s ease"
+            />
+            <text
+              x="50"
+              y="50"
+              transform="rotate(90 50 50)"
+              text-anchor="middle"
+              dominant-baseline="central"
+              class="fill-[var(--color-ink)] text-[22px] font-extrabold"
+            >
+              {{ curriculumPct }}%
+            </text>
+          </svg>
+          <p class="mt-2 text-sm text-[var(--color-muted)]">커리큘럼 진행률</p>
+        </div>
+
+        <!-- 이번 주 MVP -->
+        <div
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <p class="text-sm text-[var(--color-muted)]">이번 주 MVP</p>
+          <div v-if="mvp" class="mt-3 flex items-center gap-3">
+            <span
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+              :style="{ backgroundColor: getGroupCategoryColor(mvp.memberId) }"
+            >
+              {{ mvp.nickname.slice(0, 1).toUpperCase() }}
+            </span>
+            <div class="min-w-0">
+              <p class="truncate font-bold text-[var(--color-ink)]">{{ mvp.nickname }}</p>
+              <p class="text-xs text-[var(--color-muted)]">
+                활동 {{ mvp.count }}회 · 연속 {{ mvp.streak }}일
+              </p>
+            </div>
+          </div>
+          <p v-else class="mt-4 text-sm text-[var(--color-muted)]">아직 활동 기록이 없어요.</p>
+        </div>
+      </div>
+
+      <!-- Row2: 주간 학습 활동 | 멤버별 참여도 -->
+      <div class="grid gap-4 lg:grid-cols-3">
+        <!-- 주간 학습 활동 -->
+        <section
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] lg:col-span-2"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-[var(--color-ink)]">주간 학습 활동</h2>
+            <div class="flex gap-1 rounded-[var(--radius-chip)] bg-[var(--color-active)] p-0.5">
+              <button
+                type="button"
+                class="rounded-[var(--radius-chip)] px-3 py-1 text-xs font-bold transition"
+                :class="
+                  barView === 'team'
+                    ? 'bg-[var(--color-primary)] text-white'
+                    : 'text-[var(--color-muted)]'
+                "
+                @click="barView = 'team'"
+              >
+                팀 전체
+              </button>
+              <button
+                type="button"
+                class="rounded-[var(--radius-chip)] px-3 py-1 text-xs font-bold transition"
+                :class="
+                  barView === 'me'
+                    ? 'bg-[var(--color-primary)] text-white'
+                    : 'text-[var(--color-muted)]'
+                "
+                @click="barView = 'me'"
+              >
+                나
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-5 flex h-44 items-stretch justify-between gap-2">
+            <div
+              v-for="(value, i) in barValues"
+              :key="i"
+              class="flex flex-1 flex-col items-center gap-2"
+            >
+              <div class="flex w-full flex-1 items-end justify-center">
+                <div
+                  class="w-full max-w-[44px] rounded-t-lg transition-all duration-500"
+                  :class="
+                    value === maxBar && value > 0
+                      ? 'bg-[var(--color-primary)]'
+                      : 'bg-[var(--color-tint-200)]'
+                  "
+                  :style="{ height: `${Math.max(6, (value / maxBar) * 100)}%` }"
+                  :title="`${value}회`"
+                />
+              </div>
+              <span
+                class="text-xs"
+                :class="
+                  value === maxBar && value > 0
+                    ? 'font-bold text-[var(--color-ink)]'
+                    : 'text-[var(--color-muted)]'
+                "
+              >
+                {{ weekdayLabel(weekDates[i]) }}
               </span>
             </div>
-            <div class="h-2 overflow-hidden rounded-full bg-[var(--color-card)]">
-              <div
-                class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-500"
-                :style="{
-                  width: `${(onboardingProgress.submitted / onboardingProgress.total) * 100}%`,
-                }"
-              />
-            </div>
           </div>
-        </div>
-        <div v-if="members.length > 0" class="mt-3 flex flex-wrap gap-2">
-          <span
-            v-for="member in members"
-            :key="member.id"
-            :class="[
-              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
-              member.onboardingStatus === 'SUBMITTED'
-                ? 'bg-[rgba(35,165,90,0.2)] text-[var(--color-success)]'
-                : 'bg-[var(--color-card)] text-[var(--color-muted)]',
-            ]"
-          >
-            {{ member.nickname ?? member.displayName }}
-            <span v-if="member.onboardingStatus === 'SUBMITTED'">✓</span>
-          </span>
-        </div>
-      </section>
+        </section>
 
-      <!-- 그룹 홈 메인 -->
+        <!-- 멤버별 참여도 -->
+        <section
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <h2 class="text-base font-bold text-[var(--color-ink)]">멤버별 참여도</h2>
+          <ul class="mt-4 grid gap-3.5">
+            <li v-for="p in participation" :key="p.memberId" class="flex items-center gap-2.5">
+              <span
+                class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                :style="{ backgroundColor: getGroupCategoryColor(p.memberId) }"
+              >
+                {{ p.nickname.slice(0, 1).toUpperCase() }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="truncate text-sm font-semibold text-[var(--color-ink)]">{{
+                    p.nickname
+                  }}</span>
+                  <span class="text-xs font-bold text-[var(--color-ink)]">{{ p.pct }}%</span>
+                </div>
+                <div
+                  class="mt-1 h-1.5 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
+                >
+                  <div
+                    class="h-full rounded-[var(--radius-chip)] bg-[var(--color-primary)]"
+                    :style="{ width: `${p.pct}%` }"
+                  />
+                </div>
+              </div>
+            </li>
+            <li v-if="participation.length === 0" class="text-sm text-[var(--color-muted)]">
+              아직 참여 기록이 없어요.
+            </li>
+          </ul>
+        </section>
+      </div>
+
+      <!-- Row3: 최근 활동 | 바로가기 + CTA -->
+      <div class="grid gap-4 lg:grid-cols-3">
+        <section
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] lg:col-span-2"
+        >
+          <h2 class="text-base font-bold text-[var(--color-ink)]">최근 활동</h2>
+          <ul v-if="recentActivity.length" class="mt-4 grid gap-1">
+            <li
+              v-for="item in recentActivity"
+              :key="item.memberId"
+              class="flex items-center gap-3 py-2"
+            >
+              <span
+                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                :style="{ backgroundColor: getGroupCategoryColor(item.memberId) }"
+              >
+                {{ item.nickname.slice(0, 1).toUpperCase() }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-[var(--color-ink)]">
+                  {{ item.nickname }}님이 학습했어요
+                </p>
+                <p class="text-xs text-[var(--color-muted)]">{{ formatRelative(item.date) }}</p>
+              </div>
+            </li>
+          </ul>
+          <p v-else class="mt-4 text-sm text-[var(--color-muted)]">아직 표시할 활동이 없어요.</p>
+        </section>
+
+        <div class="grid content-start gap-4">
+          <RouterLink
+            :to="{ name: 'group-todo', params: { groupId } }"
+            class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)] transition hover:border-[var(--color-primary)]"
+          >
+            <p class="font-bold text-[var(--color-ink)]">커리큘럼 · Todo</p>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">주차별 과제를 확인하고 체크하세요.</p>
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'group-ai', params: { groupId } }"
+            class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)] transition hover:border-[var(--color-primary)]"
+          >
+            <p class="font-bold text-[var(--color-ink)]">AI 팀장</p>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">학습 흐름을 점검하기</p>
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'group-todo', params: { groupId } }"
+            class="flex h-14 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-primary)] text-sm font-bold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-primary-deep)]"
+          >
+            오늘 할 일 하러 가기
+          </RouterLink>
+        </div>
+      </div>
+    </template>
+
+    <!-- ════════ 시작 전: 온보딩 준비 ════════ -->
+    <template v-else-if="group">
+      <!-- 헤더 카드 -->
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-soft)]"
       >
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-[var(--color-primary)]">그룹 홈</p>
-            <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
-            <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-              {{ mainSummary }}
+            <span
+              class="inline-flex items-center gap-1.5 rounded-[var(--radius-chip)] bg-[rgba(255,176,32,0.15)] px-2.5 py-1 text-xs font-bold text-[#9a6a00]"
+            >
+              <span class="h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
+              {{ getGroupStatusLabel(group.status) }}
+            </span>
+            <h1 class="mt-3 text-2xl font-extrabold text-[var(--color-ink)]">
+              스터디 시작 준비 중이에요
+            </h1>
+            <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+              멤버들이 온보딩(목표·가능한 시간·숙련도)을 작성하고 있어요. 모두 완료되면 방장이
+              스터디를 시작하고, AI가 첫 주 커리큘럼을 만들어요.
             </p>
           </div>
-
-          <!-- 오너 전용 관리 버튼 -->
-          <div v-if="isOwner" class="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
-              @click="showEditModal = true"
-            >
-              <svg
-                class="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              편집
-            </button>
-            <button
-              type="button"
-              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[rgba(237,66,69,0.4)] bg-[rgba(237,66,69,0.06)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[rgba(237,66,69,0.12)] focus:outline-none focus:ring-4 focus:ring-[rgba(237,66,69,0.14)]"
-              @click="showDeleteDialog = true"
-            >
-              <svg
-                class="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                aria-hidden="true"
-              >
-                <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round" />
-                <path
-                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              삭제
-            </button>
-          </div>
-
-          <div
-            v-if="group.status === 'ONBOARDING' && onboardingSubmitted"
-            class="flex shrink-0 items-center gap-3"
-          >
-            <span
-              class="inline-flex h-11 items-center gap-1.5 rounded-md bg-emerald-50 px-5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              온보딩 제출 완료
-            </span>
-            <RouterLink
-              :to="{ name: 'group-onboarding', params: { groupId } }"
-              class="text-sm font-semibold text-[var(--color-primary)] underline-offset-2 hover:underline focus:outline-none"
-            >
-              확인하기
-            </RouterLink>
-          </div>
-        </div>
-
-        <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-4">
-          <div>
-            <dt class="text-[var(--color-muted)]">상태</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">
-              {{ getGroupStatusLabel(group.status) }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[var(--color-muted)]">기간</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">
-              {{ formatDateRange(group.startsAt, group.endsAt) }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[var(--color-muted)]">정원</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.maxMembers }}명</dd>
-          </div>
-          <div>
-            <dt class="text-[var(--color-muted)]">초대 코드</dt>
-            <dd class="mt-1 font-semibold text-[var(--color-ink)]">{{ group.inviteCode }}</dd>
-          </div>
-        </dl>
-
-        <div class="mt-5 flex flex-wrap items-center gap-2">
           <button
+            v-if="isOwner"
             type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
-            @click="copyInviteCode"
+            :disabled="!canStartStudy || isStartingStudy"
+            class="inline-flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-primary-deep)] disabled:cursor-not-allowed disabled:opacity-40"
+            @click="handleStartStudy"
           >
-            초대 코드 복사
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            스터디 시작하기
           </button>
-          <span
-            v-if="copyStatusMessage"
-            role="status"
-            class="text-xs font-semibold text-[var(--color-primary-deep)]"
-          >
-            {{ copyStatusMessage }}
-          </span>
         </div>
 
-        <div class="mt-5 flex flex-wrap gap-2">
-          <span
-            v-for="keyword in group.detailKeywords"
-            :key="keyword"
-            class="rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]"
-          >
-            {{ keyword }}
-          </span>
-        </div>
-      </section>
-
-      <!-- 활동 대시보드 -->
-      <section
-        v-if="group.status === 'ACTIVE' && activityRows.length > 0"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <div class="flex items-start justify-between">
-          <div>
-            <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
-            <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
-          </div>
-
-          <!-- 커스텀 범례 (우측 상단, 리스트 형식) -->
-          <div class="flex flex-col gap-2">
-            <p class="text-[10px] font-bold text-[var(--color-muted)]">팀원</p>
-            <button
-              v-for="(row, i) in activityRows"
-              :key="row.memberNickname"
-              type="button"
-              class="flex cursor-pointer items-center gap-2 transition-transform duration-150 hover:scale-105"
-              @click="toggleDataset(i)"
+        <div class="mt-5">
+          <div class="mb-1.5 flex items-center justify-between text-sm">
+            <span class="text-[var(--color-muted)]">온보딩 완료</span>
+            <span class="font-bold text-[var(--color-ink)]"
+              >{{ onboardingDone }} / {{ onboardingTotal }}</span
             >
-              <span
-                class="inline-block h-3 w-3 shrink-0 rounded-full border-[1.5px] transition-colors duration-150"
-                :style="{
-                  borderColor: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
-                  backgroundColor: hiddenDatasets[i]
-                    ? 'transparent'
-                    : MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
-                }"
-              />
-              <span
-                class="text-xs font-semibold transition-opacity duration-150"
-                :style="{ color: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border }"
-                :class="{ 'opacity-40': hiddenDatasets[i] }"
-                >{{ row.memberNickname }}</span
-              >
-            </button>
           </div>
-        </div>
-
-        <div class="mt-3 h-96">
-          <Line ref="chartRef" :data="combinedChartData" :options="chartOptions" />
+          <div
+            class="h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
+          >
+            <div
+              class="h-full rounded-[var(--radius-chip)] bg-[var(--color-warning)] transition-all duration-500"
+              :style="{ width: `${onboardingPct}%` }"
+            />
+          </div>
         </div>
       </section>
 
-      <!-- 퀵 링크 -->
-      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="그룹 내부 기능">
-        <RouterLink
-          v-for="link in quickLinks"
-          :key="link.routeName"
-          :to="{ name: link.routeName, params: { groupId } }"
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
+      <!-- 통계 카드 -->
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
         >
-          <span class="text-base font-bold text-[var(--color-ink)]">{{ link.title }}</span>
-          <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">{{
-            link.caption
-          }}</span>
-        </RouterLink>
+          <p class="text-sm text-[var(--color-muted)]">온보딩 완료</p>
+          <p class="mt-1 text-2xl font-extrabold text-[var(--color-primary-text)]">
+            {{ onboardingDone
+            }}<span class="ml-0.5 text-base font-bold text-[var(--color-muted)]">명</span>
+          </p>
+        </div>
+        <div
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <p class="text-sm text-[var(--color-muted)]">작성 대기</p>
+          <p class="mt-1 text-2xl font-extrabold text-[#9a6a00]">
+            {{ onboardingWaiting
+            }}<span class="ml-0.5 text-base font-bold text-[var(--color-muted)]">명</span>
+          </p>
+        </div>
+        <div
+          class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <p class="text-sm text-[var(--color-muted)]">정원</p>
+          <p class="mt-1 text-2xl font-extrabold text-[var(--color-ink)]">
+            {{ onboardingTotal
+            }}<span class="ml-0.5 text-base font-bold text-[var(--color-muted)]">명</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- 멤버 온보딩 현황 -->
+      <section
+        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
+        <h2 class="text-base font-bold text-[var(--color-ink)]">멤버 온보딩 현황</h2>
+        <ul class="mt-4 divide-y divide-[var(--color-line)]">
+          <li
+            v-for="member in activeMembers"
+            :key="member.id"
+            class="flex items-center justify-between gap-3 py-3"
+          >
+            <div class="flex min-w-0 items-center gap-3">
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                :style="{ backgroundColor: getGroupCategoryColor(member.id) }"
+              >
+                {{ (member.nickname ?? member.displayName ?? '?').slice(0, 1).toUpperCase() }}
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="truncate font-bold text-[var(--color-ink)]">{{
+                  member.nickname ?? member.displayName
+                }}</span>
+                <span
+                  v-if="member.userId === myUserId"
+                  class="rounded-[var(--radius-chip)] bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-white"
+                  >나</span
+                >
+                <span
+                  v-if="member.permission === 'OWNER'"
+                  class="rounded-[var(--radius-chip)] bg-[var(--color-tint-50)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-primary-text)]"
+                  >방장</span
+                >
+              </span>
+            </div>
+            <span
+              class="shrink-0 rounded-[var(--radius-chip)] px-2.5 py-1 text-xs font-semibold"
+              :class="
+                member.onboardingStatus === 'SUBMITTED'
+                  ? 'bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+                  : 'bg-[var(--color-active)] text-[var(--color-muted)]'
+              "
+            >
+              {{ member.onboardingStatus === 'SUBMITTED' ? '제출 완료' : '미제출' }}
+            </span>
+          </li>
+        </ul>
       </section>
     </template>
   </div>
@@ -704,7 +731,7 @@ async function handleStartStudy(): Promise<void> {
     />
   </Teleport>
 
-  <!-- 그룹 삭제 확인 다이얼로그 -->
+  <!-- 그룹 삭제 확인 -->
   <Teleport to="body">
     <Transition
       enter-active-class="transition-opacity duration-150 ease-out"
@@ -719,60 +746,38 @@ async function handleStartStudy(): Promise<void> {
         class="fixed inset-0 z-50 flex items-center justify-center px-4"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="delete-dialog-title"
       >
         <div
           class="absolute inset-0 bg-black/50 backdrop-blur-sm"
           @click="showDeleteDialog = false"
         />
-        <div class="relative w-full max-w-sm rounded-xl bg-[var(--color-card)] p-6 shadow-2xl">
-          <div
-            class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]"
-          >
-            <svg
-              class="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              aria-hidden="true"
-            >
-              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round" />
-              <path
-                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 id="delete-dialog-title" class="mt-4 text-lg font-bold text-[var(--color-ink)]">
-            그룹을 삭제하시겠습니까?
-          </h2>
+        <div
+          class="relative w-full max-w-sm rounded-[var(--radius-card)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-strong)]"
+        >
+          <h2 class="text-lg font-bold text-[var(--color-ink)]">그룹을 삭제하시겠습니까?</h2>
           <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
             이 작업은 되돌릴 수 없습니다. 그룹과 관련된 모든 데이터가 영구적으로 삭제됩니다.
           </p>
-
           <p
             v-if="deleteError"
             role="alert"
-            class="mt-3 rounded-lg border border-[rgba(237,66,69,0.3)] bg-[rgba(237,66,69,0.08)] px-3 py-2.5 text-sm font-semibold text-[var(--color-danger)]"
+            class="mt-3 text-sm font-semibold text-[var(--color-danger)]"
           >
             {{ deleteError }}
           </p>
-
           <div class="mt-5 flex gap-3">
             <button
               type="button"
-              class="flex-1 inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
               :disabled="isDeleting"
+              class="inline-flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:opacity-50"
               @click="showDeleteDialog = false"
             >
               취소
             </button>
             <button
               type="button"
-              class="flex-1 inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-danger)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="isDeleting"
+              class="inline-flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-danger)] text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
               @click="handleDeleteGroup"
             >
               {{ isDeleting ? '삭제 중…' : '삭제' }}
@@ -783,7 +788,7 @@ async function handleStartStudy(): Promise<void> {
     </Transition>
   </Teleport>
 
-  <!-- 스터디 시작 프로그레스 모달 -->
+  <!-- 스터디 시작 프로그레스 -->
   <Teleport to="body">
     <Transition
       enter-active-class="transition-opacity duration-200 ease-out"
@@ -795,55 +800,37 @@ async function handleStartStudy(): Promise<void> {
     >
       <div
         v-if="showStartModal"
-        class="fixed inset-0 z-50 flex items-center justify-center"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="start-modal-title"
       >
-        <!-- 배경 오버레이 -->
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-        <!-- 모달 카드 -->
         <div
-          class="relative w-full max-w-sm rounded-2xl bg-[var(--color-card)] p-8 shadow-2xl text-center mx-4"
+          class="relative w-full max-w-sm rounded-[var(--radius-card)] bg-[var(--color-card)] p-8 text-center shadow-[var(--shadow-strong)]"
         >
           <div class="orbit-spinner mx-auto mb-5" aria-hidden="true">
             <div v-for="i in 6" :key="i" class="orbit-arm" :style="`--i: ${i - 1}`">
               <div class="orbit-dot" />
             </div>
           </div>
-
-          <h2 id="start-modal-title" class="text-xl font-bold text-[var(--color-ink)]">
-            스터디 생성 중
-          </h2>
+          <h2 class="text-xl font-bold text-[var(--color-ink)]">스터디 생성 중</h2>
           <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
             AI가 커리큘럼을 만들고 있어요.<br />잠시만 기다려 주세요.
           </p>
-
-          <!-- 프로그레스 바 -->
           <div class="mt-7">
             <div class="mb-2 flex items-center justify-between text-xs font-semibold">
               <span class="text-[var(--color-muted)]">진행률</span>
-              <span class="text-[var(--color-primary-deep)]">{{ startProgress }}%</span>
+              <span class="text-[var(--color-primary-text)]">{{ startProgress }}%</span>
             </div>
-            <div class="h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-card)]">
+            <div
+              class="h-2.5 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
+            >
               <div
-                class="h-full rounded-full bg-[var(--color-primary)] transition-all duration-700 ease-out"
+                class="h-full rounded-[var(--radius-chip)] bg-[var(--color-primary)] transition-all duration-700 ease-out"
                 :style="{ width: `${startProgress}%` }"
               />
             </div>
           </div>
-
-          <p
-            v-if="startProgress >= 99 && startProgress < 100"
-            class="mt-0 text-xs text-[var(--color-muted)]"
-          ></p>
-          <p
-            v-else-if="startProgress === 100"
-            class="mt-4 text-xs font-semibold text-[var(--color-primary)]"
-          >
-            완료! 이동합니다...
-          </p>
         </div>
       </div>
     </Transition>
@@ -856,7 +843,6 @@ async function handleStartStudy(): Promise<void> {
   width: 64px;
   height: 64px;
 }
-
 .orbit-arm {
   position: absolute;
   top: 50%;
@@ -867,7 +853,6 @@ async function handleStartStudy(): Promise<void> {
   animation: orbit 1.4s linear infinite;
   animation-delay: calc(var(--i) * -0.233s);
 }
-
 .orbit-dot {
   position: absolute;
   right: -5px;
@@ -878,7 +863,6 @@ async function handleStartStudy(): Promise<void> {
   background-color: var(--color-primary);
   opacity: calc(0.2 + var(--i) * 0.16);
 }
-
 @keyframes orbit {
   from {
     transform: rotate(0deg);
