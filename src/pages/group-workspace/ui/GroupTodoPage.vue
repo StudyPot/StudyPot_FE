@@ -230,7 +230,7 @@ function formatDate(value: string): string {
             <button
               type="button"
               :disabled="!canPrev"
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="이전 주차"
               @click="goPrev"
             >
