@@ -8,7 +8,7 @@ import {
   type StudyGroupStatus,
   useGroupListStore,
 } from '@/entities/group'
-import { getMyOnboarding, useOnboardingStatusStore } from '@/entities/onboarding'
+import { getMyOnboarding } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
 import { NotificationBell, useInAppNotificationStore } from '@/features/notification'
 import { apiOrigin } from '@/shared/config/api'
@@ -25,7 +25,6 @@ const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
 const groupListStore = useGroupListStore()
-const onboardingStatusStore = useOnboardingStatusStore()
 const notificationStore = useInAppNotificationStore()
 
 const currentGroupId = computed(() => String(route.params.groupId ?? ''))
@@ -53,36 +52,17 @@ const PRIVATE_CHANNELS: ChannelDef[] = [
   { routeName: 'group-retrospective', label: '회고', type: 'review' },
 ]
 
-const ONBOARD_CHANNEL: ChannelDef = {
-  routeName: 'group-onboarding',
-  label: '온보딩',
-  type: 'onboard',
-}
-
-const showOnboarding = computed(() => {
-  if (!currentGroup.value) return false
-  const s = currentGroup.value.status
-  if (s === 'READY_TO_START' || s === 'ACTIVE' || s === 'COMPLETED' || s === 'ARCHIVED')
-    return false
-  // 제출 직후엔 onboardingStatusStore 신호로(서버 재조회 없이) 즉시 탭을 숨긴다.
-  if (onboardingStatusStore.submittedGroupIds.includes(currentGroupId.value)) return false
-  return !myOnboardingSubmitted.value
-})
 
 const channelSections = computed<ChannelSection[]>(() => {
-  const isActive = currentGroup.value?.status === 'ACTIVE'
-
-  if (!isActive) {
-    const nonActiveChannels = showOnboarding.value
-      ? [PUBLIC_CHANNELS[0]!, ONBOARD_CHANNEL, PUBLIC_CHANNELS[2]!]
-      : [PUBLIC_CHANNELS[0]!, PUBLIC_CHANNELS[2]!]
-    return [{ label: '', channels: nonActiveChannels }]
+  const status = currentGroup.value?.status
+  if (status === 'ACTIVE' || status === 'COMPLETED') {
+    return [
+      { label: '공용 공간', channels: [...PUBLIC_CHANNELS] },
+      { label: '개인 공간', channels: PRIVATE_CHANNELS },
+    ]
   }
-
-  return [
-    { label: '공용 공간', channels: [...PUBLIC_CHANNELS] },
-    { label: '개인 공간', channels: PRIVATE_CHANNELS },
-  ]
+  // DRAFT / ONBOARDING / READY_TO_START / ARCHIVED → 홈·팀원만
+  return [{ label: '', channels: [PUBLIC_CHANNELS[0]!, PUBLIC_CHANNELS[2]!] }]
 })
 
 const allChannels = computed(() => channelSections.value.flatMap((s) => s.channels))
@@ -189,20 +169,21 @@ function getStatusPhase(status: StudyGroupStatus): StatusPhase {
 
 function getIconClasses(group: StudyGroup, isSelected: boolean): string {
   const base =
-    'flex h-12 w-12 items-center justify-center text-sm font-bold transition-colors duration-100'
+    'flex h-12 w-12 items-center justify-center text-sm font-bold transition-all duration-100'
+  const ring = isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-rail' : ''
   const phase = getStatusPhase(group.status)
   if (phase === 'active') {
     return isSelected
-      ? `${base} rounded-2xl bg-[var(--color-primary)] text-white`
+      ? `${base} ${ring} rounded-2xl bg-[var(--color-primary)] text-white`
       : `${base} rounded-3xl bg-[var(--color-active)] text-[var(--color-muted)] group-hover:rounded-2xl group-hover:bg-[var(--color-primary)] group-hover:text-white`
   }
   if (phase === 'before') {
     return isSelected
-      ? `${base} rounded-2xl bg-[#fde68a] text-[#92400e]`
+      ? `${base} ${ring} rounded-2xl bg-[#fde68a] text-[#92400e]`
       : `${base} rounded-3xl bg-[#fef3c7] text-[#d97706] group-hover:rounded-2xl group-hover:bg-[#fde68a] group-hover:text-[#92400e]`
   }
   return isSelected
-    ? `${base} rounded-2xl bg-[#e5e7eb] text-[#9ca3af]`
+    ? `${base} ${ring} rounded-2xl bg-[#e5e7eb] text-[#9ca3af]`
     : `${base} rounded-3xl bg-[#f3f4f6] text-[#d1d5db] group-hover:rounded-2xl group-hover:bg-[#e5e7eb] group-hover:text-[#9ca3af]`
 }
 
@@ -341,17 +322,14 @@ function startGoogleLogin(): void {
       >
         <div
           :class="[
-            'flex h-12 w-12 items-center justify-center bg-[var(--color-primary)] font-bold text-white transition-[border-radius] duration-100',
-            !currentGroupId ? 'rounded-2xl text-sm' : 'rounded-3xl text-xs group-hover:rounded-2xl',
+            'flex h-12 w-12 items-center justify-center bg-[var(--color-primary)] font-bold text-white transition-all duration-100',
+            !currentGroupId
+              ? 'rounded-2xl text-sm ring-2 ring-primary-deep ring-offset-2 ring-offset-rail'
+              : 'rounded-3xl text-xs group-hover:rounded-2xl',
           ]"
         >
           SP
         </div>
-        <div
-          class="absolute -left-[13px] top-1/2 w-[3px] -translate-y-1/2 rounded-r-sm bg-white"
-          :class="!currentGroupId ? 'h-10' : 'h-0 group-hover:h-5'"
-          style="transition: height 100ms"
-        />
       </RouterLink>
 
       <div class="mx-auto h-px w-8 bg-[var(--color-line-strong)]" />
@@ -377,12 +355,6 @@ function startGoogleLogin(): void {
           ]"
         />
 
-        <!-- Selection pill -->
-        <div
-          class="absolute -left-[13px] top-1/2 w-[3px] -translate-y-1/2 rounded-r-sm bg-white"
-          :class="currentGroupId === group.id ? 'h-10' : 'h-0 group-hover:h-5'"
-          style="transition: height 100ms"
-        />
       </RouterLink>
 
       <div class="mx-auto h-px w-8 bg-[var(--color-line-strong)]" />
@@ -426,7 +398,7 @@ function startGoogleLogin(): void {
     </nav>
 
     <!-- ── Channel panel (240px) ── -->
-    <div class="flex w-60 shrink-0 flex-col overflow-hidden bg-[var(--color-panel)]">
+    <div class="flex w-60 shrink-0 flex-col overflow-hidden border-r border-line bg-surface">
       <!-- Panel header -->
       <div
         class="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] px-3"
@@ -436,19 +408,19 @@ function startGoogleLogin(): void {
             {{ currentGroup?.name ?? 'StudyPot' }}
           </p>
           <!-- Status badge for current group -->
-          <p
+          <span
             v-if="currentGroupPhase"
             :class="[
-              'text-[10px] font-medium leading-none mt-0.5',
+              'mt-0.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
               currentGroupPhase === 'active'
-                ? 'text-[var(--color-success)]'
+                ? 'bg-tint-50 text-primary-text'
                 : currentGroupPhase === 'before'
-                  ? 'text-[#e0953a]'
-                  : 'text-[var(--color-muted-deep)]',
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'bg-hover text-muted',
             ]"
           >
             {{ statusLabel[currentGroup!.status] }}
-          </p>
+          </span>
         </div>
       </div>
 
@@ -468,17 +440,15 @@ function startGoogleLogin(): void {
               :key="ch.routeName"
               :to="{ name: ch.routeName, params: { groupId: currentGroupId } }"
               :class="[
-                'group flex h-8 items-center gap-2 rounded px-2 text-sm transition-colors',
-                ch.type === 'onboard'
-                  ? 'text-[#e0953a] hover:bg-[var(--color-hover)] hover:text-[#f0a04b]'
-                  : 'text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]',
+                'group relative flex h-8 items-center gap-2 rounded-lg border-l-[3px] border-transparent px-2 text-sm transition-colors',
+                'text-muted hover:bg-hover hover:text-ink',
               ]"
-              :exact-active-class="
-                ch.type === 'onboard'
-                  ? 'bg-[var(--color-hover)] !text-[#f0a04b]'
-                  : 'bg-[var(--color-active)] !text-[var(--color-ink)]'
-              "
+              exact-active-class="!border-primary bg-tint-50 !text-primary-text font-medium"
             >
+              <!-- Left bar indicator (active state) -->
+              <span
+                class="pointer-events-none absolute -left-2 bottom-0 top-0 w-0.75 rounded-full bg-primary opacity-0 transition-opacity group-[&.router-link-exact-active]:opacity-100"
+              />
               <!-- Channel icon -->
               <svg
                 class="h-4 w-4 shrink-0 opacity-60 group-[&.router-link-exact-active]:opacity-100"
@@ -530,11 +500,6 @@ function startGoogleLogin(): void {
 
               <span class="truncate">{{ ch.label }}</span>
 
-              <!-- Onboarding action indicator -->
-              <span
-                v-if="ch.type === 'onboard'"
-                class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[#e0953a]"
-              />
             </RouterLink>
           </template>
         </template>
@@ -637,7 +602,7 @@ function startGoogleLogin(): void {
 
       <!-- User panel -->
       <div
-        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 bg-[var(--color-rail)] px-2 transition-colors hover:bg-[var(--color-hover)]"
+        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 border-t border-line bg-surface px-2 transition-colors hover:bg-hover"
         role="button"
         tabindex="0"
         @click="toggleUserMenu"

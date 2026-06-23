@@ -12,9 +12,16 @@ export type StudyGroup = {
   detailKeywords: string[]
   status: StudyGroupStatus
   maxMembers: number
+  memberCount?: number
+  progressPct?: number
   inviteCode: string
   startsAt: string
   endsAt: string
+}
+
+export type GroupSummary = {
+  groupCount: number
+  weeklyActivityCount: number
 }
 
 export type GroupSortField = 'name' | 'startsAt' | 'endsAt' | 'createdAt'

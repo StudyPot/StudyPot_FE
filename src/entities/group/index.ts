@@ -2,6 +2,7 @@ export {
   createGroup,
   deleteGroup,
   getGroup,
+  getGroupSummary,
   getMyGroupMemberProfile,
   joinGroup,
   joinGroupByInviteCode,
@@ -22,6 +23,7 @@ export { useGroupListStore } from './model/groupListStore'
 export type {
   CreateGroupRequest,
   GroupSortField,
+  GroupSummary,
   ListGroupsParams,
   DetailKeywordSuggestionsResponse,
   GroupMember,
