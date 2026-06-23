@@ -811,11 +811,6 @@ function formatDate(value: string): string {
           <div class="min-w-0 flex-1">
             <!-- 뱃지 -->
             <div class="flex flex-wrap items-center gap-1.5">
-              <span
-                v-if="post.pinned"
-                class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-                >고정</span
-              >
               <template v-if="isLeaderReport(post.boardId)">
                 <span
                   class="rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-bold text-white"
@@ -851,9 +846,9 @@ function formatDate(value: string): string {
             <!-- 제목 -->
             <p class="mt-1.5 font-semibold text-[var(--color-ink)]">{{ post.title }}</p>
 
-            <!-- 미리보기 -->
+            <!-- 미리보기 (AI 리포트는 본문 미리보기 숨김) -->
             <p
-              v-if="post.contentPreview"
+              v-if="post.contentPreview && !isLeaderReport(post.boardId)"
               class="mt-0.5 line-clamp-1 text-sm text-[var(--color-muted)]"
             >
               {{ post.contentPreview }}
@@ -908,11 +903,6 @@ function formatDate(value: string): string {
           <div class="px-6 pt-6">
             <!-- 뱃지 -->
             <div class="flex flex-wrap items-center gap-1.5">
-              <span
-                v-if="selectedPost.pinned"
-                class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-                >고정</span
-              >
               <span
                 v-if="isLeaderReport(selectedPost.boardId)"
                 class="rounded-full bg-[rgba(25,195,125,0.12)] px-2 py-0.5 text-xs font-semibold text-[var(--color-primary)]"
