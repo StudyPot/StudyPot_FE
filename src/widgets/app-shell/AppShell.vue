@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 
 import {
   getGroup,
-  getGroupCategoryColor,
   joinGroupByInviteCode,
   type StudyGroup,
   type StudyGroupStatus,
@@ -212,6 +211,14 @@ function getDotClass(status: StudyGroupStatus): string {
   return 'bg-[#c0c4cc]'
 }
 
+// 레일 아이콘 배경: 시작(진행 중)=초록, 시작 전=피치, 완료/보관=회색
+function getIconBg(status: StudyGroupStatus): string {
+  const phase = getStatusPhase(status)
+  if (phase === 'active') return 'var(--color-primary)'
+  if (phase === 'before') return '#f4a259'
+  return '#c0c4cc'
+}
+
 function toggleUserMenu(event: Event): void {
   event.stopPropagation()
   showUserMenu.value = !showUserMenu.value
@@ -374,7 +381,7 @@ function startGoogleLogin(): void {
   <div v-else class="flex h-full overflow-hidden">
     <!-- ── Server rail (72px) ── -->
     <nav
-      class="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto bg-[var(--color-rail)] py-3"
+      class="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-surface)] py-3"
       aria-label="스터디 그룹"
     >
       <!-- Home button -->
@@ -411,7 +418,7 @@ function startGoogleLogin(): void {
         <!-- Icon -->
         <div
           :class="getIconClasses(group, currentGroupId === group.id)"
-          :style="{ backgroundColor: getGroupCategoryColor(group.topic) }"
+          :style="{ backgroundColor: getIconBg(group.status) }"
         >
           {{ getGroupInitials(group.name) }}
         </div>
@@ -455,7 +462,9 @@ function startGoogleLogin(): void {
     </nav>
 
     <!-- ── Channel panel (240px) ── -->
-    <div class="flex w-60 shrink-0 flex-col overflow-hidden bg-[var(--color-panel)]">
+    <div
+      class="flex w-60 shrink-0 flex-col overflow-hidden border-r border-[var(--color-line)] bg-[var(--color-surface)]"
+    >
       <!-- Panel header -->
       <div
         class="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] px-3"
@@ -604,7 +613,7 @@ function startGoogleLogin(): void {
           >
             <span
               class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white"
-              :style="{ backgroundColor: getGroupCategoryColor(g.topic) }"
+              :style="{ backgroundColor: getIconBg(g.status) }"
             >
               {{ getGroupInitials(g.name) }}
             </span>
@@ -656,7 +665,7 @@ function startGoogleLogin(): void {
 
       <!-- User panel -->
       <div
-        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 bg-[var(--color-rail)] px-2 transition-colors hover:bg-[var(--color-hover)]"
+        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-2 transition-colors hover:bg-[var(--color-hover)]"
         role="button"
         tabindex="0"
         @click="toggleUserMenu"
