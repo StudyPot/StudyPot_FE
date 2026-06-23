@@ -13,6 +13,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   listBoards,
   listBoardPosts,
+  listAllPosts,
   getBoardPost,
   createBoardPost,
   updateBoardPost,
@@ -45,6 +46,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const boards = ref<GroupBoard[]>([])
 const selectedBoard = ref<GroupBoard | null>(null)
+const isAllBoards = ref(false)
 const posts = ref<BoardPostSummary[]>([])
 const selectedPost = ref<BoardPost | null>(null)
 const comments = ref<BoardComment[]>([])
@@ -55,6 +57,7 @@ const isDeletingPost = ref(false)
 
 const sortField = ref<BoardSortField>('createdAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+
 
 const newPostForm = ref({ title: '', content: '', pinned: false })
 const isCreating = ref(false)
@@ -151,7 +154,8 @@ async function loadBoards(): Promise<void> {
   try {
     boards.value = await listBoards(groupId.value)
     if (boards.value.length > 0) {
-      selectedBoard.value = boards.value.find((b) => b.defaultBoard) ?? boards.value[0] ?? null
+      isAllBoards.value = true
+      selectedBoard.value = null
       await loadPosts()
     }
   } catch (error) {
@@ -161,22 +165,31 @@ async function loadBoards(): Promise<void> {
   }
 }
 
+async function selectAllBoards(): Promise<void> {
+  isAllBoards.value = true
+  selectedBoard.value = null
+  viewMode.value = 'list'
+  await loadPosts()
+}
+
 async function selectBoard(board: GroupBoard): Promise<void> {
+  isAllBoards.value = false
   selectedBoard.value = board
   viewMode.value = 'list'
   await loadPosts()
 }
 
 async function loadPosts(): Promise<void> {
-  if (!selectedBoard.value) return
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const result = await listBoardPosts(groupId.value, selectedBoard.value.id, {
-      sort: sortField.value,
-      order: sortOrder.value,
-    })
-    posts.value = result.items
+    const params = { sort: sortField.value, order: sortOrder.value }
+    const result = isAllBoards.value
+      ? await listAllPosts(groupId.value, params)
+      : selectedBoard.value
+        ? await listBoardPosts(groupId.value, selectedBoard.value.id, params)
+        : { items: [] }
+    posts.value = 'items' in result ? result.items : []
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : '게시글을 불러오지 못했습니다.'
   } finally {
@@ -605,13 +618,26 @@ function formatDate(value: string): string {
       v-if="boards.length > 0"
       class="flex flex-wrap gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-2 shadow-[var(--shadow-soft)]"
     >
+      <!-- 전체 탭 -->
+      <button
+        type="button"
+        :class="[
+          'rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
+          isAllBoards
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'bg-[var(--color-card)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
+        ]"
+        @click="selectAllBoards"
+      >
+        전체
+      </button>
       <button
         v-for="board in boards"
         :key="board.id"
         type="button"
         :class="[
           'rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
-          selectedBoard?.id === board.id
+          !isAllBoards && selectedBoard?.id === board.id
             ? 'bg-[var(--color-primary)] text-white'
             : 'bg-[var(--color-card)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
         ]"
@@ -632,26 +658,34 @@ function formatDate(value: string): string {
           <div>
             <p class="text-sm font-semibold text-[var(--color-primary)]">게시판</p>
             <h2 class="mt-1 text-lg font-bold text-[var(--color-ink)]">
-              {{ selectedBoard?.name ?? '그룹 게시판' }}
+              {{ isAllBoards ? '전체 게시글' : (selectedBoard?.name ?? '그룹 게시판') }}
             </h2>
           </div>
           <div class="flex items-center gap-2">
             <!-- 정렬 셀렉터 -->
-            <select
-              class="h-9 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-2 text-xs text-[var(--color-ink)] focus:outline-none"
-              aria-label="정렬 기준"
-              :value="`${sortField}:${sortOrder}`"
-              @change="(e) => {
-                const [f, o] = (e.target as HTMLSelectElement).value.split(':')
-                void changeSort(f as BoardSortField, o as 'asc' | 'desc')
-              }"
-            >
-              <option value="createdAt:desc">최신순</option>
-              <option value="createdAt:asc">오래된순</option>
-              <option value="commentCount:desc">댓글 많은순</option>
-            </select>
+            <div class="relative">
+              <select
+                class="sort-select h-9 appearance-none cursor-pointer rounded-md border border-[var(--color-line-strong)] pl-3 pr-8 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+                aria-label="정렬 기준"
+                :value="`${sortField}:${sortOrder}`"
+                @change="(e) => {
+                  const [f, o] = (e.target as HTMLSelectElement).value.split(':')
+                  void changeSort(f as BoardSortField, o as 'asc' | 'desc')
+                }"
+              >
+                <option value="createdAt:desc">최신순</option>
+                <option value="createdAt:asc">오래된순</option>
+                <option value="commentCount:desc">댓글 많은순</option>
+              </select>
+              <svg
+                class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+                width="12" height="12" viewBox="0 0 12 12" fill="none"
+              >
+                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
             <button
-              v-if="selectedBoard"
+              v-if="!isAllBoards && selectedBoard"
               type="button"
               class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
               @click="viewMode = 'create'"
@@ -685,7 +719,6 @@ function formatDate(value: string): string {
           >
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
-                <span v-if="post.pinned" class="text-sm">📌</span>
                 <!-- 카테고리 뱃지 -->
                 <span
                   class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
@@ -739,7 +772,6 @@ function formatDate(value: string): string {
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="selectedPost.pinned" class="text-sm">📌</span>
                   <!-- 카테고리 뱃지 -->
                   <span
                     v-if="boardMap[selectedPost.boardId]"
@@ -1058,6 +1090,23 @@ function formatDate(value: string): string {
     </template>
   </div>
 </template>
+
+<style>
+select.sort-select {
+  background-color: var(--color-panel) !important;
+  color: var(--color-ink);
+}
+
+select.sort-select option {
+  background-color: var(--color-panel);
+  color: var(--color-ink);
+}
+
+select.sort-select option:checked {
+  background-color: var(--color-active);
+  color: var(--color-ink);
+}
+</style>
 
 <style scoped>
 .markdown-body {

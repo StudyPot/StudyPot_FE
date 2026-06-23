@@ -30,6 +30,27 @@ export const boardHandlers = [
     return HttpResponse.json(boards.filter((b) => b.groupId === groupId))
   }),
 
+  http.get(`${apiBaseUrl}/groups/:groupId/posts`, ({ params, request }) => {
+    const groupId = String(params.groupId)
+    const url = new URL(request.url)
+    const sort = url.searchParams.get('sort') ?? 'createdAt'
+    const order = url.searchParams.get('order') ?? 'desc'
+
+    let filtered = posts.filter((p) => p.groupId === groupId)
+
+    filtered = filtered.slice().sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+      if (sort === 'commentCount') {
+        const diff = a.commentCount - b.commentCount
+        return order === 'asc' ? diff : -diff
+      }
+      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return order === 'asc' ? diff : -diff
+    })
+
+    return HttpResponse.json({ items: filtered, pageInfo: { nextCursor: null, hasNext: false } })
+  }),
+
   http.get(`${apiBaseUrl}/groups/:groupId/boards/:boardId/posts`, ({ params, request }) => {
     const { groupId, boardId } = params
     const url = new URL(request.url)
