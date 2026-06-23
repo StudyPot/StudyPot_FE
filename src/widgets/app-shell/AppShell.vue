@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { getGroup, type StudyGroup, type StudyGroupStatus, useGroupListStore } from '@/entities/group'
-import { getMyOnboarding } from '@/entities/onboarding'
+import { getMyOnboarding, useOnboardingStatusStore } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
 import { NotificationBell } from '@/features/notification'
 import { apiOrigin } from '@/shared/config/api'
@@ -16,6 +16,7 @@ const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
 const groupListStore = useGroupListStore()
+const onboardingStatusStore = useOnboardingStatusStore()
 
 const currentGroupId = computed(() => String(route.params.groupId ?? ''))
 const currentGroup = ref<StudyGroup | null>(null)
@@ -43,6 +44,8 @@ const showOnboarding = computed(() => {
   if (!currentGroup.value) return false
   const s = currentGroup.value.status
   if (s === 'READY_TO_START' || s === 'ACTIVE' || s === 'COMPLETED' || s === 'ARCHIVED') return false
+  // 제출 직후엔 onboardingStatusStore 신호로(서버 재조회 없이) 즉시 탭을 숨긴다.
+  if (onboardingStatusStore.submittedGroupIds.includes(currentGroupId.value)) return false
   return !myOnboardingSubmitted.value
 })
 
