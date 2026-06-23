@@ -557,7 +557,7 @@ async function handleStartStudy(): Promise<void> {
 
           <!-- 커스텀 범례 (우측 상단, 리스트 형식) -->
           <div class="flex flex-col gap-2">
-            <p class="text-[10px] font-bold text-[var(--color-muted)]">그래프 활성화</p>
+            <p class="text-[10px] font-bold text-[var(--color-muted)]">팀원</p>
             <button
               v-for="(row, i) in activityRows"
               :key="row.memberNickname"
