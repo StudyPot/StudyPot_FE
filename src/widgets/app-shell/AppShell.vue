@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import {
   getGroup,
+  getGroupCategoryColor,
   type StudyGroup,
   type StudyGroupStatus,
   useGroupListStore,
@@ -187,23 +188,13 @@ function getStatusPhase(status: StudyGroupStatus): StatusPhase {
   return 'before'
 }
 
-function getIconClasses(group: StudyGroup, isSelected: boolean): string {
+// 레일 그룹 아이콘은 그룹마다 다른 카테고리 색을 쓴다. 상태는 우하단 점으로 표시.
+function getIconClasses(_group: StudyGroup, isSelected: boolean): string {
   const base =
-    'flex h-12 w-12 items-center justify-center text-sm font-bold transition-colors duration-100'
-  const phase = getStatusPhase(group.status)
-  if (phase === 'active') {
-    return isSelected
-      ? `${base} rounded-2xl bg-[var(--color-primary)] text-white`
-      : `${base} rounded-3xl bg-[var(--color-active)] text-[var(--color-muted)] group-hover:rounded-2xl group-hover:bg-[var(--color-primary)] group-hover:text-white`
-  }
-  if (phase === 'before') {
-    return isSelected
-      ? `${base} rounded-2xl bg-[#fde68a] text-[#92400e]`
-      : `${base} rounded-3xl bg-[#fef3c7] text-[#d97706] group-hover:rounded-2xl group-hover:bg-[#fde68a] group-hover:text-[#92400e]`
-  }
+    'flex h-12 w-12 items-center justify-center text-sm font-bold text-white transition-all duration-100'
   return isSelected
-    ? `${base} rounded-2xl bg-[#e5e7eb] text-[#9ca3af]`
-    : `${base} rounded-3xl bg-[#f3f4f6] text-[#d1d5db] group-hover:rounded-2xl group-hover:bg-[#e5e7eb] group-hover:text-[#9ca3af]`
+    ? `${base} rounded-2xl`
+    : `${base} rounded-3xl opacity-85 group-hover:rounded-2xl group-hover:opacity-100`
 }
 
 function getDotClass(status: StudyGroupStatus): string {
@@ -365,7 +356,10 @@ function startGoogleLogin(): void {
         :title="`${group.name} · ${statusLabel[group.status]}`"
       >
         <!-- Icon -->
-        <div :class="getIconClasses(group, currentGroupId === group.id)">
+        <div
+          :class="getIconClasses(group, currentGroupId === group.id)"
+          :style="{ backgroundColor: getGroupCategoryColor(group.topic) }"
+        >
           {{ getGroupInitials(group.name) }}
         </div>
 
@@ -433,7 +427,7 @@ function startGoogleLogin(): void {
       >
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-[var(--color-ink)]">
-            {{ currentGroup?.name ?? 'StudyPot' }}
+            {{ currentGroupId ? (currentGroup?.name ?? '...') : '내 스터디' }}
           </p>
           <!-- Status badge for current group -->
           <p
@@ -539,12 +533,11 @@ function startGoogleLogin(): void {
           </template>
         </template>
 
-        <!-- No group selected: simple links -->
+        <!-- No group selected: 참여 중인 스터디 목록 -->
         <template v-else>
-          <p class="mb-1 mt-1 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]">메뉴</p>
           <RouterLink
             :to="{ name: 'groups' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+            class="mb-1 flex h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
             active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
           >
             <svg
@@ -561,44 +554,35 @@ function startGoogleLogin(): void {
               <rect x="3" y="14" width="7" height="7" />
               <rect x="14" y="14" width="7" height="7" />
             </svg>
-            <span>그룹 목록</span>
+            <span>전체 그룹</span>
           </RouterLink>
+
+          <p class="mb-1 mt-3 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]">
+            참여 중
+          </p>
           <RouterLink
-            :to="{ name: 'group-create' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
-            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
+            v-for="g in groupListStore.groups"
+            :key="g.id"
+            :to="{ name: 'group-overview', params: { groupId: g.id } }"
+            class="flex h-10 items-center gap-2.5 rounded-lg px-2 text-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-hover)]"
+            active-class="bg-[var(--color-active)]"
           >
-            <svg
-              class="h-4 w-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
+            <span
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white"
+              :style="{ backgroundColor: getGroupCategoryColor(g.topic) }"
             >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v8M8 12h8" />
-            </svg>
-            <span>새 그룹 만들기</span>
+              {{ getGroupInitials(g.name) }}
+            </span>
+            <span class="min-w-0 flex-1 truncate font-medium">{{ g.name }}</span>
+            <span class="h-2 w-2 shrink-0 rounded-full" :class="getDotClass(g.status)" />
           </RouterLink>
-          <RouterLink
-            :to="{ name: 'group-join' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
-            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
+
+          <p
+            v-if="groupListStore.groups.length === 0"
+            class="px-2 py-4 text-xs leading-5 text-[var(--color-muted)]"
           >
-            <svg
-              class="h-4 w-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-            </svg>
-            <span>초대 코드로 참여</span>
-          </RouterLink>
+            아직 참여 중인 그룹이 없어요.<br />레일의 + 로 새 그룹을 만들어 보세요.
+          </p>
         </template>
       </nav>
 

@@ -1,4 +1,10 @@
-export type StudyGroupStatus = 'DRAFT' | 'ONBOARDING' | 'READY_TO_START' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
+export type StudyGroupStatus =
+  | 'DRAFT'
+  | 'ONBOARDING'
+  | 'READY_TO_START'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'ARCHIVED'
 
 export type GroupMemberPermission = 'OWNER' | 'MEMBER'
 
@@ -15,6 +21,9 @@ export type StudyGroup = {
   inviteCode: string
   startsAt: string
   endsAt: string
+  // 목록 카드용(있으면 사용, 없으면 graceful 처리). 백엔드 보강 예정.
+  memberCount?: number
+  progressPercent?: number
 }
 
 export type GroupSortField = 'name' | 'startsAt' | 'endsAt' | 'createdAt'
