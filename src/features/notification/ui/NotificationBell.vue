@@ -18,6 +18,7 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   RETROSPECTIVE_READY: '회고 준비 완료',
   RETROSPECTIVE_REMINDER: '회고 리마인더',
   NEXT_WEEK_ADJUSTED: '다음 주 조정',
+  NOTICE_POSTED: '새 공지',
   GROUP_DELETED: '그룹 삭제',
 }
 
@@ -98,12 +99,7 @@ function formatDateTime(value?: string | null): string {
     </button>
 
     <!-- 바깥 클릭 닫기용 오버레이 -->
-    <div
-      v-if="isOpen"
-      class="fixed inset-0 z-10"
-      aria-hidden="true"
-      @click="close"
-    />
+    <div v-if="isOpen" class="fixed inset-0 z-10" aria-hidden="true" @click="close" />
 
     <!-- 알림 드롭다운 -->
     <div
@@ -138,10 +134,7 @@ function formatDateTime(value?: string | null): string {
       </div>
 
       <!-- 알림 목록 -->
-      <ul
-        class="max-h-[28rem] overflow-y-auto divide-y divide-[var(--color-line)]"
-        role="list"
-      >
+      <ul class="max-h-[28rem] overflow-y-auto divide-y divide-[var(--color-line)]" role="list">
         <li
           v-for="notification in store.notifications"
           :key="notification.id"
@@ -161,8 +154,13 @@ function formatDateTime(value?: string | null): string {
 
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-1.5">
-              <span class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-muted)]">
-                {{ NOTIFICATION_TYPE_LABEL[notification.notificationType] ?? notification.notificationType }}
+              <span
+                class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-muted)]"
+              >
+                {{
+                  NOTIFICATION_TYPE_LABEL[notification.notificationType] ??
+                  notification.notificationType
+                }}
               </span>
               <span class="font-semibold text-[var(--color-ink)]">{{ notification.title }}</span>
             </div>
@@ -183,7 +181,10 @@ function formatDateTime(value?: string | null): string {
           </button>
         </li>
 
-        <li v-if="store.notifications.length === 0" class="px-4 py-8 text-center text-sm text-[var(--color-muted)]">
+        <li
+          v-if="store.notifications.length === 0"
+          class="px-4 py-8 text-center text-sm text-[var(--color-muted)]"
+        >
           알림이 없어요.
         </li>
       </ul>

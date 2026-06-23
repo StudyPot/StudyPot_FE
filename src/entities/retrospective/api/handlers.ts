@@ -7,6 +7,7 @@ import type { Retrospective } from '../model/types'
 
 type LegacyRetrospective = {
   id: string
+  weekId?: string
   status: Retrospective['status']
   feedback?: JsonObject
   nextWeekAdjustment?: JsonObject
@@ -19,6 +20,9 @@ export const retrospectiveHandlers = [
   http.get(`${apiBaseUrl}/weeks/:weekId/retrospectives/me`, () => {
     return HttpResponse.json(toRetrospective('COMPLETED'))
   }),
+  http.get(`${apiBaseUrl}/groups/:groupId/retrospectives/me`, () => {
+    return HttpResponse.json([toRetrospective('COMPLETED')])
+  }),
 ]
 
 function toRetrospective(status?: Retrospective['status']): Retrospective {
@@ -26,6 +30,7 @@ function toRetrospective(status?: Retrospective['status']): Retrospective {
 
   return {
     id: source.id,
+    weekId: source.weekId,
     status: status ?? source.status,
     aiFeedback: source.feedback ?? {},
     nextWeekAdjustment: source.nextWeekAdjustment ?? {},

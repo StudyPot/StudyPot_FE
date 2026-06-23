@@ -2,10 +2,7 @@
 import { computed, inject, onMounted, ref } from 'vue'
 
 import { getGroupMembersActivity, type MemberActivityRow } from '@/entities/curriculum'
-import {
-  getGroupOnboardings,
-  type MemberOnboardingResponse,
-} from '@/entities/onboarding'
+import { getGroupOnboardings, type MemberOnboardingResponse } from '@/entities/onboarding'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -97,14 +94,31 @@ function lastActivity(memberId: string): string | null {
   return latest
 }
 
-// 5. 연속 완료(오늘부터 거꾸로 활동이 이어진 일수)
-function currentStreak(memberId: string): number {
+// 해당 날짜가 속한 주의 월요일(ISO, 주 시작) 날짜를 반환한다.
+function mondayOf(iso: string): string {
+  const d = new Date(iso)
+  const dayFromMonday = (d.getDay() + 6) % 7 // Mon=0 … Sun=6
+  d.setDate(d.getDate() - dayFromMonday)
+  return d.toISOString().slice(0, 10)
+}
+
+// 5. 연속 완료(이번 주부터 거꾸로 활동이 이어진 주 수)
+// 이번 주에 아직 활동이 없으면 진행 중인 주로 보고 지난 주를 기준으로 센다.
+function currentStreakWeeks(memberId: string): number {
   const map = countMapFor(memberId)
+  const activeWeeks = new Set<string>()
+  for (const [date, count] of map) {
+    if (count > 0) activeWeeks.add(mondayOf(date))
+  }
+  if (activeWeeks.size === 0) return 0
+
+  let cursor = mondayOf(todayIso())
+  if (!activeWeeks.has(cursor)) cursor = shiftIso(cursor, -7)
+
   let streak = 0
-  let cursor = todayIso()
-  while ((map.get(cursor) ?? 0) > 0) {
+  while (activeWeeks.has(cursor)) {
     streak += 1
-    cursor = shiftIso(cursor, -1)
+    cursor = shiftIso(cursor, -7)
   }
   return streak
 }
@@ -120,7 +134,9 @@ function formatDate(value?: string | null): string {
 <template>
   <div>
     <h1 class="text-2xl font-bold text-[var(--color-ink)]">팀원</h1>
-    <p class="mt-1 text-sm text-[var(--color-muted)]">그룹 멤버들의 역할, 온보딩 정보와 활동을 확인하세요.</p>
+    <p class="mt-1 text-sm text-[var(--color-muted)]">
+      그룹 멤버들의 역할, 온보딩 정보와 활동을 확인하세요.
+    </p>
 
     <ScreenState
       v-if="pageState === 'loading'"
@@ -139,10 +155,7 @@ function formatDate(value?: string | null): string {
     />
 
     <template v-else>
-      <p
-        v-if="members.length === 0"
-        class="mt-8 text-center text-sm text-[var(--color-muted)]"
-      >
+      <p v-if="members.length === 0" class="mt-8 text-center text-sm text-[var(--color-muted)]">
         아직 온보딩 정보가 없어요.
       </p>
 
@@ -163,7 +176,9 @@ function formatDate(value?: string | null): string {
               </div>
               <div class="flex flex-col">
                 <div class="flex items-center gap-2">
-                  <span class="font-semibold text-[var(--color-ink)]">{{ member.memberNickname }}</span>
+                  <span class="font-semibold text-[var(--color-ink)]">{{
+                    member.memberNickname
+                  }}</span>
                   <!-- 1. 역할 배지 -->
                   <span
                     :class="[
@@ -197,15 +212,21 @@ function formatDate(value?: string | null): string {
           <!-- 3 & 5. 활동 통계 (스터디 시작 후) -->
           <div v-if="hasActivity" class="mt-4 grid grid-cols-3 gap-2 text-center">
             <div class="rounded-md bg-[var(--color-input)] py-2">
-              <p class="text-lg font-bold text-[var(--color-ink)]">{{ thisWeekCount(member.memberId) }}</p>
+              <p class="text-lg font-bold text-[var(--color-ink)]">
+                {{ thisWeekCount(member.memberId) }}
+              </p>
               <p class="text-[11px] text-[var(--color-muted)]">이번 주 완료</p>
             </div>
             <div class="rounded-md bg-[var(--color-input)] py-2">
-              <p class="text-lg font-bold text-[var(--color-ink)]">🔥 {{ currentStreak(member.memberId) }}</p>
-              <p class="text-[11px] text-[var(--color-muted)]">연속(일)</p>
+              <p class="text-lg font-bold text-[var(--color-ink)]">
+                🔥 {{ currentStreakWeeks(member.memberId) }}
+              </p>
+              <p class="text-[11px] text-[var(--color-muted)]">연속(주)</p>
             </div>
             <div class="rounded-md bg-[var(--color-input)] py-2">
-              <p class="text-sm font-bold text-[var(--color-ink)]">{{ formatDate(lastActivity(member.memberId)) }}</p>
+              <p class="text-sm font-bold text-[var(--color-ink)]">
+                {{ formatDate(lastActivity(member.memberId)) }}
+              </p>
               <p class="text-[11px] text-[var(--color-muted)]">최근 활동</p>
             </div>
           </div>
@@ -221,7 +242,9 @@ function formatDate(value?: string | null): string {
               </div>
               <div v-if="member.additionalNote">
                 <dt class="text-[var(--color-muted)]">추가 메모</dt>
-                <dd class="mt-0.5 leading-6 text-[var(--color-ink)]">{{ member.additionalNote }}</dd>
+                <dd class="mt-0.5 leading-6 text-[var(--color-ink)]">
+                  {{ member.additionalNote }}
+                </dd>
               </div>
             </dl>
 
