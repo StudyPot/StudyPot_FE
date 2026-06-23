@@ -23,8 +23,26 @@ const toastStore = useInAppNotificationStore()
 
 type PageState = 'loading' | 'empty' | 'ready' | 'error'
 
-// 5점 리커트 라벨 (1 매우 아니다 … 5 매우 그렇다)
-const LIKERT_LABELS = ['매우 아니다', '아니다', '보통', '그렇다', '매우 그렇다']
+// 5점 리커트 라벨 (1 매우 그렇지 않다 … 5 매우 그렇다)
+const LIKERT_LABELS = ['매우 그렇지 않다', '그렇지 않다', '보통', '그렇다', '매우 그렇다']
+
+// 제출 답변(읽기) 라벨 칩 색
+function likertChipClass(score: number | null): string {
+  switch (score) {
+    case 5:
+      return 'bg-[var(--color-primary)] text-white'
+    case 4:
+      return 'bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+    case 3:
+      return 'bg-[var(--color-active)] text-[var(--color-muted)]'
+    case 2:
+      return 'bg-[rgba(255,176,32,0.18)] text-[#9a6a00]'
+    case 1:
+      return 'bg-[rgba(255,82,71,0.15)] text-[var(--color-danger)]'
+    default:
+      return 'bg-[var(--color-active)] text-[var(--color-muted)]'
+  }
+}
 
 const pageState = ref<PageState>('loading')
 const errorMessage = ref('')
@@ -177,30 +195,28 @@ async function handleSubmit(): Promise<void> {
 }
 
 // 칩 상태/스타일
-type ChipState = 'selected' | 'answered' | 'locked' | 'open'
-
-function chipState(week: RetrospectiveWeekOverview): ChipState {
-  if (week.weekId === selectedWeekId.value) return 'selected'
-  if (week.answered) return 'answered'
-  if (!week.unlocked && week.status === 'PENDING') return 'locked'
-  return 'open'
-}
-
-function chipDisabled(week: RetrospectiveWeekOverview): boolean {
+function isLockedWeek(week: RetrospectiveWeekOverview): boolean {
   return !week.unlocked && week.status === 'PENDING'
 }
 
+function chipDisabled(week: RetrospectiveWeekOverview): boolean {
+  return isLockedWeek(week)
+}
+
+// 완료(제출) 주차: 초록(선택 시 진한 초록). 현재/열림 주차: 흰색(선택 시 다크). 미생성: 회색 잠금.
 function chipClasses(week: RetrospectiveWeekOverview): string {
-  switch (chipState(week)) {
-    case 'selected':
-      return 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
-    case 'answered':
-      return 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-    case 'locked':
-      return 'border-[var(--color-line)] bg-[var(--color-panel)] text-[var(--color-faint)]'
-    default:
-      return 'border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-primary)]'
+  const selected = week.weekId === selectedWeekId.value
+  if (isLockedWeek(week)) {
+    return 'border-[var(--color-line)] bg-[var(--color-panel)] text-[var(--color-faint)]'
   }
+  if (week.answered) {
+    return selected
+      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+      : 'border-[var(--color-tint-200)] bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+  }
+  return selected
+    ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
+    : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-primary)]'
 }
 </script>
 
@@ -250,7 +266,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
             @click="!chipDisabled(week) && selectWeek(week)"
           >
             <svg
-              v-if="chipState(week) === 'answered'"
+              v-if="week.answered"
               class="h-3.5 w-3.5"
               viewBox="0 0 24 24"
               fill="none"
@@ -262,7 +278,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
               <path d="M20 6L9 17l-5-5" />
             </svg>
             <svg
-              v-else-if="chipState(week) === 'locked'"
+              v-else-if="isLockedWeek(week)"
               class="h-3.5 w-3.5"
               viewBox="0 0 24 24"
               fill="none"
@@ -321,23 +337,72 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
         </RouterLink>
       </section>
 
+      <!-- AI 주간 리포트 발행 안내 (제출 완료/끝난 주차) -->
+      <RouterLink
+        v-if="selectedWeek && selectedWeek.answered"
+        :to="{ name: 'group-board', params: { groupId } }"
+        class="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-tint-200)] bg-[var(--color-tint-50)] p-4 transition hover:brightness-[0.98]"
+      >
+        <span class="flex items-center gap-3">
+          <span
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
+            </svg>
+          </span>
+          <span>
+            <span class="block font-bold text-[var(--color-ink)]">
+              {{ selectedWeek.weekNumber }}주차 AI 주간 리포트가 발행됐어요
+            </span>
+            <span class="block text-sm text-[var(--color-muted)]">
+              게시판 · 팀장 리포트에서 전체 리포트를 확인하세요
+            </span>
+          </span>
+        </span>
+        <svg
+          class="h-5 w-5 shrink-0 text-[var(--color-primary)]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </RouterLink>
+
       <!-- 질문 리스트 -->
       <section
         v-if="selectedWeek && selectedWeek.questions.length > 0"
         class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
         :class="questionMode === 'locked' ? 'opacity-60' : ''"
       >
-        <div class="mb-2 flex items-center justify-between">
-          <h3 class="text-sm font-bold text-[var(--color-ink)]">
-            <template v-if="questionMode === 'readonly'"
-              >{{ selectedWeek.weekNumber }}주차 회고 (제출 완료)</template
+        <div class="mb-3">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-base font-bold text-[var(--color-ink)]">
+              <template v-if="questionMode === 'readonly'"
+                >{{ selectedWeek.weekNumber }}주차 내 회고</template
+              >
+              <template v-else-if="questionMode === 'interactive'"
+                >{{ selectedWeek.weekNumber }}주차 회고 작성</template
+              >
+              <template v-else>AI가 미리 만든 회고 질문</template>
+            </h3>
+            <span
+              v-if="questionMode === 'readonly'"
+              class="inline-flex h-6 items-center rounded-[var(--radius-chip)] bg-[var(--color-tint-50)] px-2.5 text-xs font-bold text-[var(--color-primary-text)]"
             >
-            <template v-else-if="questionMode === 'interactive'"
-              >{{ selectedWeek.weekNumber }}주차 회고 작성</template
-            >
-            <template v-else>AI가 미리 만든 회고 질문</template>
-          </h3>
-          <p class="text-xs text-[var(--color-muted)]">{{ likertQuestionCount }}문항 · 5점 척도</p>
+              제출 완료
+            </span>
+            <p v-else class="text-xs text-[var(--color-muted)]">
+              {{ likertQuestionCount }}문항 · 5점 척도
+            </p>
+          </div>
+          <p v-if="questionMode === 'readonly'" class="mt-1 text-sm text-[var(--color-muted)]">
+            내가 제출한 답변이에요. 팀 집계는 AI 주간 리포트에 반영됩니다.
+          </p>
         </div>
 
         <ul class="divide-y divide-[var(--color-line)]">
@@ -355,7 +420,16 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
                 </span>
                 <span>{{ question.text }}</span>
               </p>
-              <div class="flex shrink-0 items-center gap-2">
+              <!-- 제출 완료: 답변 라벨 칩 -->
+              <span
+                v-if="questionMode === 'readonly'"
+                class="shrink-0 rounded-[var(--radius-chip)] px-3 py-1 text-xs font-bold"
+                :class="likertChipClass(scoreOf(question.id))"
+              >
+                {{ scoreOf(question.id) ? LIKERT_LABELS[scoreOf(question.id)! - 1] : '-' }}
+              </span>
+              <!-- 작성/미리보기: 5점 척도 점 -->
+              <div v-else class="flex shrink-0 items-center gap-2">
                 <button
                   v-for="n in 5"
                   :key="n"
