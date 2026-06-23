@@ -664,9 +664,8 @@ function getDayLabel(dayStr: string): string {
 
           <p
             v-if="startProgress >= 99 && startProgress < 100"
-            class="mt-4 text-xs text-[var(--color-muted)]"
+            class="mt-0 text-xs text-[var(--color-muted)]"
           >
-            조금 더 걸리고 있어요...
           </p>
           <p
             v-else-if="startProgress === 100"

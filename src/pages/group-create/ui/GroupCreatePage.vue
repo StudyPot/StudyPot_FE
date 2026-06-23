@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { createGroup, suggestDetailKeywords, type CreateGroupRequest, useGroupListStore } from '@/entities/group'
 import { ApiError } from '@/shared/api'
+import { DateInput } from '@/shared/ui'
 
 type GroupCreateForm = {
   name: string
@@ -396,13 +397,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
 
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-[var(--color-ink)]">시작일</span>
-            <input
-              v-model="form.startsAt"
-              name="startsAt"
-              type="date"
-              :min="today"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
-            />
+            <DateInput v-model="form.startsAt" :min="today" />
             <span v-if="fieldErrors.startsAt" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.startsAt }}
             </span>
@@ -410,13 +405,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
 
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-[var(--color-ink)]">종료일</span>
-            <input
-              v-model="form.endsAt"
-              name="endsAt"
-              type="date"
-              :min="form.startsAt || today"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
-            />
+            <DateInput v-model="form.endsAt" :min="form.startsAt || today" />
             <span v-if="fieldErrors.endsAt" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.endsAt }}
             </span>
