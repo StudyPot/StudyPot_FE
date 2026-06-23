@@ -225,12 +225,12 @@ function formatDate(value: string): string {
         class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex items-center justify-between gap-3">
-          <div class="flex min-w-0 items-center gap-3">
-            <!-- 이전 주차 -->
+          <div class="flex min-w-0 items-start gap-3">
+            <!-- 이전 주차 (주차 제목 줄에 맞춰 상단 정렬) -->
             <button
               type="button"
               :disabled="!canPrev"
-              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="이전 주차"
               @click="goPrev"
             >
