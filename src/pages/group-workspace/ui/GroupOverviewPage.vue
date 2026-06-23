@@ -192,6 +192,24 @@ const MEMBER_COLORS = [
   { border: 'rgba(147,223,200,1)',  background: 'rgba(147,223,200,0.15)' },
 ]
 
+const chartRef = ref<{ chart: ChartJS } | null>(null)
+const hiddenDatasets = ref<boolean[]>([])
+
+watch(
+  () => activityRows.value,
+  (rows) => { hiddenDatasets.value = rows.map(() => false) },
+  { immediate: true },
+)
+
+function toggleDataset(index: number): void {
+  const chart = chartRef.value?.chart
+  if (!chart) return
+  const meta = chart.getDatasetMeta(index)
+  meta.hidden = !meta.hidden
+  hiddenDatasets.value = hiddenDatasets.value.map((h, i) => (i === index ? !h : h))
+  chart.update()
+}
+
 const combinedChartData = computed(() => ({
   labels: activityDays.value.map((d) => {
     const date = new Date(d)
@@ -221,40 +239,7 @@ const chartOptions = {
   maintainAspectRatio: false,
   interaction: { mode: 'index' as const, intersect: false },
   plugins: {
-    legend: {
-      display: true,
-      position: 'top' as const,
-      labels: {
-        color: 'rgba(148,155,164,0.9)',
-        font: { size: 11 },
-        usePointStyle: true,
-        pointStyle: 'circle' as const,
-        boxWidth: 8,
-        boxHeight: 8,
-        padding: 16,
-        generateLabels: (chart: ChartJS) =>
-          chart.data.datasets.map((dataset, i) => {
-            const meta = chart.getDatasetMeta(i)
-            const borderColor = dataset.borderColor as string
-            return {
-              text: dataset.label ?? '',
-              fillStyle: meta.hidden ? 'transparent' : borderColor,
-              strokeStyle: borderColor,
-              lineWidth: 1.5,
-              hidden: false,
-              datasetIndex: i,
-              pointStyle: 'circle' as const,
-            }
-          }),
-      },
-      onClick: (_e: unknown, legendItem: { datasetIndex?: number }, legend: { chart: ChartJS }) => {
-        const index = legendItem.datasetIndex
-        if (index === undefined) return
-        const meta = legend.chart.getDatasetMeta(index)
-        meta.hidden = !meta.hidden
-        legend.chart.update()
-      },
-    },
+    legend: { display: false },
     tooltip: {
       callbacks: {
         label: (ctx: { dataset: { label?: string }; parsed: { y: number | null } }) =>
@@ -549,11 +534,40 @@ async function handleStartStudy(): Promise<void> {
         v-if="group.status === 'ACTIVE' && activityRows.length > 0"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
-        <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
-        <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
+            <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
+          </div>
 
-        <div class="mt-4 h-96">
-          <Line :data="combinedChartData" :options="chartOptions" />
+          <!-- 커스텀 범례 (우측 상단, 리스트 형식) -->
+          <div class="flex flex-col gap-2">
+            <p class="text-[10px] font-bold text-[var(--color-muted)]">그래프 활성화</p>
+            <button
+              v-for="(row, i) in activityRows"
+              :key="row.memberNickname"
+              type="button"
+              class="flex cursor-pointer items-center gap-2 transition-transform duration-150 hover:scale-105"
+              @click="toggleDataset(i)"
+            >
+              <span
+                class="inline-block h-3 w-3 shrink-0 rounded-full border-[1.5px] transition-colors duration-150"
+                :style="{
+                  borderColor: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
+                  backgroundColor: hiddenDatasets[i] ? 'transparent' : MEMBER_COLORS[i % MEMBER_COLORS.length]!.border,
+                }"
+              />
+              <span
+                class="text-xs font-semibold transition-opacity duration-150"
+                :style="{ color: MEMBER_COLORS[i % MEMBER_COLORS.length]!.border }"
+                :class="{ 'opacity-40': hiddenDatasets[i] }"
+              >{{ row.memberNickname }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-3 h-96">
+          <Line ref="chartRef" :data="combinedChartData" :options="chartOptions" />
         </div>
       </section>
 
