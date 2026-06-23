@@ -167,7 +167,7 @@ function getDotClass(status: StudyGroupStatus): string {
   return isDark.value ? 'bg-[#383838]' : 'bg-[#c0c4cc]'
 }
 
-function toggleUserMenu(event: MouseEvent): void {
+function toggleUserMenu(event: Event): void {
   event.stopPropagation()
   showUserMenu.value = !showUserMenu.value
 }

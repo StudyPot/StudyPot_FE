@@ -195,7 +195,7 @@ describe('GroupReviewPage', () => {
     const starButtons = wrapper.findAll('button[aria-label]').filter((b) =>
       b.attributes('aria-label')?.endsWith('점'),
     )
-    await starButtons[3].trigger('click')
+    await starButtons[3]!.trigger('click')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
@@ -228,7 +228,7 @@ describe('GroupReviewPage', () => {
     const starButtons = wrapper.findAll('button[aria-label]').filter((b) =>
       b.attributes('aria-label')?.endsWith('점'),
     )
-    await starButtons[4].trigger('click')
+    await starButtons[4]!.trigger('click')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 

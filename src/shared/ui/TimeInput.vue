@@ -13,7 +13,7 @@ const HOURS = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = Array.from({ length: 60 }, (_, i) => i)
 
 const parsed = computed(() => {
-  const [h, m] = (props.modelValue ?? '00:00').split(':').map(Number)
+  const [h = 0, m = 0] = (props.modelValue ?? '00:00').split(':').map(Number)
   const isPm = h >= 12
   const hour12 = h % 12 || 12
   return { isPm, hour12, minute: m }

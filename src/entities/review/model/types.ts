@@ -1,35 +1,25 @@
-export type ScaleQuestion = {
-  id: string
-  type: 'scale'
-  label: string
-  required: boolean
-}
-
-export type TextQuestion = {
-  id: string
-  type: 'text'
-  label: string
-  required: boolean
-  placeholder?: string
-}
-
-export type RetroQuestion = ScaleQuestion | TextQuestion
-
-export type RetroAnswers = Record<string, number | string>
-
 export type Review = {
   id: string
   groupId: string
   userId: string
   displayName: string | null
-  answers: RetroAnswers
+  rating: number
+  content?: string
   createdAt: string
 }
 
+export type ReviewStats = {
+  averageRating: number
+  totalCount: number
+  ratingDistribution: Record<string, number>
+}
+
 export type CreateReviewRequest = {
-  answers: RetroAnswers
+  rating: number
+  content?: string
 }
 
 export type UpdateReviewRequest = {
-  answers: RetroAnswers
+  rating?: number
+  content?: string
 }
