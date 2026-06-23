@@ -431,20 +431,6 @@ async function submitJoin(): Promise<void> {
           </span>
         </div>
 
-        <!-- 오너인 경우 스터디 시작 버튼 (상태가 READY_TO_START일 때만) -->
-        <div v-if="group.status === 'READY_TO_START' && isOwner(group)" class="relative z-10 mt-4">
-          <p v-if="startError[group.id]" role="alert" class="mb-2 text-xs font-semibold text-danger">
-            {{ startError[group.id] }}
-          </p>
-          <button
-            type="button"
-            :disabled="startingGroupId === group.id"
-            class="w-full rounded-button bg-primary py-2.5 text-sm font-bold text-white transition hover:bg-primary-deep disabled:opacity-60"
-            @click.stop="handleStartStudy(group.id)"
-          >
-            {{ startingGroupId === group.id ? '시작 중…' : '스터디 시작하기' }}
-          </button>
-        </div>
       </article>
     </div>
   </div>
