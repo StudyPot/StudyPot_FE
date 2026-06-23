@@ -2,7 +2,7 @@
   "boards": [
     {
       "id": "board-id-001",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
       "boardType": "NOTICE",
       "name": "공지",
       "description": "그룹 운영 공지 게시판입니다.",
@@ -13,7 +13,7 @@
     },
     {
       "id": "board-id-002",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
       "boardType": "QUESTION",
       "name": "질문",
       "description": "학습 질문과 답변을 남기는 게시판입니다.",
@@ -24,7 +24,7 @@
     },
     {
       "id": "board-id-003",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
       "boardType": "RESOURCE",
       "name": "자료 공유",
       "description": "학습 자료와 링크를 공유하는 게시판입니다.",
@@ -32,134 +32,223 @@
       "defaultBoard": true,
       "createdAt": "2026-04-22T00:00:00Z",
       "updatedAt": "2026-04-22T00:00:00Z"
+    },
+    {
+      "id": "board-id-004",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "boardType": "RETROSPECTIVE",
+      "name": "회고",
+      "description": "주차별 회고를 남기는 게시판입니다.",
+      "displayOrder": 4,
+      "defaultBoard": false,
+      "createdAt": "2026-04-22T00:00:00Z",
+      "updatedAt": "2026-04-22T00:00:00Z"
+    },
+    {
+      "id": "board-id-005",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "boardType": "LEADER_REPORT",
+      "name": "AI 팀장",
+      "description": "AI 팀장이 자동으로 발행하는 그룹 리포트입니다.",
+      "displayOrder": 5,
+      "defaultBoard": false,
+      "createdAt": "2026-04-22T00:00:00Z",
+      "updatedAt": "2026-04-22T00:00:00Z"
     }
   ],
   "posts": [
     {
       "id": "board-001",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
       "boardId": "board-id-001",
       "author": {
         "memberId": "member-001",
         "userId": "018f7a4e-0000-7000-9000-000000000001",
-        "displayName": "user1"
+        "displayName": "김현우"
       },
-      "title": "3주차 스터디 자료 공유",
-      "contentPreview": "이번 주 Spring Security 관련 자료입니다. 공식 문서와 블로그 링크를 첨부합니다.",
-      "content": "이번 주 Spring Security 관련 자료입니다. 공식 문서와 블로그 링크를 첨부합니다.\n\nhttps://docs.spring.io/spring-security/reference/",
+      "title": "3주차 스터디 일정 안내",
+      "contentPreview": "안녕하세요! 이번 주 토요일 온라인 미팅 시간이 오후 3시로 확정됐습니다. 모두 참석 부탁드려요.",
+      "content": "안녕하세요!\n\n이번 주 토요일 온라인 미팅 시간이 오후 3시로 확정됐습니다.\n\n- 일시: 6월 28일(토) 오후 3:00 ~ 5:00\n- 장소: Google Meet (링크 별도 공유 예정)\n- 주제: 3주차 풀이 리뷰 + 4주차 문제 선정\n\n모두 참석 부탁드려요 😊",
       "pinned": true,
-      "commentCount": 3,
-      "createdAt": "2026-05-19T09:00:00+09:00",
-      "updatedAt": "2026-05-19T09:00:00+09:00"
+      "commentCount": 2,
+      "createdAt": "2026-06-23T21:00:00+09:00",
+      "updatedAt": "2026-06-23T21:00:00+09:00"
     },
     {
       "id": "board-002",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "boardId": "board-id-001",
+      "author": {
+        "memberId": "member-001",
+        "userId": "018f7a4e-0000-7000-9000-000000000001",
+        "displayName": "김현우"
+      },
+      "title": "스터디 진행 규칙 안내",
+      "contentPreview": "원활한 스터디 진행을 위해 아래 규칙을 함께 지켜주세요. 매주 최소 2문제 풀기를 기본으로 합니다.",
+      "content": "원활한 스터디 진행을 위해 아래 규칙을 함께 지켜주세요.\n\n1. 매주 최소 2문제 풀기\n2. 풀이 코드는 금요일 자정까지 PR 올리기\n3. 다른 멤버 코드에 최소 1개 이상 리뷰 남기기\n4. 미참석 시 사전에 게시판에 알리기",
+      "pinned": true,
+      "commentCount": 1,
+      "createdAt": "2026-06-23T10:00:00+09:00",
+      "updatedAt": "2026-06-23T10:00:00+09:00"
+    },
+    {
+      "id": "board-003",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
       "boardId": "board-id-002",
       "author": {
         "memberId": "member-002",
         "userId": "user-002",
-        "displayName": "minji"
+        "displayName": "이지은"
       },
-      "title": "SecurityConfig 설정 질문",
-      "contentPreview": "SecurityConfig에서 csrf().disable()을 하면 어떤 보안 이슈가 생기나요?",
-      "content": "SecurityConfig에서 csrf().disable()을 하면 어떤 보안 이슈가 생기나요? 프로덕션 환경에서는 어떻게 처리해야 할지 궁금합니다.",
+      "title": "BFS vs DFS 선택 기준이 헷갈려요",
+      "contentPreview": "문제를 풀 때 BFS를 써야 하는지 DFS를 써야 하는지 판단이 잘 안 됩니다. 최단 경로는 BFS라고 알고 있는데 항상 그런 건 아닌 것 같더라고요.",
+      "content": "문제를 풀 때 BFS를 써야 하는지 DFS를 써야 하는지 판단이 잘 안 됩니다.\n\n최단 경로는 BFS라고 알고 있는데, 가중치가 없는 그래프에서는 BFS가 맞고 가중치가 있으면 다익스트라를 써야 하는 건가요?\n\n그리고 연결 요소 개수를 구할 때는 DFS/BFS 둘 다 되는 건가요?",
       "pinned": false,
-      "commentCount": 5,
-      "createdAt": "2026-05-20T14:30:00+09:00",
-      "updatedAt": "2026-05-20T16:00:00+09:00"
-    },
-    {
-      "id": "board-003",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
-      "boardId": "board-id-003",
-      "author": {
-        "memberId": "member-003",
-        "userId": "user-003",
-        "displayName": "dohoon"
-      },
-      "title": "JWT 구현 완료 후기",
-      "contentPreview": "드디어 JWT 기반 인증을 구현했어요! access token + refresh token 방식으로 구현했는데 생각보다 고려할 게 많더라고요.",
-      "content": "드디어 JWT 기반 인증을 구현했어요! access token + refresh token 방식으로 구현했는데 생각보다 고려할 게 많더라고요. 혹시 비슷하게 구현하신 분 계신가요?",
-      "pinned": false,
-      "commentCount": 8,
-      "createdAt": "2026-05-21T11:00:00+09:00",
-      "updatedAt": "2026-05-21T11:00:00+09:00"
+      "commentCount": 2,
+      "createdAt": "2026-06-23T18:00:00+09:00",
+      "updatedAt": "2026-06-23T18:00:00+09:00"
     },
     {
       "id": "board-004",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
-      "boardId": "board-id-001",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "boardId": "board-id-002",
       "author": {
-        "memberId": "member-001",
-        "userId": "018f7a4e-0000-7000-9000-000000000001",
-        "displayName": "user1"
+        "memberId": "member-003",
+        "userId": "user-003",
+        "displayName": "박도훈"
       },
-      "title": "이번 주 온라인 스터디 시간 변경 공지",
-      "contentPreview": "이번 주 토요일 온라인 미팅이 오후 3시에서 오후 5시로 변경됩니다.",
-      "content": "이번 주 토요일 온라인 미팅이 오후 3시에서 오후 5시로 변경됩니다. 모두 일정 확인해 주세요!",
-      "pinned": true,
-      "commentCount": 2,
-      "createdAt": "2026-05-22T10:00:00+09:00",
-      "updatedAt": "2026-05-22T10:00:00+09:00"
+      "title": "dp 테이블 초기화 실수가 잦아요",
+      "contentPreview": "dp 문제 풀 때마다 테이블 초기값 설정에서 자꾸 틀려요. 특히 최솟값 구할 때 INF 설정을 어떻게 해야 하는지 헷갈립니다.",
+      "content": "dp 문제 풀 때마다 테이블 초기값 설정에서 자꾸 틀려요.\n\n특히 최솟값 구할 때 INF 설정을 `float('inf')`로 해야 하는지, 아니면 `sys.maxsize`를 써야 하는지 헷갈립니다.\n\n그리고 2차원 dp에서 `dp = [[0] * n for _ in range(m)]`이랑 `dp = [[0] * n] * m`의 차이도 설명해주실 수 있나요?",
+      "pinned": false,
+      "commentCount": 0,
+      "createdAt": "2026-06-21T10:00:00+09:00",
+      "updatedAt": "2026-06-21T10:00:00+09:00"
     },
     {
       "id": "board-005",
-      "groupId": "018f7a4e-0000-7000-9000-000000000011",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
       "boardId": "board-id-003",
       "author": {
         "memberId": "member-004",
         "userId": "user-004",
-        "displayName": "suin"
+        "displayName": "최수인"
       },
-      "title": "Spring Data JPA N+1 문제 정리",
-      "contentPreview": "N+1 문제를 해결하는 방법들을 정리해봤습니다. Fetch Join, @EntityGraph, Batch Size 설정 등.",
-      "content": "N+1 문제를 해결하는 방법들을 정리해봤습니다.\n1. Fetch Join\n2. @EntityGraph\n3. Batch Size 설정\n\n각 방법의 장단점을 비교해보겠습니다.",
+      "title": "코딩테스트 단계별 로드맵 공유",
+      "contentPreview": "제가 참고한 알고리즘 학습 로드맵을 공유합니다. 기초 자료구조부터 고급 알고리즘까지 단계별로 정리되어 있어요.",
+      "content": "제가 참고한 알고리즘 학습 로드맵을 공유합니다.\n\n## 1단계: 기초 자료구조\n- 배열, 연결리스트, 스택, 큐\n- 해시맵, 집합\n\n## 2단계: 기초 알고리즘\n- 정렬 (버블, 선택, 삽입, 퀵, 병합)\n- 이진 탐색\n- 투 포인터, 슬라이딩 윈도우\n\n## 3단계: 그래프\n- BFS / DFS\n- 다익스트라, 벨만-포드\n- 유니온 파인드\n\n## 4단계: 동적 프로그래밍\n- 메모이제이션, 타뷸레이션\n- LCS, LIS, 배낭 문제\n\n## 추천 문제집\n- 백준 단계별로 풀어보기\n- 프로그래머스 레벨 1~3",
       "pinned": false,
-      "commentCount": 4,
-      "createdAt": "2026-05-23T15:30:00+09:00",
-      "updatedAt": "2026-05-23T15:30:00+09:00"
+      "commentCount": 1,
+      "createdAt": "2026-06-21T14:00:00+09:00",
+      "updatedAt": "2026-06-21T14:00:00+09:00"
+    },
+    {
+      "id": "board-006",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "boardId": "board-id-005",
+      "author": {
+        "memberId": "member-ai",
+        "userId": "ai-leader",
+        "displayName": "AI 팀장"
+      },
+      "title": "2주차 그룹 회고 리포트가 도착했어요",
+      "contentPreview": "2주차 활동을 분석했습니다. 이번 주 그룹 참여율은 83%로 지난 주 대비 12%p 상승했어요. 특히 질문 게시판 활동이 활발했습니다.",
+      "content": "## 📊 2주차 그룹 활동 리포트\n\n### 참여율\n이번 주 그룹 참여율은 **83%** 로 지난 주 대비 12%p 상승했어요. 훌륭합니다! 🎉\n\n### 문제 풀이 현황\n- 총 제출 횟수: 18회\n- 평균 풀이 시간: 42분\n- 가장 많이 풀린 유형: DP (6문제), 그래프 (4문제)\n\n### 이번 주 MVP\n**이지은** 님이 가장 활발하게 참여하셨습니다. 질문 3개, 댓글 7개를 남기셨어요!\n\n### 다음 주 제안\n1. BFS/DFS 심화 문제에 집중해보세요\n2. 코드 리뷰를 더 적극적으로 해보면 좋겠어요\n3. 어려웠던 문제는 질문 게시판에 올려주세요",
+      "pinned": true,
+      "commentCount": 0,
+      "createdAt": "2026-06-17T10:00:00+09:00",
+      "updatedAt": "2026-06-17T10:00:00+09:00"
+    },
+    {
+      "id": "board-007",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "boardId": "board-id-004",
+      "author": {
+        "memberId": "member-002",
+        "userId": "user-002",
+        "displayName": "이지은"
+      },
+      "title": "2주차 개인 회고",
+      "contentPreview": "이번 주는 DP 문제를 집중적으로 풀었어요. 점화식 세우는 게 아직 어렵지만 예전보다 훨씬 나아진 것 같아요.",
+      "content": "이번 주는 DP 문제를 집중적으로 풀었어요.\n\n## 잘한 것\n- 매일 1문제씩 꾸준히 풀었다\n- 모르면 바로 질문 게시판에 올렸다\n\n## 아쉬운 것\n- 풀이 시간이 너무 길었다 (평균 1시간)\n- 코드 리뷰를 한 번밖에 못 했다\n\n## 다음 주 목표\n- BFS 관련 문제 3문제 이상 풀기\n- 다른 멤버 코드 리뷰 2개 이상 남기기",
+      "pinned": false,
+      "commentCount": 1,
+      "createdAt": "2026-06-18T22:00:00+09:00",
+      "updatedAt": "2026-06-18T22:00:00+09:00"
     }
   ],
   "comments": {
     "board-001": [
       {
         "id": "c-001-1",
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
         "postId": "board-001",
-        "author": { "memberId": "member-002", "userId": "user-002", "displayName": "minji" },
-        "content": "감사합니다!",
-        "createdAt": "2026-05-19T09:30:00+09:00",
-        "updatedAt": "2026-05-19T09:30:00+09:00"
+        "author": { "memberId": "member-002", "userId": "user-002", "displayName": "이지은" },
+        "content": "확인했어요! 참석할게요 😊",
+        "createdAt": "2026-06-23T22:00:00+09:00",
+        "updatedAt": "2026-06-23T22:00:00+09:00"
       },
       {
         "id": "c-001-2",
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
         "postId": "board-001",
-        "author": { "memberId": "member-003", "userId": "user-003", "displayName": "dohoon" },
-        "content": "공식 문서 링크도 있네요. 도움이 됩니다.",
-        "createdAt": "2026-05-19T10:00:00+09:00",
-        "updatedAt": "2026-05-19T10:00:00+09:00"
-      },
-      {
-        "id": "c-001-3",
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "postId": "board-001",
-        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "user1" },
-        "content": "블로그도 추가해주셔서 이해하기 쉬웠어요.",
-        "createdAt": "2026-05-19T12:00:00+09:00",
-        "updatedAt": "2026-05-19T12:00:00+09:00"
+        "author": { "memberId": "member-003", "userId": "user-003", "displayName": "박도훈" },
+        "content": "저도 참석할게요!",
+        "createdAt": "2026-06-23T23:00:00+09:00",
+        "updatedAt": "2026-06-23T23:00:00+09:00"
       }
     ],
     "board-002": [
       {
         "id": "c-002-1",
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
         "postId": "board-002",
-        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "user1" },
-        "content": "REST API 서버에서는 stateless하게 운영되기 때문에 CSRF 위험이 낮아요.",
-        "createdAt": "2026-05-20T15:00:00+09:00",
-        "updatedAt": "2026-05-20T15:00:00+09:00"
+        "author": { "memberId": "member-002", "userId": "user-002", "displayName": "이지은" },
+        "content": "규칙 확인했습니다! 열심히 해볼게요 💪",
+        "createdAt": "2026-06-23T11:00:00+09:00",
+        "updatedAt": "2026-06-23T11:00:00+09:00"
+      }
+    ],
+    "board-003": [
+      {
+        "id": "c-003-1",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "postId": "board-003",
+        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "김현우" },
+        "content": "BFS는 레벨 단위로 탐색하기 때문에 최단 경로에 유리해요. 가중치가 없는 그래프에서 최단 거리라면 BFS가 정답입니다. 가중치가 있으면 말씀하신 대로 다익스트라를 쓰면 돼요!",
+        "createdAt": "2026-06-23T19:00:00+09:00",
+        "updatedAt": "2026-06-23T19:00:00+09:00"
+      },
+      {
+        "id": "c-003-2",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "postId": "board-003",
+        "author": { "memberId": "member-004", "userId": "user-004", "displayName": "최수인" },
+        "content": "연결 요소 개수는 DFS/BFS 모두 가능해요! 방문 안 된 노드마다 탐색을 시작하면서 카운트하면 됩니다.",
+        "createdAt": "2026-06-23T20:00:00+09:00",
+        "updatedAt": "2026-06-23T20:00:00+09:00"
+      }
+    ],
+    "board-005": [
+      {
+        "id": "c-005-1",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "postId": "board-005",
+        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "김현우" },
+        "content": "좋은 자료 감사합니다! 단계별로 잘 정리되어 있네요 👍",
+        "createdAt": "2026-06-21T15:00:00+09:00",
+        "updatedAt": "2026-06-21T15:00:00+09:00"
+      }
+    ],
+    "board-007": [
+      {
+        "id": "c-007-1",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "postId": "board-007",
+        "author": { "memberId": "member-001", "userId": "018f7a4e-0000-7000-9000-000000000001", "displayName": "김현우" },
+        "content": "꾸준히 하고 계신 거 대단해요! 이번 주도 화이팅 🔥",
+        "createdAt": "2026-06-18T23:00:00+09:00",
+        "updatedAt": "2026-06-18T23:00:00+09:00"
       }
     ]
   }
