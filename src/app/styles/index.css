@@ -1,41 +1,34 @@
 @import 'tailwindcss';
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
 /*
  * StudyPot 디자인 토큰 — 라이트 우선 · 프레시 그린 (뱅크샐러드풍 리디자인)
  * 단일 라이트 테마. 기존 변수명을 유지해 컴포넌트가 자동으로 새 팔레트를 따른다.
  */
-:root {
-  font-family:
-    'Pretendard Variable', Pretendard, 'SUIT Variable', 'Noto Sans KR', 'Apple SD Gothic Neo',
-    'Malgun Gothic', sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-variant-numeric: tabular-nums;
 
-  /* 레이아웃 면(面) */
-  --color-rail: #edeff2; /* 좌측 레일 */
-  --color-panel: #f5f6f8; /* 채널 패널 / 페이지 배경 */
-  --color-surface: #ffffff; /* 메인 표면 */
-  --color-card: #ffffff; /* 카드 */
-  --color-input: #ffffff; /* 입력 */
-  --color-hover: #f1f3f5; /* 중립 호버 */
-  --color-active: #e9f9f1; /* 선택/활성 (tint-50) */
-
-  /* 브랜드 그린 */
+@theme {
+  /* 브랜드 */
   --color-primary: #19c37d;
   --color-primary-deep: #14a567;
-  --color-primary-text: #0c8a55; /* 텍스트용 진한 그린 */
+  --color-primary-text: #0c8a55;
   --color-tint-50: #e9f9f1;
   --color-tint-200: #a3ecca;
 
   /* 텍스트 */
-  --color-ink: #1a1c1e; /* 제목/강조 */
-  --color-body: #33373b; /* 본문 */
-  --color-muted: #8a9099; /* 보조 */
+  --color-ink: #1a1c1e;
+  --color-body: #33373b;
+  --color-muted: #8a9099;
   --color-muted-deep: #6f757d;
-  --color-faint: #b4b9c0; /* 가장 옅은 */
+  --color-faint: #b4b9c0;
+
+  /* 레이아웃 */
+  --color-rail: #edeff2;
+  --color-panel: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-input: #ffffff;
+  --color-hover: #f1f3f5;
+  --color-active: #e9f9f1;
 
   /* 라인 */
   --color-line: #eff1f3;
@@ -46,10 +39,10 @@
   --color-positive: #19c37d;
   --color-danger: #ff5247;
   --color-negative: #ff5247;
-  --color-warning: #ffb020; /* 시작 대기/주의 (amber) */
+  --color-warning: #ffb020;
   --color-info: #3d8bff;
 
-  /* 카테고리(주제별) */
+  /* 카테고리 */
   --color-cat-1: #4dabf7;
   --color-cat-2: #9775fa;
   --color-cat-3: #22b8cf;
@@ -67,6 +60,17 @@
   /* 그림자 */
   --shadow-soft: 0 1px 2px rgba(20, 28, 40, 0.04);
   --shadow-strong: 0 12px 32px rgba(20, 28, 40, 0.18);
+}
+
+:root {
+  font-family:
+    'Pretendard Variable', Pretendard, 'SUIT Variable', 'Noto Sans KR', 'Apple SD Gothic Neo',
+    'Malgun Gothic', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
 }
 
 html,
