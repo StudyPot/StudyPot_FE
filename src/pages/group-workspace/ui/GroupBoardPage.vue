@@ -76,6 +76,7 @@ const sortValue = computed({
 
 
 const newPostForm = ref({ title: '', content: '', pinned: false })
+const newPostBoardId = ref('')
 const isCreating = ref(false)
 const createError = ref('')
 
@@ -352,8 +353,19 @@ async function deleteComment(commentId: string): Promise<void> {
   }
 }
 
+function openCreatePost(): void {
+  newPostBoardId.value = selectedBoard.value?.id ?? ''
+  newPostForm.value = { title: '', content: '', pinned: false }
+  previewContent.value = ''
+  createError.value = ''
+  viewMode.value = 'create'
+}
+
 async function submitNewPost(): Promise<void> {
-  if (!selectedBoard.value) return
+  if (!newPostBoardId.value) {
+    createError.value = '게시판을 선택해주세요.'
+    return
+  }
   if (!newPostForm.value.title.trim() || !newPostForm.value.content.trim()) {
     createError.value = '제목과 내용을 입력해주세요.'
     return
@@ -361,7 +373,7 @@ async function submitNewPost(): Promise<void> {
   isCreating.value = true
   createError.value = ''
   try {
-    await createBoardPost(groupId.value, selectedBoard.value.id, {
+    await createBoardPost(groupId.value, newPostBoardId.value, {
       title: newPostForm.value.title.trim(),
       content: newPostForm.value.content.trim(),
       pinned: newPostForm.value.pinned || undefined,
@@ -685,10 +697,9 @@ function formatDate(value: string): string {
               aria-label="정렬 기준"
             />
             <button
-              v-if="!isAllBoards && selectedBoard"
               type="button"
               class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
-              @click="viewMode = 'create'"
+              @click="openCreatePost"
             >
               글 쓰기
             </button>
@@ -934,10 +945,33 @@ function formatDate(value: string): string {
         >
           ← 목록으로
         </button>
-        <p class="text-sm font-semibold text-[var(--color-primary)]">{{ selectedBoard?.name }}</p>
+        <p class="text-sm font-semibold text-[var(--color-primary)]">게시판</p>
         <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">새 글 작성</h2>
 
         <form class="mt-5 grid gap-4" @submit.prevent="submitNewPost">
+          <!-- 카테고리 선택 -->
+          <div class="grid gap-2">
+            <span class="text-sm font-semibold text-[var(--color-ink)]">
+              카테고리 <span class="text-[var(--color-danger)]">*</span>
+            </span>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="board in boards"
+                :key="board.id"
+                type="button"
+                :class="[
+                  'rounded-md border px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
+                  newPostBoardId === board.id
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                    : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                ]"
+                @click="newPostBoardId = board.id"
+              >
+                {{ board.name }}
+              </button>
+            </div>
+          </div>
+
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-[var(--color-ink)]">제목</span>
             <input
