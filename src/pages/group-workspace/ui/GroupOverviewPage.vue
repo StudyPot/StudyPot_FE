@@ -191,12 +191,38 @@ async function loadGroupActivity(): Promise<void> {
   }
 }
 
+const MAX_CHART_DAYS = 28
+
+function toLocalDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 const activityDays = computed(() => {
-  const dates = new Set<string>()
-  for (const row of activityRows.value) {
-    for (const d of row.dailyActivity) dates.add(d.date)
+  const msPerDay = 24 * 60 * 60 * 1000
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // 스터디 시작일 기준. 미래이면 오늘로 클램핑
+  let startDate = today
+  if (group.value?.startsAt) {
+    const d = new Date(group.value.startsAt)
+    if (!isNaN(d.getTime())) {
+      d.setHours(0, 0, 0, 0)
+      if (d <= today) startDate = d
+    }
   }
-  return Array.from(dates).sort().slice(-14)
+
+  // 시작일부터 오늘까지 경과 일수(1-indexed)
+  const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / msPerDay) + 1
+  // 최대 28일. 초과 시 최신 28일 슬라이딩 윈도우
+  const windowSize = Math.min(daysSinceStart, MAX_CHART_DAYS)
+
+  const result: string[] = []
+  for (let i = windowSize - 1; i >= 0; i--) {
+    result.push(toLocalDateStr(new Date(today.getTime() - i * msPerDay)))
+  }
+  return result
 })
 
 const MEMBER_COLORS = [
