@@ -248,7 +248,7 @@ function renderMarkdown(content: string): string {
       >
         <div v-if="messages.length === 0" class="mt-10 text-center">
           <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white"
+            class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
           >
             <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
@@ -272,7 +272,7 @@ function renderMarkdown(content: string): string {
           <!-- ASSISTANT (좌측 아바타 + 흰 버블) -->
           <div v-else-if="message.senderType === 'ASSISTANT'" class="flex items-start gap-2.5">
             <span
-              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white"
+              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
               aria-hidden="true"
             >
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -280,7 +280,7 @@ function renderMarkdown(content: string): string {
               </svg>
             </span>
             <div
-              class="ai-markdown max-w-[78%] rounded-2xl bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
+              class="ai-markdown max-w-[78%] rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
               v-html="renderMarkdown(message.content)"
             />
           </div>
@@ -304,7 +304,7 @@ function renderMarkdown(content: string): string {
             class="flex items-start gap-2.5"
           >
             <span
-              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white"
+              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
               aria-hidden="true"
             >
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -312,7 +312,7 @@ function renderMarkdown(content: string): string {
               </svg>
             </span>
             <div
-              class="flex items-center gap-1.5 rounded-2xl bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-soft)]"
+              class="flex items-center gap-1.5 rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-soft)]"
             >
               <span
                 class="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--color-muted)]"
