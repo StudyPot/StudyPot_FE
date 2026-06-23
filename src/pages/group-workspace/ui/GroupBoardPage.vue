@@ -780,7 +780,12 @@ function formatDate(value: string): string {
         <li
           v-for="post in posts"
           :key="post.id"
-          class="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-sm transition hover:shadow-md"
+          class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition hover:shadow-md"
+          :class="
+            isLeaderReport(post.boardId)
+              ? 'border-[var(--color-tint-200)] bg-[var(--color-tint-50)] shadow-[var(--shadow-soft)]'
+              : 'border-[var(--color-line)] bg-[var(--color-card)] shadow-sm'
+          "
           @click="openPost(post)"
         >
           <!-- 아바타 -->
@@ -811,11 +816,16 @@ function formatDate(value: string): string {
                 class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400"
                 >고정</span
               >
-              <span
-                v-if="isLeaderReport(post.boardId)"
-                class="rounded-full bg-[rgba(25,195,125,0.12)] px-2 py-0.5 text-xs font-semibold text-[var(--color-primary)]"
-                >AI 팀장</span
-              >
+              <template v-if="isLeaderReport(post.boardId)">
+                <span
+                  class="rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-bold text-white"
+                  >AI 팀장</span
+                >
+                <span
+                  class="rounded-full bg-[var(--color-tint-50)] px-2 py-0.5 text-xs font-semibold text-[var(--color-primary-text)]"
+                  >주간 리포트</span
+                >
+              </template>
               <span
                 v-else-if="boardMap[post.boardId]?.boardType === 'NOTICE'"
                 class="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-600 dark:bg-teal-900/20 dark:text-teal-400"
