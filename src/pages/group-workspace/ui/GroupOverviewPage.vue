@@ -1,7 +1,11 @@
 <script setup lang="ts">
 
+import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, Tooltip } from 'chart.js'
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
+import { Bar } from 'vue-chartjs'
 import { useRouter } from 'vue-router'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
 
 import {
   deleteGroup,
@@ -162,16 +166,7 @@ async function loadGroupActivity(): Promise<void> {
   }
 }
 
-function activityLevel(count: number): number {
-  if (count === 0) return 0
-  if (count <= 2) return 1
-  if (count <= 5) return 2
-  return 3
-}
-
-// 잔디: 백엔드가 내려준 커리큘럼 기간(시작~종료) 날짜를 그대로 사용한다.
-// (멤버별 dailyActivity는 같은 날짜 축이지만, 안전하게 모든 행의 날짜를 합쳐 정렬한다.)
-const heatmapDays = computed(() => {
+const activityDays = computed(() => {
   const dates = new Set<string>()
   for (const row of activityRows.value) {
     for (const d of row.dailyActivity) dates.add(d.date)
@@ -179,23 +174,52 @@ const heatmapDays = computed(() => {
   return Array.from(dates).sort()
 })
 
-const heatmapData = computed(() =>
+const activityCharts = computed(() =>
   activityRows.value.map((row) => ({
     name: row.memberNickname,
-    activity: heatmapDays.value.map((day) => {
-      const found = row.dailyActivity.find((d) => d.date === day)
-      return activityLevel(found?.count ?? 0)
-    }),
+    data: {
+      labels: activityDays.value.map((d) => {
+        const date = new Date(d)
+        return `${date.getMonth() + 1}/${date.getDate()}`
+      }),
+      datasets: [
+        {
+          data: activityDays.value.map((day) => {
+            return row.dailyActivity.find((d) => d.date === day)?.count ?? 0
+          }),
+          backgroundColor: 'rgba(88,101,242,0.7)',
+          hoverBackgroundColor: 'rgba(88,101,242,1)',
+          borderRadius: 3,
+          borderSkipped: false,
+        },
+      ],
+    },
   }))
 )
 
-const HEAT_COLORS = [
-  // 활동 없는 날도 GitHub 잔디처럼 회색 사각형이 보이도록 한다. (이전엔 카드색이라 배경과 섞여 안 보였음)
-  'bg-[var(--color-line-strong)]',
-  'bg-[rgba(54,92,255,0.25)]',
-  'bg-[rgba(54,92,255,0.55)]',
-  'bg-[var(--color-primary)]',
-]
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (ctx: { parsed: { y: number | null } }) => ` ${ctx.parsed.y ?? 0}건`,
+      },
+    },
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: 'rgba(148,155,164,0.8)', font: { size: 10 } },
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { stepSize: 1, color: 'rgba(148,155,164,0.8)', font: { size: 10 } },
+      grid: { color: 'rgba(255,255,255,0.05)' },
+    },
+  },
+} as const
 
 const quickLinks: QuickLink[] = [
   { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
@@ -251,10 +275,7 @@ async function handleStartStudy(): Promise<void> {
   }
 }
 
-function getDayLabel(dayStr: string): string {
-  const d = new Date(dayStr)
-  return `${d.getMonth() + 1}/${d.getDate()}`
-}
+
 </script>
 
 <template>
@@ -476,50 +497,23 @@ function getDayLabel(dayStr: string): string {
         </div>
       </section>
 
-      <!-- 활동 대시보드 (잔디) -->
+      <!-- 활동 대시보드 -->
       <section
-        v-if="group.status === 'ACTIVE' && heatmapData.length > 0"
+        v-if="group.status === 'ACTIVE' && activityCharts.length > 0"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-semibold text-[var(--color-primary)]">활동 현황</p>
-        <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">최근 4주 학습 활동</h3>
+        <h3 class="mt-1 text-base font-bold text-[var(--color-ink)]">팀원별 일별 학습 활동</h3>
 
-        <div class="mt-4 overflow-x-auto">
-          <div class="min-w-max">
-            <!-- 날짜 헤더 -->
-            <div class="mb-1 flex gap-1 pl-24">
-              <div
-                v-for="(day, idx) in heatmapDays"
-                :key="day"
-                class="w-5 text-center text-[10px] text-[var(--color-muted)]"
-              >
-                {{ idx % 7 === 0 ? getDayLabel(day) : '' }}
-              </div>
-            </div>
-
-            <!-- 멤버 행 -->
-            <div
-              v-for="row in heatmapData"
-              :key="row.name"
-              class="mb-1 flex items-center gap-1"
-            >
-              <span class="w-24 shrink-0 truncate text-right pr-2 text-xs font-medium text-[var(--color-muted)]">
-                {{ row.name }}
-              </span>
-              <div
-                v-for="(level, idx) in row.activity"
-                :key="idx"
-                class="h-5 w-5 rounded-sm transition-colors"
-                :class="HEAT_COLORS[level]"
-                :title="`${row.name} ${heatmapDays[idx]}`"
-              />
-            </div>
-
-            <!-- 범례 -->
-            <div class="mt-3 flex items-center gap-2 pl-24 text-xs text-[var(--color-muted)]">
-              <span>적음</span>
-              <div v-for="(cls, i) in HEAT_COLORS" :key="i" class="h-3 w-3 rounded-sm" :class="cls" />
-              <span>많음</span>
+        <div class="mt-4 grid gap-5 sm:grid-cols-2">
+          <div
+            v-for="member in activityCharts"
+            :key="member.name"
+            class="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-4"
+          >
+            <p class="mb-3 text-sm font-semibold text-[var(--color-ink)]">{{ member.name }}</p>
+            <div class="h-32">
+              <Bar :data="member.data" :options="chartOptions" />
             </div>
           </div>
         </div>
