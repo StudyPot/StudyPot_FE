@@ -202,9 +202,7 @@ function getStatusPhase(status: StudyGroupStatus): StatusPhase {
 function getIconClasses(_group: StudyGroup, isSelected: boolean): string {
   const base =
     'flex h-12 w-12 items-center justify-center text-sm font-bold text-white transition-all duration-100'
-  return isSelected
-    ? `${base} rounded-2xl`
-    : `${base} rounded-3xl opacity-85 group-hover:rounded-2xl group-hover:opacity-100`
+  return isSelected ? `${base} rounded-2xl` : `${base} rounded-3xl group-hover:rounded-2xl`
 }
 
 function getDotClass(status: StudyGroupStatus): string {
