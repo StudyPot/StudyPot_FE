@@ -4,9 +4,7 @@
       "id": "taskDifficulty",
       "type": "scale",
       "label": "이번 주차 과제 난이도는 어땠나요?",
-      "required": true,
-      "minLabel": "매우 쉬움",
-      "maxLabel": "매우 어려움"
+      "required": true
     },
     {
       "id": "difficultyReason",
@@ -19,17 +17,13 @@
       "id": "curriculumSatisfaction",
       "type": "scale",
       "label": "이번 주차 커리큘럼 만족도는 어땠나요?",
-      "required": true,
-      "minLabel": "매우 불만족",
-      "maxLabel": "매우 만족"
+      "required": true
     },
     {
       "id": "overallSatisfaction",
       "type": "scale",
       "label": "이번 스터디 전반적인 만족도는 어떠셨나요?",
-      "required": true,
-      "minLabel": "매우 불만족",
-      "maxLabel": "매우 만족"
+      "required": true
     },
     {
       "id": "reflection",

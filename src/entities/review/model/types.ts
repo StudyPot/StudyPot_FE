@@ -3,8 +3,6 @@ export type ScaleQuestion = {
   type: 'scale'
   label: string
   required: boolean
-  minLabel: string
-  maxLabel: string
 }
 
 export type TextQuestion = {

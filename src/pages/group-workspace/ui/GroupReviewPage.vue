@@ -170,22 +170,31 @@ function formatDate(value: string): string {
 
             <!-- scale 답변 표시 (뷰) -->
             <template v-if="q.type === 'scale'">
-              <div class="mt-3 flex items-center gap-3">
-                <span class="w-20 shrink-0 text-right text-xs text-[var(--color-muted)]">{{ q.minLabel }}</span>
+              <div class="mt-3 flex flex-col gap-1.5">
                 <div class="flex items-center gap-4">
-                  <span
+                  <div
                     v-for="(size, idx) in ['h-9 w-9', 'h-7 w-7', 'h-6 w-6', 'h-7 w-7', 'h-9 w-9']"
                     :key="idx"
-                    class="rounded-full border-2"
-                    :class="[
-                      size,
-                      myReview.answers[q.id] === idx + 1
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
-                        : 'border-[var(--color-line-strong)] bg-[var(--color-card)]'
-                    ]"
-                  />
+                    class="flex w-9 justify-center"
+                  >
+                    <span
+                      class="rounded-full border-2"
+                      :class="[
+                        size,
+                        myReview.answers[q.id] === idx + 1
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                          : 'border-[var(--color-line-strong)] bg-[var(--color-card)]'
+                      ]"
+                    />
+                  </div>
                 </div>
-                <span class="w-20 shrink-0 text-xs text-[var(--color-muted)]">{{ q.maxLabel }}</span>
+                <div class="flex gap-4">
+                  <span
+                    v-for="idx in 5"
+                    :key="idx"
+                    class="flex w-9 justify-center text-[10px] text-[var(--color-muted)]"
+                  >{{ idx }}</span>
+                </div>
               </div>
             </template>
 
@@ -216,24 +225,33 @@ function formatDate(value: string): string {
 
             <!-- scale 선택 -->
             <template v-if="q.type === 'scale'">
-              <div class="mt-3 flex items-center gap-3">
-                <span class="w-20 shrink-0 text-right text-xs text-[var(--color-muted)]">{{ q.minLabel }}</span>
-                <div class="flex items-center gap-5">
-                  <button
+              <div class="mt-3 flex flex-col gap-1.5">
+                <div class="flex items-center gap-4">
+                  <div
                     v-for="(size, idx) in ['h-9 w-9', 'h-7 w-7', 'h-6 w-6', 'h-7 w-7', 'h-9 w-9']"
                     :key="idx"
-                    type="button"
-                    class="rounded-full border-2 transition-colors focus:outline-none"
-                    :class="[
-                      size,
-                      answers[q.id] === idx + 1
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
-                        : 'border-[var(--color-line-strong)] bg-[var(--color-card)] hover:border-[var(--color-primary)]'
-                    ]"
-                    @click="answers[q.id] = idx + 1"
-                  />
+                    class="flex w-9 justify-center"
+                  >
+                    <button
+                      type="button"
+                      class="rounded-full border-2 transition-colors focus:outline-none"
+                      :class="[
+                        size,
+                        answers[q.id] === idx + 1
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                          : 'border-[var(--color-line-strong)] bg-[var(--color-card)] hover:border-[var(--color-primary)]'
+                      ]"
+                      @click="answers[q.id] = idx + 1"
+                    />
+                  </div>
                 </div>
-                <span class="w-20 shrink-0 text-xs text-[var(--color-muted)]">{{ q.maxLabel }}</span>
+                <div class="flex gap-4">
+                  <span
+                    v-for="idx in 5"
+                    :key="idx"
+                    class="flex w-9 justify-center text-[10px] text-[var(--color-muted)]"
+                  >{{ idx }}</span>
+                </div>
               </div>
               <p
                 v-if="validationErrors[q.id]"
