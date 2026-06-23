@@ -47,12 +47,17 @@ const showOnboarding = computed(() => {
 })
 
 const channels = computed<ChannelDef[]>(() => {
-  if (!showOnboarding.value) return baseChannels
-  return [
-    baseChannels[0]!,
-    { routeName: 'group-onboarding', label: '온보딩', type: 'onboard' },
-    ...baseChannels.slice(1),
-  ]
+  const isActive = currentGroup.value?.status === 'ACTIVE'
+  const home = baseChannels[0]!
+  const onboardChannel: ChannelDef = { routeName: 'group-onboarding', label: '온보딩', type: 'onboard' }
+
+  if (showOnboarding.value) {
+    return isActive
+      ? [home, onboardChannel, ...baseChannels.slice(1)]
+      : [home, onboardChannel]
+  }
+
+  return isActive ? baseChannels : [home]
 })
 
 const activeChannelLabel = computed(() =>
