@@ -54,6 +54,7 @@ const isLoadingComments = ref(false)
 const newCommentText = ref('')
 const isSubmittingComment = ref(false)
 const isDeletingPost = ref(false)
+const showDeletePostDialog = ref(false)
 
 const sortField = ref<BoardSortField>('createdAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
@@ -281,17 +282,23 @@ async function submitEditPost(): Promise<void> {
   }
 }
 
-async function deletePost(): Promise<void> {
+function deletePost(): void {
   if (!selectedPost.value) return
-  if (!window.confirm('게시글을 삭제하시겠습니까?')) return
+  showDeletePostDialog.value = true
+}
+
+async function confirmDeletePost(): Promise<void> {
+  if (!selectedPost.value) return
   isDeletingPost.value = true
   try {
     await deleteBoardPost(groupId.value, selectedPost.value.id)
+    showDeletePostDialog.value = false
     selectedPost.value = null
     backToList()
     await loadPosts()
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : '게시글 삭제에 실패했습니다.'
+    showDeletePostDialog.value = false
   } finally {
     isDeletingPost.value = false
   }
@@ -1123,6 +1130,60 @@ function formatDate(value: string): string {
       </section>
     </template>
   </div>
+
+  <!-- 게시글 삭제 확인 모달 -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-150 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showDeletePostDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-post-dialog-title"
+      >
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showDeletePostDialog = false" />
+        <div class="relative w-full max-w-sm rounded-xl bg-[var(--color-card)] p-6 shadow-2xl">
+          <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2 id="delete-post-dialog-title" class="mt-4 text-lg font-bold text-[var(--color-ink)]">
+            게시글을 삭제하시겠습니까?
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+            삭제된 게시글은 복구할 수 없습니다.
+          </p>
+          <div class="mt-5 flex gap-3">
+            <button
+              type="button"
+              :disabled="isDeletingPost"
+              class="flex-1 inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:opacity-50"
+              @click="showDeletePostDialog = false"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              :disabled="isDeletingPost"
+              class="flex-1 inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-danger)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              @click="confirmDeletePost"
+            >
+              {{ isDeletingPost ? '삭제 중…' : '삭제' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 
