@@ -42,7 +42,7 @@ const PUBLIC_CHANNELS: ChannelDef[] = [
 const PRIVATE_CHANNELS: ChannelDef[] = [
   { routeName: 'group-todo',   label: 'Todo',   type: 'todo' },
   { routeName: 'group-ai',     label: 'AI 팀장', type: 'ai' },
-  { routeName: 'group-review', label: '회고',    type: 'review' },
+  { routeName: 'group-retrospective', label: '회고', type: 'review' },
 ]
 
 const ONBOARD_CHANNEL: ChannelDef = { routeName: 'group-onboarding', label: '온보딩', type: 'onboard' }

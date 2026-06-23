@@ -404,7 +404,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                 회고를 작성하고 이번 주를 마무리해 보세요.
               </p>
               <RouterLink
-                :to="{ name: 'group-review', params: { groupId } }"
+                :to="{ name: 'group-retrospective', params: { groupId } }"
                 class="mt-2 inline-flex h-8 items-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none"
               >
                 회고하러 가기
