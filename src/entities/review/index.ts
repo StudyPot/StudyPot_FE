@@ -1,2 +1,10 @@
-export { createReview, getMyReview, getReviewStats, listReviews, updateMyReview } from './api/reviewsApi'
-export type { CreateReviewRequest, Review, ReviewStats, UpdateReviewRequest } from './model/types'
+export { createReview, getMyReview, getRetroQuestions, updateMyReview } from './api/reviewsApi'
+export type {
+  CreateReviewRequest,
+  RetroAnswers,
+  RetroQuestion,
+  Review,
+  ScaleQuestion,
+  TextQuestion,
+  UpdateReviewRequest,
+} from './model/types'

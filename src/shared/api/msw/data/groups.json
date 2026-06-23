@@ -211,7 +211,7 @@
     "displayName": "user1",
     "onboarding": { "submitted": true, "skillLevel": 3, "submittedAt": "2026-05-10T01:00:00Z" },
     "currentWeek": null,
-    "taskCompletion": { "totalCount": 4, "doneCount": 2, "incompleteCount": 1, "skippedCount": 0 },
+    "taskCompletion": { "totalCount": 4, "doneCount": 4, "incompleteCount": 0, "skippedCount": 0 },
     "retrospective": { "feedbackReady": false }
   }
 }
