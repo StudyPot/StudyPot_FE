@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import {
   getMyOnboarding,
   submitMyOnboarding,
+  useOnboardingStatusStore,
   type AvailabilitySlot,
   type OnboardingResponse,
 } from '@/entities/onboarding'
@@ -29,6 +30,7 @@ if (!workspaceContext) {
 
 const { groupId, group, reloadMembers } = workspaceContext
 const router = useRouter()
+const onboardingStatusStore = useOnboardingStatusStore()
 
 // 스터디가 시작되면(상태가 더 이상 온보딩 단계가 아니면) 온보딩 페이지는 자동으로 사라지고
 // 그룹 개요로 이동한다. (새로고침 없이도 실시간 갱신으로 그룹 상태가 바뀌면 반영됨)
@@ -119,6 +121,9 @@ async function handleSubmit(): Promise<void> {
     pageState.value = 'submitted'
     // 공유 워크스페이스 members를 갱신해 개요의 온보딩 현황에 즉시 반영되게 한다.
     void reloadMembers()
+    // 제출 완료 신호를 공유 스토어에 기록해 좌측 온보딩 탭이 즉시 사라지게 하고, 홈으로 이동한다.
+    onboardingStatusStore.markSubmitted(groupId.value)
+    void router.replace({ name: 'group-overview', params: { groupId: groupId.value } })
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       submitError.value = '이미 제출된 온보딩입니다.'

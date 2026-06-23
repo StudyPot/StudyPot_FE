@@ -155,6 +155,14 @@ const primaryEntry = computed<GroupEntryAction | null>(() =>
   group.value ? getGroupOverviewPrimaryEntry(group.value.status) : null,
 )
 
+// 비(非)오너 멤버에게는 READY_TO_START 에서 '스터디를 시작하세요' 문구가 오해를 주므로 대기 안내로 바꾼다.
+const mainSummary = computed(() => {
+  if (isReadyToStart.value && !isOwner.value) {
+    return '관리자가 스터디를 시작하면 커리큘럼이 생성됩니다. 잠시만 기다려 주세요.'
+  }
+  return primaryEntry.value?.summary ?? ''
+})
+
 const onboardingProgress = computed(() => {
   if (!group.value) return null
   const active = members.value.filter((m) => m.status !== 'LEFT')
@@ -428,7 +436,7 @@ async function handleStartStudy(): Promise<void> {
             <p class="text-sm font-semibold text-[var(--color-primary)]">그룹 홈</p>
             <h2 class="mt-2 text-2xl font-bold text-[var(--color-ink)]">{{ group.name }}</h2>
             <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-              {{ primaryEntry.summary }}
+              {{ mainSummary }}
             </p>
           </div>
 
@@ -487,7 +495,6 @@ async function handleStartStudy(): Promise<void> {
               확인하기
             </RouterLink>
           </div>
-
         </div>
 
         <dl class="mt-6 grid gap-4 text-sm sm:grid-cols-4">
