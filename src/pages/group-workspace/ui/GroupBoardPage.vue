@@ -27,7 +27,7 @@ import type { BoardSortField } from '@/entities/board/api/boardApi'
 import type { GroupBoard, BoardPostSummary, BoardPost, BoardComment } from '@/entities/board/model/types'
 import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
-import { ScreenState } from '@/shared/ui'
+import { ScreenState, SelectDropdown } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
 const workspaceContext = inject(groupWorkspaceContextKey)
@@ -57,6 +57,20 @@ const isDeletingPost = ref(false)
 
 const sortField = ref<BoardSortField>('createdAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+
+const sortOptions = [
+  { value: 'createdAt:desc', label: '최신순' },
+  { value: 'createdAt:asc', label: '오래된순' },
+  { value: 'commentCount:desc', label: '댓글 많은순' },
+] as const
+
+const sortValue = computed({
+  get: () => `${sortField.value}:${sortOrder.value}` as (typeof sortOptions)[number]['value'],
+  set: (val: string) => {
+    const [f, o] = val.split(':')
+    void changeSort(f as BoardSortField, o as 'asc' | 'desc')
+  },
+})
 
 
 const newPostForm = ref({ title: '', content: '', pinned: false })
@@ -662,28 +676,12 @@ function formatDate(value: string): string {
             </h2>
           </div>
           <div class="flex items-center gap-2">
-            <!-- 정렬 셀렉터 -->
-            <div class="relative">
-              <select
-                class="sort-select h-9 appearance-none cursor-pointer rounded-md border border-[var(--color-line-strong)] pl-3 pr-8 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
-                aria-label="정렬 기준"
-                :value="`${sortField}:${sortOrder}`"
-                @change="(e) => {
-                  const [f, o] = (e.target as HTMLSelectElement).value.split(':')
-                  void changeSort(f as BoardSortField, o as 'asc' | 'desc')
-                }"
-              >
-                <option value="createdAt:desc">최신순</option>
-                <option value="createdAt:asc">오래된순</option>
-                <option value="commentCount:desc">댓글 많은순</option>
-              </select>
-              <svg
-                class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
-                width="12" height="12" viewBox="0 0 12 12" fill="none"
-              >
-                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+            <!-- 정렬 -->
+            <SelectDropdown
+              v-model="sortValue"
+              :options="sortOptions"
+              aria-label="정렬 기준"
+            />
             <button
               v-if="!isAllBoards && selectedBoard"
               type="button"
@@ -1091,22 +1089,6 @@ function formatDate(value: string): string {
   </div>
 </template>
 
-<style>
-select.sort-select {
-  background-color: var(--color-panel) !important;
-  color: var(--color-ink);
-}
-
-select.sort-select option {
-  background-color: var(--color-panel);
-  color: var(--color-ink);
-}
-
-select.sort-select option:checked {
-  background-color: var(--color-active);
-  color: var(--color-ink);
-}
-</style>
 
 <style scoped>
 .markdown-body {
