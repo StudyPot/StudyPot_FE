@@ -36,7 +36,7 @@ const baseChannels: ChannelDef[] = [
   { routeName: 'group-ai',       label: 'AI 팀장', type: 'ai' },
   { routeName: 'group-board',    label: '게시판', type: 'board' },
   { routeName: 'group-my',       label: '팀원', type: 'person' },
-  { routeName: 'group-review',   label: '리뷰', type: 'review' },
+  { routeName: 'group-review',   label: '회고', type: 'review' },
 ]
 
 const showOnboarding = computed(() => {

@@ -201,7 +201,7 @@ const quickLinks: QuickLink[] = [
   { routeName: 'group-todo', title: '커리큘럼 · Todo', caption: '주차별 커리큘럼과 이번 주 과제를 관리합니다.' },
   { routeName: 'group-ai', title: 'AI 팀장', caption: '학습 흐름을 함께 점검합니다.' },
   { routeName: 'group-board', title: '게시판', caption: '공지와 토론을 나눕니다.' },
-  { routeName: 'group-review', title: '스터디 리뷰', caption: '평균 평점과 중복 방지 상태를 확인하고 리뷰를 남깁니다.' },
+  { routeName: 'group-review', title: '스터디 회고', caption: '이번 스터디를 돌아보며 별점과 소감을 남겨보세요.' },
 ]
 
 function formatDateRange(startsAt: string, endsAt: string): string {
