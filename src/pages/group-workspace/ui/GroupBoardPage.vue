@@ -24,7 +24,12 @@ import {
   deletePostComment,
 } from '@/entities/board/api/boardApi'
 import type { BoardSortField } from '@/entities/board/api/boardApi'
-import type { GroupBoard, BoardPostSummary, BoardPost, BoardComment } from '@/entities/board/model/types'
+import type {
+  GroupBoard,
+  BoardPostSummary,
+  BoardPost,
+  BoardComment,
+} from '@/entities/board/model/types'
 import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState, SelectDropdown } from '@/shared/ui'
@@ -75,7 +80,6 @@ const sortValue = computed({
   },
 })
 
-
 const newPostForm = ref({ title: '', content: '', pinned: false })
 const newPostBoardId = ref('')
 const isCreating = ref(false)
@@ -102,7 +106,13 @@ const boardTypeLabel: Record<string, string> = {
   QUESTION: '질문',
   RESOURCE: '자료',
   RETROSPECTIVE: '회고',
+  LEADER_REPORT: '팀장 리포트',
 }
+
+// 팀장 리포트 보드는 AI 팀장이 자동 게시하는 곳이라 사용자가 글을 쓸 수 없다.
+const writableBoards = computed<GroupBoard[]>(() =>
+  boards.value.filter((board) => board.boardType !== 'LEADER_REPORT'),
+)
 
 const boardMap = computed<Record<string, GroupBoard>>(() => {
   const map: Record<string, GroupBoard> = {}
@@ -336,7 +346,11 @@ async function saveEditComment(commentId: string): Promise<void> {
   if (!editingCommentText.value.trim()) return
   isSavingComment.value = true
   try {
-    const updated = await updatePostComment(groupId.value, commentId, editingCommentText.value.trim())
+    const updated = await updatePostComment(
+      groupId.value,
+      commentId,
+      editingCommentText.value.trim(),
+    )
     const index = comments.value.findIndex((c) => c.id === commentId)
     if (index !== -1) comments.value[index] = updated
     editingCommentId.value = null
@@ -698,11 +712,7 @@ function formatDate(value: string): string {
           </div>
           <div class="flex items-center gap-2">
             <!-- 정렬 -->
-            <SelectDropdown
-              v-model="sortValue"
-              :options="sortOptions"
-              aria-label="정렬 기준"
-            />
+            <SelectDropdown v-model="sortValue" :options="sortOptions" aria-label="정렬 기준" />
             <button
               type="button"
               class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
@@ -741,11 +751,16 @@ function formatDate(value: string): string {
                 <span
                   class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
                   :class="{
-                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': boardMap[post.boardId]?.boardType === 'NOTICE',
-                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': boardMap[post.boardId]?.boardType === 'QUESTION',
-                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': boardMap[post.boardId]?.boardType === 'RESOURCE',
-                    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': boardMap[post.boardId]?.boardType === 'RETROSPECTIVE',
-                    'bg-[var(--color-active)] text-[var(--color-muted)]': !boardMap[post.boardId]?.boardType,
+                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
+                      boardMap[post.boardId]?.boardType === 'NOTICE',
+                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400':
+                      boardMap[post.boardId]?.boardType === 'QUESTION',
+                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
+                      boardMap[post.boardId]?.boardType === 'RESOURCE',
+                    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400':
+                      boardMap[post.boardId]?.boardType === 'RETROSPECTIVE',
+                    'bg-[var(--color-active)] text-[var(--color-muted)]':
+                      !boardMap[post.boardId]?.boardType,
                   }"
                 >
                   {{ getBoardBadgeLabel(post.boardId) }}
@@ -795,16 +810,22 @@ function formatDate(value: string): string {
                     v-if="boardMap[selectedPost.boardId]"
                     class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold"
                     :class="{
-                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': boardMap[selectedPost.boardId]?.boardType === 'NOTICE',
-                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': boardMap[selectedPost.boardId]?.boardType === 'QUESTION',
-                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': boardMap[selectedPost.boardId]?.boardType === 'RESOURCE',
-                      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': boardMap[selectedPost.boardId]?.boardType === 'RETROSPECTIVE',
+                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400':
+                        boardMap[selectedPost.boardId]?.boardType === 'NOTICE',
+                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400':
+                        boardMap[selectedPost.boardId]?.boardType === 'QUESTION',
+                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400':
+                        boardMap[selectedPost.boardId]?.boardType === 'RESOURCE',
+                      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400':
+                        boardMap[selectedPost.boardId]?.boardType === 'RETROSPECTIVE',
                     }"
                   >
                     {{ getBoardBadgeLabel(selectedPost.boardId) }}
                   </span>
                 </div>
-                <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">{{ selectedPost.title }}</h2>
+                <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">
+                  {{ selectedPost.title }}
+                </h2>
                 <p class="mt-1 text-xs text-[var(--color-muted)]">
                   {{ selectedPost.author.displayName }} · {{ formatDate(selectedPost.createdAt) }}
                 </p>
@@ -963,7 +984,7 @@ function formatDate(value: string): string {
             </span>
             <div class="flex flex-wrap gap-2">
               <button
-                v-for="board in boards"
+                v-for="board in writableBoards"
                 :key="board.id"
                 type="button"
                 :class="[
@@ -1023,7 +1044,11 @@ function formatDate(value: string): string {
             </section>
           </div>
 
-          <p v-if="createError" role="alert" class="text-sm font-semibold text-[var(--color-danger)]">
+          <p
+            v-if="createError"
+            role="alert"
+            class="text-sm font-semibold text-[var(--color-danger)]"
+          >
             {{ createError }}
           </p>
 
@@ -1106,7 +1131,11 @@ function formatDate(value: string): string {
             </section>
           </div>
 
-          <p v-if="editPostError" role="alert" class="text-sm font-semibold text-[var(--color-danger)]">
+          <p
+            v-if="editPostError"
+            role="alert"
+            class="text-sm font-semibold text-[var(--color-danger)]"
+          >
             {{ editPostError }}
           </p>
 
@@ -1148,12 +1177,27 @@ function formatDate(value: string): string {
         aria-modal="true"
         aria-labelledby="delete-post-dialog-title"
       >
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showDeletePostDialog = false" />
+        <div
+          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          @click="showDeletePostDialog = false"
+        />
         <div class="relative w-full max-w-sm rounded-xl bg-[var(--color-card)] p-6 shadow-2xl">
-          <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+          <div
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(237,66,69,0.12)] text-[var(--color-danger)]"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </div>
           <h2 id="delete-post-dialog-title" class="mt-4 text-lg font-bold text-[var(--color-ink)]">
@@ -1185,7 +1229,6 @@ function formatDate(value: string): string {
     </Transition>
   </Teleport>
 </template>
-
 
 <style scoped>
 .markdown-body {

@@ -1,4 +1,4 @@
-export type GroupBoardType = 'NOTICE' | 'QUESTION' | 'RESOURCE' | 'RETROSPECTIVE'
+export type GroupBoardType = 'NOTICE' | 'QUESTION' | 'RESOURCE' | 'RETROSPECTIVE' | 'LEADER_REPORT'
 
 export type GroupBoard = {
   id: string
