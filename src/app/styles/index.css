@@ -71,6 +71,18 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-variant-numeric: tabular-nums;
+
+  /*
+   * 카테고리 색은 JS 인라인 스타일(:style)로만 사용돼 Tailwind v4 @theme 트리셰이킹에
+   * 의해 :root 로 출력되지 않는다. 런타임에서 var() 가 해석되도록 :root 에 직접 정의한다.
+   */
+  --color-cat-1: #4dabf7;
+  --color-cat-2: #9775fa;
+  --color-cat-3: #22b8cf;
+  --color-cat-4: #51cf66;
+  --color-cat-5: #ffa94d;
+  --color-cat-6: #ff8787;
+  --color-cat-7: #f783ac;
 }
 
 html,
@@ -78,7 +90,7 @@ body,
 #app {
   height: 100%;
   overflow: hidden;
-  background: var(--color-panel);
+  background: var(--color-surface);
   color: var(--color-body);
 }
 
@@ -87,7 +99,7 @@ button {
 }
 
 ::selection {
-  background: rgba(25,195,125, 0.22);
+  background: rgba(25, 195, 125, 0.22);
 }
 
 /* 얇은 스크롤바 (라이트) */

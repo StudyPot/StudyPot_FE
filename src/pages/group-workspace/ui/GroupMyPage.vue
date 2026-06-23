@@ -2,9 +2,10 @@
 import { computed, inject, onMounted, ref } from 'vue'
 
 import { getGroupMembersActivity, type MemberActivityRow } from '@/entities/curriculum'
+import { getGroupCategoryColor } from '@/entities/group'
 import { getGroupOnboardings, type MemberOnboardingResponse } from '@/entities/onboarding'
 import { getAiManager, updateAiManager, type AiManager } from '@/entities/ai'
-import aiManagerAvatar from '@/assets/ai-manager-avatar.svg'
+import { useInAppNotificationStore } from '@/features/notification'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -23,15 +24,90 @@ const workspaceContext = inject(groupWorkspaceContextKey)
 if (!workspaceContext) {
   throw new Error('GroupMyPage must be used inside GroupWorkspacePage.')
 }
-const { groupId, group, members } = workspaceContext
+const { groupId, group, members, reloadMembers } = workspaceContext
 
 const sessionStore = useSessionStore()
+const toastStore = useInAppNotificationStore()
+
+// 내 멤버십 id (GroupMember.id === MemberOnboardingResponse.memberId)
+const myMemberId = computed<string | null>(() => {
+  const myUserId = sessionStore.user?.id
+  if (!myUserId) return null
+  return members.value.find((m) => m.userId === myUserId)?.id ?? null
+})
 
 const isOwner = computed(() => {
   const myUserId = sessionStore.user?.id
   if (!myUserId) return false
   return members.value.some((m) => m.userId === myUserId && m.permission === 'OWNER')
 })
+
+// 화면에 그릴 통합 멤버(로스터 기준이라 방장·미온보딩 멤버도 항상 포함).
+type DisplayMember = {
+  memberId: string
+  userId: string
+  memberNickname: string
+  permission: 'OWNER' | 'MEMBER'
+  joinedAt?: string | null
+  status: 'SUBMITTED' | 'NOT_SUBMITTED'
+  skillLevel: number
+  additionalNote?: string | null
+  availabilitySlots: MemberOnboardingResponse['availabilitySlots']
+}
+
+function isMe(member: DisplayMember): boolean {
+  return member.memberId === myMemberId.value
+}
+
+const onboardingByMemberId = computed(() => {
+  const map = new Map<string, MemberOnboardingResponse>()
+  for (const o of memberList.value) map.set(o.memberId, o)
+  return map
+})
+
+// 정렬: 내 카드 → 방장 → 나머지. 로스터(members)가 있으면 그것을 기준으로,
+// 없으면 온보딩 응답만으로 fallback.
+const orderedMembers = computed<DisplayMember[]>(() => {
+  const roster = members.value.filter((m) => m.status !== 'LEFT')
+  let merged: DisplayMember[]
+
+  if (roster.length > 0) {
+    merged = roster.map((gm) => {
+      const o = onboardingByMemberId.value.get(gm.id)
+      const submitted = o?.status === 'SUBMITTED' || gm.onboardingStatus === 'SUBMITTED'
+      return {
+        memberId: gm.id,
+        userId: gm.userId,
+        memberNickname: o?.memberNickname ?? gm.nickname ?? gm.displayName ?? '멤버',
+        permission: gm.permission,
+        joinedAt: o?.joinedAt ?? null,
+        status: submitted ? 'SUBMITTED' : 'NOT_SUBMITTED',
+        skillLevel: o?.skillLevel ?? 0,
+        additionalNote: o?.additionalNote ?? null,
+        availabilitySlots: o?.availabilitySlots ?? [],
+      }
+    })
+  } else {
+    merged = memberList.value.map((o) => ({
+      memberId: o.memberId,
+      userId: '',
+      memberNickname: o.memberNickname,
+      permission: o.permission,
+      joinedAt: o.joinedAt ?? null,
+      status: o.status === 'SUBMITTED' ? 'SUBMITTED' : 'NOT_SUBMITTED',
+      skillLevel: o.skillLevel,
+      additionalNote: o.additionalNote ?? null,
+      availabilitySlots: o.availabilitySlots,
+    }))
+  }
+
+  const mine = merged.filter((m) => m.memberId === myMemberId.value)
+  const owners = merged.filter((m) => m.memberId !== myMemberId.value && m.permission === 'OWNER')
+  const rest = merged.filter((m) => m.memberId !== myMemberId.value && m.permission !== 'OWNER')
+  return [...mine, ...owners, ...rest]
+})
+
+const hasMembers = computed(() => orderedMembers.value.length > 0)
 
 type PageState = 'loading' | 'view' | 'error'
 
@@ -67,6 +143,17 @@ async function savePersona(): Promise<void> {
   }
 }
 
+async function copyInviteCode(): Promise<void> {
+  const code = group.value?.inviteCode
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code)
+    toastStore.pushToast('초대 코드를 복사했어요', code, 'success')
+  } catch {
+    toastStore.pushToast('복사하지 못했어요', '직접 코드를 복사해 주세요.', 'error')
+  }
+}
+
 onMounted(() => {
   void loadPage()
 })
@@ -83,13 +170,14 @@ async function loadPage(): Promise<void> {
     pageState.value = 'error'
     return
   }
-  // AI 팀장 퍼소나 + 활동 통계는 best-effort 로 불러온다.
   const results = await Promise.allSettled([
     getAiManager(groupId.value),
     group.value?.status === 'ACTIVE' ? getGroupMembersActivity(groupId.value) : Promise.resolve([]),
+    reloadMembers(), // 방장 포함 로스터 확보
   ])
   aiManager.value = results[0].status === 'fulfilled' ? results[0].value : null
-  activityRows.value = results[1].status === 'fulfilled' ? (results[1].value as MemberActivityRow[]) : []
+  activityRows.value =
+    results[1].status === 'fulfilled' ? (results[1].value as MemberActivityRow[]) : []
 }
 
 function todayIso(): string {
@@ -109,7 +197,6 @@ function countMapFor(memberId: string): Map<string, number> {
   return map
 }
 
-// 3. 이번 주 완료(최근 7일 내 완료한 과제 수)
 function thisWeekCount(memberId: string): number {
   const map = countMapFor(memberId)
   const today = todayIso()
@@ -118,7 +205,6 @@ function thisWeekCount(memberId: string): number {
   return sum
 }
 
-// 5. 최근 활동일
 function lastActivity(memberId: string): string | null {
   const row = activityRows.value.find((r: MemberActivityRow) => r.memberId === memberId)
   if (!row) return null
@@ -129,16 +215,13 @@ function lastActivity(memberId: string): string | null {
   return latest
 }
 
-// 해당 날짜가 속한 주의 월요일(ISO, 주 시작) 날짜를 반환한다.
 function mondayOf(iso: string): string {
   const d = new Date(iso)
-  const dayFromMonday = (d.getDay() + 6) % 7 // Mon=0 … Sun=6
+  const dayFromMonday = (d.getDay() + 6) % 7
   d.setDate(d.getDate() - dayFromMonday)
   return d.toISOString().slice(0, 10)
 }
 
-// 5. 연속 완료(이번 주부터 거꾸로 활동이 이어진 주 수)
-// 이번 주에 아직 활동이 없으면 진행 중인 주로 보고 지난 주를 기준으로 센다.
 function currentStreakWeeks(memberId: string): number {
   const map = countMapFor(memberId)
   const activeWeeks = new Set<string>()
@@ -146,10 +229,8 @@ function currentStreakWeeks(memberId: string): number {
     if (count > 0) activeWeeks.add(mondayOf(date))
   }
   if (activeWeeks.size === 0) return 0
-
   let cursor = mondayOf(todayIso())
   if (!activeWeeks.has(cursor)) cursor = shiftIso(cursor, -7)
-
   let streak = 0
   while (activeWeeks.has(cursor)) {
     streak += 1
@@ -158,7 +239,7 @@ function currentStreakWeeks(memberId: string): number {
   return streak
 }
 
-const hasActivity = computed(() => activityRows.value.length > 0)
+const isActiveGroup = computed(() => group.value?.status === 'ACTIVE')
 
 function formatDate(value?: string | null): string {
   if (!value) return '-'
@@ -168,10 +249,33 @@ function formatDate(value?: string | null): string {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-[var(--color-ink)]">팀원</h1>
-    <p class="mt-1 text-sm text-[var(--color-muted)]">
-      그룹 멤버들의 역할, 온보딩 정보와 활동을 확인하세요.
-    </p>
+    <!-- 헤더 -->
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">팀원</h1>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">역할 · 온보딩 정보 · 활동을 확인하세요</p>
+      </div>
+      <button
+        v-if="group?.inviteCode"
+        type="button"
+        class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+        @click="copyInviteCode"
+      >
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+        초대 코드 복사
+      </button>
+    </div>
 
     <ScreenState
       v-if="pageState === 'loading'"
@@ -191,157 +295,207 @@ function formatDate(value?: string | null): string {
 
     <template v-else>
       <!-- AI 팀장 카드 -->
-      <div class="mt-6 rounded-lg border border-[var(--color-primary)]/30 bg-gradient-to-br from-[rgba(25,195,125,0.06)] to-[rgba(25,195,125,0.02)] p-5 shadow-[var(--shadow-soft)]">
+      <div
+        class="mt-6 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
             <div
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(201,113,80,0.12)]"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
               aria-hidden="true"
             >
-              <img :src="aiManagerAvatar" alt="" class="h-5 w-5" />
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
+                <path d="M5.5 15l.8 2.4L8.7 18l-2.4.8L5.5 21l-.8-2.2L2.3 18l2.4-.6L5.5 15z" />
+              </svg>
             </div>
             <div class="flex flex-col">
               <div class="flex items-center gap-2">
-                <span class="font-semibold text-[var(--color-ink)]">AI 팀장</span>
-                <span class="inline-flex h-5 items-center rounded-full bg-[rgba(25,195,125,0.15)] px-2 text-[11px] font-bold text-[var(--color-primary)]">
-                  AI
-                </span>
+                <span class="font-bold text-[var(--color-ink)]">AI 팀장</span>
+                <span
+                  class="inline-flex h-5 items-center rounded-full bg-[var(--color-tint-50)] px-2 text-[11px] font-bold text-[var(--color-primary-text)]"
+                  >AI</span
+                >
               </div>
               <span class="text-xs text-[var(--color-muted)]">
-                {{ aiManager?.updatedByNickname ? `${aiManager.updatedByNickname}이 설정` : '성격 미설정' }}
+                {{
+                  aiManager?.updatedByNickname
+                    ? `${aiManager.updatedByNickname}님이 설정`
+                    : '성격 미설정'
+                }}
               </span>
             </div>
           </div>
           <button
             v-if="isOwner"
             type="button"
-            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+            class="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
             @click="openPersonaModal"
           >
-            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path
+                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             성격 설정
           </button>
         </div>
 
-        <div v-if="aiManager?.persona" class="mt-3 rounded-md bg-[var(--color-input)] px-4 py-3">
-          <p class="text-sm leading-6 text-[var(--color-ink)]">{{ aiManager.persona }}</p>
+        <div
+          v-if="aiManager?.persona"
+          class="mt-3 rounded-[var(--radius-input)] bg-[var(--color-panel)] px-4 py-3"
+        >
+          <p class="text-sm leading-6 text-[var(--color-body)]">{{ aiManager.persona }}</p>
         </div>
         <p v-else class="mt-3 text-sm text-[var(--color-muted)]">
-          {{ isOwner ? '성격을 설정하면 AI 팀장이 설정한 성격에 맞게 답변해요.' : '아직 AI 팀장 성격이 설정되지 않았어요.' }}
+          {{
+            isOwner
+              ? '성격을 설정하면 AI 팀장이 설정한 성격에 맞게 답변해요.'
+              : '아직 AI 팀장 성격이 설정되지 않았어요.'
+          }}
         </p>
       </div>
 
-      <p v-if="memberList.length === 0" class="mt-8 text-center text-sm text-[var(--color-muted)]">
-        아직 온보딩 정보가 없어요.
+      <p v-if="!hasMembers" class="mt-8 text-center text-sm text-[var(--color-muted)]">
+        아직 팀원이 없어요.
       </p>
 
       <ul v-else class="mt-4 grid gap-4">
         <li
-          v-for="member in memberList"
+          v-for="member in orderedMembers"
           :key="member.memberId"
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+          class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] transition"
+          :class="
+            isMe(member)
+              ? 'border-2 border-[var(--color-primary)]'
+              : 'border border-[var(--color-line)]'
+          "
         >
-          <!-- 헤더: 아바타, 닉네임, 역할, 제출 상태 -->
+          <!-- 내 프로필 칩 -->
+          <span
+            v-if="isMe(member)"
+            class="mb-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] bg-[var(--color-tint-50)] px-2.5 py-1 text-xs font-bold text-[var(--color-primary-text)]"
+          >
+            <svg
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            내 프로필
+          </span>
+
+          <!-- 헤더 -->
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <div
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-bold text-white"
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                :style="{ backgroundColor: getGroupCategoryColor(member.memberId) }"
                 aria-hidden="true"
               >
                 {{ member.memberNickname.slice(0, 1).toUpperCase() }}
               </div>
               <div class="flex flex-col">
                 <div class="flex items-center gap-2">
-                  <span class="font-semibold text-[var(--color-ink)]">{{
-                    member.memberNickname
-                  }}</span>
-                  <!-- 1. 역할 배지 -->
+                  <span class="font-bold text-[var(--color-ink)]">{{ member.memberNickname }}</span>
                   <span
                     :class="[
-                      'inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold',
+                      'inline-flex h-5 items-center rounded-[var(--radius-chip)] px-2 text-[11px] font-bold',
                       member.permission === 'OWNER'
-                        ? 'bg-[rgba(25,195,125,0.15)] text-[var(--color-primary)]'
-                        : 'bg-[var(--color-hover)] text-[var(--color-muted)]',
+                        ? 'bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+                        : 'bg-[var(--color-panel)] text-[var(--color-muted)]',
                     ]"
                   >
                     {{ member.permission === 'OWNER' ? '방장' : '멤버' }}
                   </span>
                 </div>
-                <!-- 6. 가입일 -->
                 <span v-if="member.joinedAt" class="text-xs text-[var(--color-muted)]">
                   {{ formatDate(member.joinedAt) }} 가입
                 </span>
               </div>
             </div>
+            <!-- 미제출만 표시 -->
             <span
-              :class="[
-                'inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold',
-                member.status === 'SUBMITTED'
-                  ? 'bg-[var(--color-active)] text-[var(--color-success)]'
-                  : 'bg-[var(--color-hover)] text-[var(--color-muted)]',
-              ]"
+              v-if="member.status !== 'SUBMITTED'"
+              class="inline-flex h-6 items-center rounded-[var(--radius-chip)] bg-[var(--color-panel)] px-2.5 text-xs font-semibold text-[var(--color-muted)]"
             >
-              {{ member.status === 'SUBMITTED' ? '제출 완료' : '미제출' }}
+              온보딩 미제출
             </span>
           </div>
 
-          <!-- 3 & 5. 활동 통계 (스터디 시작 후) -->
-          <div v-if="hasActivity" class="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div class="rounded-md bg-[var(--color-input)] py-2">
-              <p class="text-lg font-bold text-[var(--color-ink)]">
+          <!-- 활동 통계 (진행 중 + 온보딩 제출 멤버만) -->
+          <div
+            v-if="isActiveGroup && member.status === 'SUBMITTED'"
+            class="mt-4 grid grid-cols-3 gap-2.5 text-center"
+          >
+            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
+              <p class="text-xl font-extrabold text-[var(--color-ink)]">
                 {{ thisWeekCount(member.memberId) }}
               </p>
-              <p class="text-[11px] text-[var(--color-muted)]">이번 주 완료</p>
+              <p class="mt-0.5 text-[11px] text-[var(--color-muted)]">이번 주 완료</p>
             </div>
-            <div class="rounded-md bg-[var(--color-input)] py-2">
-              <p class="text-lg font-bold text-[var(--color-ink)]">
-                🔥 {{ currentStreakWeeks(member.memberId) }}
+            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
+              <p class="text-xl font-extrabold text-[var(--color-primary-text)]">
+                {{ currentStreakWeeks(member.memberId) }}주
               </p>
-              <p class="text-[11px] text-[var(--color-muted)]">연속(주)</p>
+              <p class="mt-0.5 text-[11px] text-[var(--color-muted)]">연속 참여</p>
             </div>
-            <div class="rounded-md bg-[var(--color-input)] py-2">
-              <p class="text-sm font-bold text-[var(--color-ink)]">
+            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
+              <p class="text-base font-extrabold text-[var(--color-ink)]">
                 {{ formatDate(lastActivity(member.memberId)) }}
               </p>
-              <p class="text-[11px] text-[var(--color-muted)]">최근 활동</p>
+              <p class="mt-0.5 text-[11px] text-[var(--color-muted)]">최근 활동</p>
             </div>
           </div>
 
-          <!-- 제출 완료: 온보딩 상세 -->
+          <!-- 온보딩 상세 -->
           <template v-if="member.status === 'SUBMITTED'">
-            <dl class="mt-4 grid gap-3 text-sm">
-              <div>
-                <dt class="text-[var(--color-muted)]">숙련도</dt>
-                <dd class="mt-0.5 font-semibold text-[var(--color-ink)]">
-                  {{ member.skillLevel }}단계 — {{ SKILL_LABELS[member.skillLevel] }}
-                </dd>
-              </div>
-              <div v-if="member.additionalNote">
-                <dt class="text-[var(--color-muted)]">추가 메모</dt>
-                <dd class="mt-0.5 leading-6 text-[var(--color-ink)]">
-                  {{ member.additionalNote }}
-                </dd>
-              </div>
-            </dl>
+            <div class="mt-4 grid gap-3 text-sm sm:grid-cols-[80px_1fr] sm:items-baseline">
+              <span class="text-[var(--color-muted)]">숙련도</span>
+              <span class="font-semibold text-[var(--color-ink)]">
+                {{ member.skillLevel }}단계 — {{ SKILL_LABELS[member.skillLevel] }}
+              </span>
 
-            <div v-if="member.availabilitySlots.length > 0" class="mt-4">
-              <p class="text-sm font-semibold text-[var(--color-muted)]">가능한 시간</p>
-              <ul class="mt-2 flex flex-wrap gap-2">
-                <li
-                  v-for="(slot, i) in member.availabilitySlots"
-                  :key="i"
-                  class="rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink)]"
-                >
-                  {{ DAY_LABELS[slot.dayOfWeek] }}요일 {{ slot.startTime }} – {{ slot.endTime }}
-                </li>
-              </ul>
+              <template v-if="member.availabilitySlots.length > 0">
+                <span class="text-[var(--color-muted)]">가능한 시간</span>
+                <ul class="flex flex-wrap gap-2">
+                  <li
+                    v-for="(slot, i) in member.availabilitySlots"
+                    :key="i"
+                    class="rounded-[var(--radius-input)] bg-[var(--color-panel)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink)]"
+                  >
+                    {{ DAY_LABELS[slot.dayOfWeek] }}요일 {{ slot.startTime }} – {{ slot.endTime }}
+                  </li>
+                </ul>
+              </template>
+
+              <!-- 추가 메모: 내 카드만 -->
+              <template v-if="isMe(member) && member.additionalNote">
+                <span class="text-[var(--color-muted)]">추가 메모</span>
+                <span class="leading-6 text-[var(--color-body)]">{{ member.additionalNote }}</span>
+              </template>
             </div>
           </template>
 
-          <!-- 미제출 안내 -->
           <p v-else class="mt-3 text-sm text-[var(--color-muted)]">
             아직 온보딩을 제출하지 않았어요.
           </p>
@@ -367,28 +521,45 @@ function formatDate(value?: string | null): string {
         aria-modal="true"
         aria-labelledby="persona-modal-title"
       >
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showPersonaModal = false" />
-        <div class="relative w-full max-w-md rounded-xl bg-[var(--color-card)] p-6 shadow-2xl">
+        <div
+          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          @click="showPersonaModal = false"
+        />
+        <div
+          class="relative w-full max-w-md rounded-[var(--radius-card)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-strong)]"
+        >
           <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(201,113,80,0.12)]">
-              <img :src="aiManagerAvatar" alt="" class="h-6 w-6" />
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+            >
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
+              </svg>
             </div>
             <div>
-              <h2 id="persona-modal-title" class="text-base font-bold text-[var(--color-ink)]">AI 팀장 성격 설정</h2>
+              <h2 id="persona-modal-title" class="text-base font-bold text-[var(--color-ink)]">
+                AI 팀장 성격 설정
+              </h2>
               <p class="text-xs text-[var(--color-muted)]">자연어로 자유롭게 입력하세요</p>
             </div>
           </div>
 
           <div class="mt-4">
-            <label for="persona-input" class="block text-sm font-semibold text-[var(--color-ink)]">성격 / 역할 설명</label>
+            <label for="persona-input" class="block text-sm font-semibold text-[var(--color-ink)]"
+              >성격 / 역할 설명</label
+            >
             <textarea
               id="persona-input"
               v-model="personaDraft"
               rows="5"
-              placeholder="예) 넌 따뜻한 멘토야. 팀원들을 항상 격려하고 작은 성취도 크게 칭찬해줘. 어려운 개념은 쉬운 비유로 설명하고, 실패해도 긍정적인 시각으로 바라봐."
-              class="mt-1.5 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
+              placeholder="예) 넌 따뜻한 멘토야. 팀원들을 항상 격려하고 작은 성취도 크게 칭찬해줘."
+              class="mt-1.5 w-full resize-none rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
             />
-            <p v-if="personaSaveError" role="alert" class="mt-1.5 text-xs font-semibold text-[var(--color-danger)]">
+            <p
+              v-if="personaSaveError"
+              role="alert"
+              class="mt-1.5 text-xs font-semibold text-[var(--color-danger)]"
+            >
               {{ personaSaveError }}
             </p>
           </div>
@@ -397,7 +568,7 @@ function formatDate(value?: string | null): string {
             <button
               type="button"
               :disabled="isSavingPersona"
-              class="flex-1 inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:opacity-50"
+              class="inline-flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-4 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:opacity-50"
               @click="showPersonaModal = false"
             >
               취소
@@ -405,7 +576,7 @@ function formatDate(value?: string | null): string {
             <button
               type="button"
               :disabled="isSavingPersona || !personaDraft.trim()"
-              class="flex-1 inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] disabled:cursor-not-allowed disabled:opacity-50"
               @click="savePersona"
             >
               {{ isSavingPersona ? '저장 중…' : '저장' }}

@@ -4,13 +4,15 @@ import { useRoute, useRouter } from 'vue-router'
 
 import {
   getGroup,
+  joinGroupByInviteCode,
   type StudyGroup,
   type StudyGroupStatus,
   useGroupListStore,
 } from '@/entities/group'
-import { getMyOnboarding } from '@/entities/onboarding'
+import { getMyOnboarding, useOnboardingStatusStore } from '@/entities/onboarding'
 import { useSessionStore } from '@/features/auth/session'
 import { NotificationBell, useInAppNotificationStore } from '@/features/notification'
+import { ApiError } from '@/shared/api'
 import { apiOrigin } from '@/shared/config/api'
 
 type StatusPhase = 'before' | 'active' | 'done'
@@ -25,6 +27,7 @@ const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
 const groupListStore = useGroupListStore()
+const onboardingStatusStore = useOnboardingStatusStore()
 const notificationStore = useInAppNotificationStore()
 
 const currentGroupId = computed(() => String(route.params.groupId ?? ''))
@@ -32,6 +35,14 @@ const currentGroup = ref<StudyGroup | null>(null)
 const myOnboardingSubmitted = ref(false)
 const isLoggingOut = ref(false)
 const showUserMenu = ref(false)
+
+// 새 그룹 팝오버 + 코드 참여 모달
+const showCreateMenu = ref(false)
+const createMenuPos = ref({ top: 0, left: 0 })
+const showJoinModal = ref(false)
+const joinCode = ref('')
+const joinError = ref('')
+const isJoining = ref(false)
 
 const loginNotice = computed(() => {
   if (route.query.error === 'oauth') return 'Google 로그인에 실패했습니다. 다시 시도해주세요.'
@@ -52,17 +63,36 @@ const PRIVATE_CHANNELS: ChannelDef[] = [
   { routeName: 'group-retrospective', label: '회고', type: 'review' },
 ]
 
+const ONBOARD_CHANNEL: ChannelDef = {
+  routeName: 'group-onboarding',
+  label: '온보딩',
+  type: 'onboard',
+}
+
+const showOnboarding = computed(() => {
+  if (!currentGroup.value) return false
+  const s = currentGroup.value.status
+  if (s === 'READY_TO_START' || s === 'ACTIVE' || s === 'COMPLETED' || s === 'ARCHIVED')
+    return false
+  // 제출 직후엔 onboardingStatusStore 신호로(서버 재조회 없이) 즉시 탭을 숨긴다.
+  if (onboardingStatusStore.submittedGroupIds.includes(currentGroupId.value)) return false
+  return !myOnboardingSubmitted.value
+})
 
 const channelSections = computed<ChannelSection[]>(() => {
-  const status = currentGroup.value?.status
-  if (status === 'ACTIVE' || status === 'COMPLETED') {
-    return [
-      { label: '공용 공간', channels: [...PUBLIC_CHANNELS] },
-      { label: '개인 공간', channels: PRIVATE_CHANNELS },
-    ]
+  const isActive = currentGroup.value?.status === 'ACTIVE'
+
+  if (!isActive) {
+    const nonActiveChannels = showOnboarding.value
+      ? [PUBLIC_CHANNELS[0]!, ONBOARD_CHANNEL, PUBLIC_CHANNELS[2]!]
+      : [PUBLIC_CHANNELS[0]!, PUBLIC_CHANNELS[2]!]
+    return [{ label: '', channels: nonActiveChannels }]
   }
-  // DRAFT / ONBOARDING / READY_TO_START / ARCHIVED → 홈·팀원만
-  return [{ label: '', channels: [PUBLIC_CHANNELS[0]!, PUBLIC_CHANNELS[2]!] }]
+
+  return [
+    { label: '공용 공간', channels: [...PUBLIC_CHANNELS] },
+    { label: '개인 공간', channels: PRIVATE_CHANNELS },
+  ]
 })
 
 const allChannels = computed(() => channelSections.value.flatMap((s) => s.channels))
@@ -89,11 +119,11 @@ const userInitial = computed(() => sessionStore.user?.nickname?.slice(0, 1)?.toU
 
 onMounted(() => {
   if (sessionStore.isAuthenticated) void groupListStore.loadGroups()
-  document.addEventListener('click', closeUserMenu)
+  document.addEventListener('click', closeMenus)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeUserMenu)
+  document.removeEventListener('click', closeMenus)
 })
 
 watch(
@@ -167,24 +197,11 @@ function getStatusPhase(status: StudyGroupStatus): StatusPhase {
   return 'before'
 }
 
-function getIconClasses(group: StudyGroup, isSelected: boolean): string {
+// 레일 그룹 아이콘은 그룹마다 다른 카테고리 색을 쓴다. 상태는 우하단 점으로 표시.
+function getIconClasses(_group: StudyGroup, isSelected: boolean): string {
   const base =
-    'flex h-12 w-12 items-center justify-center text-sm font-bold transition-all duration-100'
-  const ring = isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-rail' : ''
-  const phase = getStatusPhase(group.status)
-  if (phase === 'active') {
-    return isSelected
-      ? `${base} ${ring} rounded-2xl bg-[var(--color-primary)] text-white`
-      : `${base} rounded-3xl bg-[var(--color-active)] text-[var(--color-muted)] group-hover:rounded-2xl group-hover:bg-[var(--color-primary)] group-hover:text-white`
-  }
-  if (phase === 'before') {
-    return isSelected
-      ? `${base} ${ring} rounded-2xl bg-[#fde68a] text-[#92400e]`
-      : `${base} rounded-3xl bg-[#fef3c7] text-[#d97706] group-hover:rounded-2xl group-hover:bg-[#fde68a] group-hover:text-[#92400e]`
-  }
-  return isSelected
-    ? `${base} ${ring} rounded-2xl bg-[#e5e7eb] text-[#9ca3af]`
-    : `${base} rounded-3xl bg-[#f3f4f6] text-[#d1d5db] group-hover:rounded-2xl group-hover:bg-[#e5e7eb] group-hover:text-[#9ca3af]`
+    'flex h-12 w-12 items-center justify-center text-sm font-bold text-white transition-all duration-100'
+  return isSelected ? `${base} rounded-2xl` : `${base} rounded-3xl group-hover:rounded-2xl`
 }
 
 function getDotClass(status: StudyGroupStatus): string {
@@ -194,13 +211,66 @@ function getDotClass(status: StudyGroupStatus): string {
   return 'bg-[#c0c4cc]'
 }
 
+// 레일 아이콘 배경: 시작(진행 중)=초록, 시작 전=피치, 완료/보관=회색
+function getIconBg(status: StudyGroupStatus): string {
+  const phase = getStatusPhase(status)
+  if (phase === 'active') return 'var(--color-primary)'
+  if (phase === 'before') return '#f4a259'
+  return '#c0c4cc'
+}
+
 function toggleUserMenu(event: Event): void {
   event.stopPropagation()
   showUserMenu.value = !showUserMenu.value
 }
 
-function closeUserMenu(): void {
+function closeMenus(): void {
   showUserMenu.value = false
+  showCreateMenu.value = false
+}
+
+function toggleCreateMenu(event: MouseEvent): void {
+  event.stopPropagation()
+  if (!showCreateMenu.value) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    createMenuPos.value = { top: rect.top, left: rect.right + 8 }
+  }
+  showCreateMenu.value = !showCreateMenu.value
+}
+
+function goCreateGroup(): void {
+  showCreateMenu.value = false
+  void router.push({ name: 'group-create' })
+}
+
+function openJoinModal(): void {
+  showCreateMenu.value = false
+  joinCode.value = ''
+  joinError.value = ''
+  showJoinModal.value = true
+}
+
+async function submitJoin(): Promise<void> {
+  const code = joinCode.value.trim()
+  if (!code || isJoining.value) return
+  isJoining.value = true
+  joinError.value = ''
+  try {
+    const member = await joinGroupByInviteCode(code)
+    await groupListStore.loadGroups()
+    notificationStore.pushToast(
+      '그룹에 참여했어요',
+      '온보딩을 작성하면 시작할 수 있어요.',
+      'success',
+    )
+    showJoinModal.value = false
+    await router.push({ name: 'group-onboarding', params: { groupId: member.groupId } })
+  } catch (error) {
+    joinError.value =
+      error instanceof ApiError ? error.message : '참여하지 못했어요. 초대 코드를 확인해 주세요.'
+  } finally {
+    isJoining.value = false
+  }
 }
 
 async function handleLogout(): Promise<void> {
@@ -311,7 +381,7 @@ function startGoogleLogin(): void {
   <div v-else class="flex h-full overflow-hidden">
     <!-- ── Server rail (72px) ── -->
     <nav
-      class="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto bg-[var(--color-rail)] py-3"
+      class="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-surface)] py-3"
       aria-label="스터디 그룹"
     >
       <!-- Home button -->
@@ -322,14 +392,17 @@ function startGoogleLogin(): void {
       >
         <div
           :class="[
-            'flex h-12 w-12 items-center justify-center bg-[var(--color-primary)] font-bold text-white transition-all duration-100',
-            !currentGroupId
-              ? 'rounded-2xl text-sm ring-2 ring-primary-deep ring-offset-2 ring-offset-rail'
-              : 'rounded-3xl text-xs group-hover:rounded-2xl',
+            'flex h-12 w-12 items-center justify-center bg-[var(--color-primary)] font-bold text-white transition-[border-radius] duration-100',
+            !currentGroupId ? 'rounded-2xl text-sm' : 'rounded-3xl text-xs group-hover:rounded-2xl',
           ]"
         >
           SP
         </div>
+        <div
+          class="absolute -left-[13px] top-1/2 w-[3px] -translate-y-1/2 rounded-r-sm bg-white"
+          :class="!currentGroupId ? 'h-10' : 'h-0 group-hover:h-5'"
+          style="transition: height 100ms"
+        />
       </RouterLink>
 
       <div class="mx-auto h-px w-8 bg-[var(--color-line-strong)]" />
@@ -343,7 +416,10 @@ function startGoogleLogin(): void {
         :title="`${group.name} · ${statusLabel[group.status]}`"
       >
         <!-- Icon -->
-        <div :class="getIconClasses(group, currentGroupId === group.id)">
+        <div
+          :class="getIconClasses(group, currentGroupId === group.id)"
+          :style="{ backgroundColor: getIconBg(group.status) }"
+        >
           {{ getGroupInitials(group.name) }}
         </div>
 
@@ -355,15 +431,22 @@ function startGoogleLogin(): void {
           ]"
         />
 
+        <!-- Selection pill -->
+        <div
+          class="absolute -left-[13px] top-1/2 w-[3px] -translate-y-1/2 rounded-r-sm bg-white"
+          :class="currentGroupId === group.id ? 'h-10' : 'h-0 group-hover:h-5'"
+          style="transition: height 100ms"
+        />
       </RouterLink>
 
       <div class="mx-auto h-px w-8 bg-[var(--color-line-strong)]" />
 
-      <!-- Create group -->
-      <RouterLink
-        :to="{ name: 'group-create' }"
+      <!-- 새 그룹 / 코드 참여 (팝오버) -->
+      <button
+        type="button"
         class="group flex h-12 w-12 shrink-0 items-center justify-center rounded-3xl bg-[var(--color-active)] text-[var(--color-success)] transition-[border-radius,background-color] duration-100 hover:rounded-2xl hover:bg-[var(--color-success)] hover:text-white"
-        title="새 그룹 만들기"
+        title="새 그룹 / 코드 참여"
+        @click="toggleCreateMenu"
       >
         <svg
           class="h-5 w-5"
@@ -375,52 +458,35 @@ function startGoogleLogin(): void {
         >
           <path d="M12 5v14M5 12h14" />
         </svg>
-      </RouterLink>
-
-      <!-- Join group -->
-      <RouterLink
-        :to="{ name: 'group-join' }"
-        class="group flex h-12 w-12 shrink-0 items-center justify-center rounded-3xl bg-[var(--color-active)] text-[var(--color-muted)] transition-[border-radius,background-color] duration-100 hover:rounded-2xl hover:bg-[var(--color-primary)] hover:text-white"
-        title="초대 코드로 참여"
-      >
-        <svg
-          class="h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-        </svg>
-      </RouterLink>
+      </button>
     </nav>
 
     <!-- ── Channel panel (240px) ── -->
-    <div class="flex w-60 shrink-0 flex-col overflow-hidden border-r border-line bg-surface">
+    <div
+      class="flex w-60 shrink-0 flex-col overflow-hidden border-r border-[var(--color-line)] bg-[var(--color-surface)]"
+    >
       <!-- Panel header -->
       <div
         class="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] px-3"
       >
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-[var(--color-ink)]">
-            {{ currentGroup?.name ?? 'StudyPot' }}
+            {{ currentGroupId ? (currentGroup?.name ?? '...') : '내 스터디' }}
           </p>
           <!-- Status badge for current group -->
-          <span
+          <p
             v-if="currentGroupPhase"
             :class="[
-              'mt-0.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
+              'text-[10px] font-medium leading-none mt-0.5',
               currentGroupPhase === 'active'
-                ? 'bg-tint-50 text-primary-text'
+                ? 'text-[var(--color-success)]'
                 : currentGroupPhase === 'before'
-                  ? 'bg-amber-50 text-amber-700'
-                  : 'bg-hover text-muted',
+                  ? 'text-[#e0953a]'
+                  : 'text-[var(--color-muted-deep)]',
             ]"
           >
             {{ statusLabel[currentGroup!.status] }}
-          </span>
+          </p>
         </div>
       </div>
 
@@ -440,15 +506,17 @@ function startGoogleLogin(): void {
               :key="ch.routeName"
               :to="{ name: ch.routeName, params: { groupId: currentGroupId } }"
               :class="[
-                'group relative flex h-8 items-center gap-2 rounded-lg border-l-[3px] border-transparent px-2 text-sm transition-colors',
-                'text-muted hover:bg-hover hover:text-ink',
+                'group flex h-8 items-center gap-2 rounded px-2 text-sm transition-colors',
+                ch.type === 'onboard'
+                  ? 'text-[#e0953a] hover:bg-[var(--color-hover)] hover:text-[#f0a04b]'
+                  : 'text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]',
               ]"
-              exact-active-class="!border-primary bg-tint-50 !text-primary-text font-medium"
+              :exact-active-class="
+                ch.type === 'onboard'
+                  ? 'bg-[var(--color-hover)] !text-[#f0a04b]'
+                  : 'bg-[var(--color-active)] !text-[var(--color-ink)]'
+              "
             >
-              <!-- Left bar indicator (active state) -->
-              <span
-                class="pointer-events-none absolute -left-2 bottom-0 top-0 w-0.75 rounded-full bg-primary opacity-0 transition-opacity group-[&.router-link-exact-active]:opacity-100"
-              />
               <!-- Channel icon -->
               <svg
                 class="h-4 w-4 shrink-0 opacity-60 group-[&.router-link-exact-active]:opacity-100"
@@ -500,16 +568,20 @@ function startGoogleLogin(): void {
 
               <span class="truncate">{{ ch.label }}</span>
 
+              <!-- Onboarding action indicator -->
+              <span
+                v-if="ch.type === 'onboard'"
+                class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[#e0953a]"
+              />
             </RouterLink>
           </template>
         </template>
 
-        <!-- No group selected: simple links -->
+        <!-- No group selected: 참여 중인 스터디 목록 -->
         <template v-else>
-          <p class="mb-1 mt-1 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]">메뉴</p>
           <RouterLink
             :to="{ name: 'groups' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+            class="mb-1 flex h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
             active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
           >
             <svg
@@ -526,44 +598,35 @@ function startGoogleLogin(): void {
               <rect x="3" y="14" width="7" height="7" />
               <rect x="14" y="14" width="7" height="7" />
             </svg>
-            <span>그룹 목록</span>
+            <span>전체 그룹</span>
           </RouterLink>
+
+          <p class="mb-1 mt-3 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]">
+            참여 중
+          </p>
           <RouterLink
-            :to="{ name: 'group-create' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
-            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
+            v-for="g in groupListStore.groups"
+            :key="g.id"
+            :to="{ name: 'group-overview', params: { groupId: g.id } }"
+            class="flex h-10 items-center gap-2.5 rounded-lg px-2 text-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-hover)]"
+            active-class="bg-[var(--color-active)]"
           >
-            <svg
-              class="h-4 w-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
+            <span
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white"
+              :style="{ backgroundColor: getIconBg(g.status) }"
             >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v8M8 12h8" />
-            </svg>
-            <span>새 그룹 만들기</span>
+              {{ getGroupInitials(g.name) }}
+            </span>
+            <span class="min-w-0 flex-1 truncate font-medium">{{ g.name }}</span>
+            <span class="h-2 w-2 shrink-0 rounded-full" :class="getDotClass(g.status)" />
           </RouterLink>
-          <RouterLink
-            :to="{ name: 'group-join' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
-            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
+
+          <p
+            v-if="groupListStore.groups.length === 0"
+            class="px-2 py-4 text-xs leading-5 text-[var(--color-muted)]"
           >
-            <svg
-              class="h-4 w-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-            </svg>
-            <span>초대 코드로 참여</span>
-          </RouterLink>
+            아직 참여 중인 그룹이 없어요.<br />레일의 + 로 새 그룹을 만들어 보세요.
+          </p>
         </template>
       </nav>
 
@@ -602,7 +665,7 @@ function startGoogleLogin(): void {
 
       <!-- User panel -->
       <div
-        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 border-t border-line bg-surface px-2 transition-colors hover:bg-hover"
+        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-2 transition-colors hover:bg-[var(--color-hover)]"
         role="button"
         tabindex="0"
         @click="toggleUserMenu"
@@ -705,4 +768,153 @@ function startGoogleLogin(): void {
       </div>
     </div>
   </div>
+
+  <!-- 새 그룹 팝오버 -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-all duration-150 ease-out"
+      enter-from-class="opacity-0 -translate-x-1"
+      enter-to-class="opacity-100 translate-x-0"
+      leave-active-class="transition-all duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showCreateMenu"
+        class="fixed z-50 w-44 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-1.5 shadow-[var(--shadow-strong)]"
+        :style="{ top: `${createMenuPos.top}px`, left: `${createMenuPos.left}px` }"
+        @click.stop
+      >
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-[var(--radius-button)] px-3 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+          @click="goCreateGroup"
+        >
+          <svg
+            class="h-4 w-4 text-[var(--color-primary)]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          방 생성하기
+        </button>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-[var(--radius-button)] px-3 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+          @click="openJoinModal"
+        >
+          <svg
+            class="h-4 w-4 text-[var(--color-info)]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          코드로 참여하기
+        </button>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- 코드로 참여하기 모달 -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-150 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showJoinModal"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="join-modal-title"
+      >
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showJoinModal = false" />
+        <div
+          class="relative w-full max-w-md rounded-[var(--radius-card)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-strong)]"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <h2 id="join-modal-title" class="text-lg font-bold text-[var(--color-ink)]">
+              코드로 참여하기
+            </h2>
+            <button
+              type="button"
+              class="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+              aria-label="닫기"
+              @click="showJoinModal = false"
+            >
+              ✕
+            </button>
+          </div>
+          <p class="mt-1 text-sm text-[var(--color-muted)]">
+            방장에게 받은 초대 코드를 입력하세요.
+          </p>
+
+          <input
+            v-model="joinCode"
+            type="text"
+            placeholder="초대 코드 입력"
+            class="mt-4 h-12 w-full rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3.5 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
+            @keydown.enter.prevent="submitJoin"
+          />
+
+          <p class="mt-2 flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
+            <svg
+              class="h-3.5 w-3.5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            코드는 그룹의 팀원 화면에서 복사할 수 있어요.
+          </p>
+
+          <p
+            v-if="joinError"
+            role="alert"
+            class="mt-2 text-sm font-semibold text-[var(--color-danger)]"
+          >
+            {{ joinError }}
+          </p>
+
+          <div class="mt-5 flex gap-3">
+            <button
+              type="button"
+              :disabled="isJoining"
+              class="inline-flex h-11 w-28 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:opacity-50"
+              @click="showJoinModal = false"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              :disabled="isJoining || !joinCode.trim()"
+              class="inline-flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+              @click="submitJoin"
+            >
+              {{ isJoining ? '참여 중…' : '참여하기' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>

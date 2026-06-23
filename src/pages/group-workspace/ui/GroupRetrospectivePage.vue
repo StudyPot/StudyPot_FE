@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
 
+import { listWeeklyTasks } from '@/entities/curriculum'
 import {
   getMyRetrospective,
   getRetrospectiveOverview,
@@ -13,46 +14,63 @@ import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
 
-const toastStore = useInAppNotificationStore()
-
 const workspaceContext = inject(groupWorkspaceContextKey)
-
 if (!workspaceContext) {
   throw new Error('GroupRetrospectivePage must be used inside GroupWorkspacePage.')
 }
-
 const { groupId } = workspaceContext
+const toastStore = useInAppNotificationStore()
 
 type PageState = 'loading' | 'empty' | 'ready' | 'error'
 
-// 리커트 5점 척도 (5=매우 그렇다 … 1=매우 아니다)
-const LIKERT_OPTIONS = [
-  { score: 5, label: '매우 그렇다' },
-  { score: 4, label: '그렇다' },
-  { score: 3, label: '보통' },
-  { score: 2, label: '아니다' },
-  { score: 1, label: '매우 아니다' },
-]
+// 5점 리커트 라벨 (1 매우 그렇지 않다 … 5 매우 그렇다)
+const LIKERT_LABELS = ['매우 그렇지 않다', '그렇지 않다', '보통', '그렇다', '매우 그렇다']
+
+// 제출 답변(읽기) 라벨 칩 색
+function likertChipClass(score: number | null): string {
+  switch (score) {
+    case 5:
+      return 'bg-[var(--color-primary)] text-white'
+    case 4:
+      return 'bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+    case 3:
+      return 'bg-[var(--color-active)] text-[var(--color-muted)]'
+    case 2:
+      return 'bg-[rgba(255,176,32,0.18)] text-[#9a6a00]'
+    case 1:
+      return 'bg-[rgba(255,82,71,0.15)] text-[var(--color-danger)]'
+    default:
+      return 'bg-[var(--color-active)] text-[var(--color-muted)]'
+  }
+}
 
 const pageState = ref<PageState>('loading')
 const errorMessage = ref('')
 const weeks = ref<RetrospectiveWeekOverview[]>([])
 const selectedWeekId = ref<string | null>(null)
 
-// 작성 폼 상태: questionId -> score(리커트) | text(서술)
-const scoreAnswers = ref<Record<string, number>>({})
-const textAnswers = ref<Record<string, string>>({})
+const scoreAnswers = reactive<Record<string, number>>({})
+const textAnswers = reactive<Record<string, string>>({})
 const submittedAnswers = ref<RetrospectiveAnswer[] | null>(null)
+const taskProgress = ref<{ done: number; total: number } | null>(null)
 const isSubmitting = ref(false)
 const submitError = ref('')
 
 const selectedWeek = computed<RetrospectiveWeekOverview | null>(
-  () => weeks.value.find((week) => week.weekId === selectedWeekId.value) ?? null,
+  () => weeks.value.find((w) => w.weekId === selectedWeekId.value) ?? null,
 )
 
-onMounted(() => {
-  void loadOverview()
+const questionMode = computed<'interactive' | 'readonly' | 'locked'>(() => {
+  const w = selectedWeek.value
+  if (!w || !w.unlocked) return 'locked'
+  return w.answered ? 'readonly' : 'interactive'
 })
+
+const likertQuestionCount = computed(
+  () => selectedWeek.value?.questions.filter((q) => q.type === 'LIKERT_5').length ?? 0,
+)
+
+onMounted(() => void loadOverview())
 
 async function loadOverview(): Promise<void> {
   pageState.value = 'loading'
@@ -73,22 +91,26 @@ async function loadOverview(): Promise<void> {
   }
 }
 
-// 열려있고 미작성인 가장 최근 주차 우선, 없으면 열린 마지막 주차, 그것도 없으면 첫 주차.
+// 현재(진행 중) 주차 우선, 없으면 마지막 열린 주차, 그것도 없으면 첫 주차.
 function defaultWeek(): RetrospectiveWeekOverview {
-  const openUnanswered = [...weeks.value].reverse().find((week) => week.unlocked && !week.answered)
-  if (openUnanswered) return openUnanswered
-  const openLatest = [...weeks.value].reverse().find((week) => week.unlocked)
-  return openLatest ?? weeks.value[0]!
+  const inProgress = weeks.value.find((w) => w.status === 'IN_PROGRESS')
+  if (inProgress) return inProgress
+  const lastUnlocked = [...weeks.value].reverse().find((w) => w.unlocked)
+  return lastUnlocked ?? weeks.value[0]!
 }
 
 async function selectWeek(week: RetrospectiveWeekOverview): Promise<void> {
   selectedWeekId.value = week.weekId
   submitError.value = ''
-  scoreAnswers.value = {}
-  textAnswers.value = {}
+  Object.keys(scoreAnswers).forEach((k) => delete scoreAnswers[k])
+  Object.keys(textAnswers).forEach((k) => delete textAnswers[k])
   submittedAnswers.value = null
+  taskProgress.value = null
+
   if (week.answered) {
     await loadSubmitted(week.weekId)
+  } else if (!week.unlocked) {
+    await loadTaskProgress(week.weekId)
   }
 }
 
@@ -101,35 +123,52 @@ async function loadSubmitted(weekId: string): Promise<void> {
   }
 }
 
-function answerText(questionId: string): string {
-  const found = (submittedAnswers.value ?? []).find((answer) => answer.questionId === questionId)
-  if (!found) return '-'
-  if (found.score != null) {
-    return (
-      LIKERT_OPTIONS.find((option) => option.score === found.score)?.label ?? String(found.score)
-    )
+async function loadTaskProgress(weekId: string): Promise<void> {
+  try {
+    const tasks = await listWeeklyTasks(weekId)
+    const countable = tasks.filter((t) => t.completion?.status !== 'SKIPPED')
+    const done = countable.filter((t) => t.completion?.status === 'DONE').length
+    taskProgress.value = { done, total: countable.length }
+  } catch {
+    taskProgress.value = null
   }
-  return found.text ?? '-'
 }
 
-const canSubmit = computed(
-  () => !!selectedWeek.value && selectedWeek.value.unlocked && !selectedWeek.value.answered,
-)
+function submittedScore(questionId: string): number | null {
+  const found = (submittedAnswers.value ?? []).find((a) => a.questionId === questionId)
+  return found?.score ?? null
+}
+
+function submittedText(questionId: string): string {
+  const found = (submittedAnswers.value ?? []).find((a) => a.questionId === questionId)
+  return found?.text ?? '-'
+}
+
+function scoreOf(questionId: string): number | null {
+  return questionMode.value === 'readonly'
+    ? submittedScore(questionId)
+    : (scoreAnswers[questionId] ?? null)
+}
+
+function setScore(questionId: string, value: number): void {
+  if (questionMode.value !== 'interactive') return
+  scoreAnswers[questionId] = value
+}
+
+const canSubmit = computed(() => questionMode.value === 'interactive')
 
 async function handleSubmit(): Promise<void> {
   const week = selectedWeek.value
   if (!week) return
 
-  const answers: RetrospectiveAnswer[] = week.questions.map((question) =>
-    question.type === 'LIKERT_5'
-      ? { questionId: question.id, score: scoreAnswers.value[question.id] ?? null }
-      : { questionId: question.id, text: (textAnswers.value[question.id] ?? '').trim() || null },
+  const answers: RetrospectiveAnswer[] = week.questions.map((q) =>
+    q.type === 'LIKERT_5'
+      ? { questionId: q.id, score: scoreAnswers[q.id] ?? null }
+      : { questionId: q.id, text: (textAnswers[q.id] ?? '').trim() || null },
   )
 
-  const unanswered = week.questions.some((question) =>
-    question.type === 'LIKERT_5'
-      ? scoreAnswers.value[question.id] == null
-      : !(textAnswers.value[question.id] ?? '').trim(),
+  const unanswered = week.questions.some((q) =>
+    q.type === 'LIKERT_5' ? scoreAnswers[q.id] == null : !(textAnswers[q.id] ?? '').trim(),
   )
   if (unanswered) {
     submitError.value = '모든 질문에 답해 주세요.'
@@ -154,10 +193,35 @@ async function handleSubmit(): Promise<void> {
     isSubmitting.value = false
   }
 }
+
+// 칩 상태/스타일
+function isLockedWeek(week: RetrospectiveWeekOverview): boolean {
+  return !week.unlocked && week.status === 'PENDING'
+}
+
+function chipDisabled(week: RetrospectiveWeekOverview): boolean {
+  return isLockedWeek(week)
+}
+
+// 완료(제출) 주차: 초록(선택 시 진한 초록). 현재/열림 주차: 흰색(선택 시 다크). 미생성: 회색 잠금.
+function chipClasses(week: RetrospectiveWeekOverview): string {
+  const selected = week.weekId === selectedWeekId.value
+  if (isLockedWeek(week)) {
+    return 'border-[var(--color-line)] bg-[var(--color-panel)] text-[var(--color-faint)]'
+  }
+  if (week.answered) {
+    return selected
+      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+      : 'border-[var(--color-tint-200)] bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+  }
+  return selected
+    ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
+    : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-primary)]'
+}
 </script>
 
 <template>
-  <div class="grid gap-5">
+  <div class="grid gap-4">
     <ScreenState
       v-if="pageState === 'loading'"
       variant="loading"
@@ -182,132 +246,252 @@ async function handleSubmit(): Promise<void> {
     />
 
     <template v-else-if="pageState === 'ready'">
-      <!-- 주차 선택 (잠긴 주차는 비활성) -->
+      <!-- 주차별 회고 (칩) -->
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)]"
+        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
-        <p class="text-sm font-semibold text-[var(--color-primary)]">회고</p>
-        <h2 class="mt-1 text-xl font-bold text-[var(--color-ink)]">주차별 회고</h2>
-        <p class="mt-1 text-sm text-[var(--color-muted)]">
-          그 주차의 TODO를 모두 완료하면 회고가 열려요.
-        </p>
-        <div class="mt-4 flex flex-wrap gap-2">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-bold text-[var(--color-ink)]">주차별 회고</h2>
+          <p class="text-xs text-[var(--color-muted)]">할 일을 모두 끝낸 주차만 열려요</p>
+        </div>
+
+        <div class="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10">
           <button
             v-for="week in weeks"
             :key="week.weekId"
             type="button"
-            :disabled="!week.unlocked"
-            :title="week.unlocked ? '' : 'TODO를 모두 완료하면 열려요'"
-            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40"
-            :class="
-              week.weekId === selectedWeekId
-                ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
-            "
-            @click="week.unlocked && selectWeek(week)"
+            :disabled="chipDisabled(week)"
+            class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition disabled:cursor-not-allowed"
+            :class="chipClasses(week)"
+            @click="!chipDisabled(week) && selectWeek(week)"
           >
-            {{ week.weekNumber }}주차
-            <span v-if="!week.unlocked" aria-hidden="true">🔒</span>
-            <span
-              v-else-if="week.answered"
-              class="h-1.5 w-1.5 rounded-full"
-              :class="week.weekId === selectedWeekId ? 'bg-white' : 'bg-[var(--color-success)]'"
-              aria-hidden="true"
-            />
+            <svg
+              v-if="week.answered"
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            <svg
+              v-else-if="isLockedWeek(week)"
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span>{{ week.weekNumber }}주</span>
           </button>
         </div>
       </section>
 
-      <!-- 잠김 -->
+      <!-- 잠김 안내 -->
       <section
         v-if="selectedWeek && !selectedWeek.unlocked"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        class="flex flex-col gap-3 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between"
       >
-        <h2 class="text-lg font-bold text-[var(--color-ink)]">🔒 아직 잠겨 있어요</h2>
-        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
-          {{ selectedWeek.weekNumber }}주차의 TODO를 모두 완료하면 회고를 작성할 수 있어요.
-        </p>
-      </section>
-
-      <!-- 작성 폼 (열림 + 미작성) -->
-      <section
-        v-else-if="selectedWeek && canSubmit"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <h2 class="text-lg font-bold text-[var(--color-ink)]">
-          {{ selectedWeek.weekNumber }}주차 회고 작성
-        </h2>
-        <p class="mt-1 text-sm text-[var(--color-muted)]">아래 질문에 솔직하게 답해 주세요.</p>
-
-        <div class="mt-5 grid gap-6">
-          <div v-for="(question, qi) in selectedWeek.questions" :key="question.id">
-            <p class="text-sm font-semibold text-[var(--color-ink)]">
-              {{ qi + 1 }}. {{ question.text }}
+        <div class="flex items-center gap-4">
+          <div
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[var(--color-muted)]"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-bold text-[var(--color-ink)]">
+              {{ selectedWeek.weekNumber }}주차 회고는 아직 잠겨 있어요
             </p>
-
-            <div v-if="question.type === 'LIKERT_5'" class="mt-3 flex flex-wrap gap-2">
-              <button
-                v-for="option in LIKERT_OPTIONS"
-                :key="option.score"
-                type="button"
-                class="rounded-md border px-3 py-1.5 text-sm transition"
-                :class="
-                  scoreAnswers[question.id] === option.score
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                    : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] hover:border-[var(--color-primary)]'
-                "
-                @click="scoreAnswers[question.id] = option.score"
+            <p class="mt-1 text-sm text-[var(--color-muted)]">
+              이번 주 할 일을 모두 완료하면 회고가 열려요.<template v-if="taskProgress">
+                지금은 {{ taskProgress.done }}/{{ taskProgress.total }} 완료 ·
+                {{ Math.max(0, taskProgress.total - taskProgress.done) }}개 남음</template
               >
-                {{ option.label }}
-              </button>
-            </div>
-
-            <textarea
-              v-else
-              v-model="textAnswers[question.id]"
-              rows="3"
-              placeholder="자유롭게 작성해 주세요."
-              class="mt-3 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] p-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-primary)] focus:outline-none"
-            />
+            </p>
           </div>
         </div>
-
-        <p
-          v-if="submitError"
-          role="alert"
-          class="mt-4 text-sm font-semibold text-[var(--color-danger)]"
+        <RouterLink
+          :to="{ name: 'group-todo', params: { groupId } }"
+          class="inline-flex h-10 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)]"
         >
-          {{ submitError }}
-        </p>
-
-        <button
-          type="button"
-          :disabled="isSubmitting"
-          class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
-          @click="handleSubmit"
-        >
-          {{ isSubmitting ? '제출 중…' : '회고 제출' }}
-        </button>
+          할 일 하러 가기
+        </RouterLink>
       </section>
 
-      <!-- 작성 완료 (읽기 전용) -->
-      <section
-        v-else-if="selectedWeek"
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+      <!-- AI 주간 리포트 발행 안내 (제출 완료/끝난 주차) -->
+      <RouterLink
+        v-if="selectedWeek && selectedWeek.answered"
+        :to="{ name: 'group-board', params: { groupId } }"
+        class="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-tint-200)] bg-[var(--color-tint-50)] p-4 transition hover:brightness-[0.98]"
       >
-        <h2 class="text-lg font-bold text-[var(--color-ink)]">
-          {{ selectedWeek.weekNumber }}주차 회고 (제출 완료)
-        </h2>
-        <dl class="mt-4 grid gap-5">
-          <div v-for="(question, qi) in selectedWeek.questions" :key="question.id">
-            <dt class="text-sm font-semibold text-[var(--color-muted)]">
-              {{ qi + 1 }}. {{ question.text }}
-            </dt>
-            <dd class="mt-1 text-sm leading-6 text-[var(--color-ink)]">
-              {{ answerText(question.id) }}
-            </dd>
+        <span class="flex items-center gap-3">
+          <span
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
+            </svg>
+          </span>
+          <span>
+            <span class="block font-bold text-[var(--color-ink)]">
+              {{ selectedWeek.weekNumber }}주차 AI 주간 리포트가 발행됐어요
+            </span>
+            <span class="block text-sm text-[var(--color-muted)]">
+              게시판 · 팀장 리포트에서 전체 리포트를 확인하세요
+            </span>
+          </span>
+        </span>
+        <svg
+          class="h-5 w-5 shrink-0 text-[var(--color-primary)]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </RouterLink>
+
+      <!-- 질문 리스트 -->
+      <section
+        v-if="selectedWeek && selectedWeek.questions.length > 0"
+        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        :class="questionMode === 'locked' ? 'opacity-60' : ''"
+      >
+        <div class="mb-3">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-base font-bold text-[var(--color-ink)]">
+              <template v-if="questionMode === 'readonly'"
+                >{{ selectedWeek.weekNumber }}주차 내 회고</template
+              >
+              <template v-else-if="questionMode === 'interactive'"
+                >{{ selectedWeek.weekNumber }}주차 회고 작성</template
+              >
+              <template v-else>AI가 미리 만든 회고 질문</template>
+            </h3>
+            <span
+              v-if="questionMode === 'readonly'"
+              class="inline-flex h-6 items-center rounded-[var(--radius-chip)] bg-[var(--color-tint-50)] px-2.5 text-xs font-bold text-[var(--color-primary-text)]"
+            >
+              제출 완료
+            </span>
+            <p v-else class="text-xs text-[var(--color-muted)]">
+              {{ likertQuestionCount }}문항 · 5점 척도
+            </p>
           </div>
-        </dl>
+          <p v-if="questionMode === 'readonly'" class="mt-1 text-sm text-[var(--color-muted)]">
+            내가 제출한 답변이에요. 팀 집계는 AI 주간 리포트에 반영됩니다.
+          </p>
+        </div>
+
+        <ul class="divide-y divide-[var(--color-line)]">
+          <li v-for="(question, qi) in selectedWeek.questions" :key="question.id" class="py-3.5">
+            <!-- 리커트 -->
+            <div
+              v-if="question.type === 'LIKERT_5'"
+              class="flex items-center justify-between gap-4"
+            >
+              <p class="flex min-w-0 items-start gap-2.5 text-sm text-[var(--color-ink)]">
+                <span
+                  class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[11px] font-bold text-[var(--color-muted)]"
+                >
+                  {{ qi + 1 }}
+                </span>
+                <span>{{ question.text }}</span>
+              </p>
+              <!-- 제출 완료: 답변 라벨 칩 -->
+              <span
+                v-if="questionMode === 'readonly'"
+                class="shrink-0 rounded-[var(--radius-chip)] px-3 py-1 text-xs font-bold"
+                :class="likertChipClass(scoreOf(question.id))"
+              >
+                {{ scoreOf(question.id) ? LIKERT_LABELS[scoreOf(question.id)! - 1] : '-' }}
+              </span>
+              <!-- 작성/미리보기: 5점 척도 점 -->
+              <div v-else class="flex shrink-0 items-center gap-2">
+                <button
+                  v-for="n in 5"
+                  :key="n"
+                  type="button"
+                  :disabled="questionMode !== 'interactive'"
+                  class="h-4 w-4 rounded-full border-2 transition disabled:cursor-default"
+                  :class="
+                    scoreOf(question.id) === n
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                      : 'border-[var(--color-line-strong)] bg-transparent hover:border-[var(--color-primary)]'
+                  "
+                  :title="LIKERT_LABELS[n - 1]"
+                  :aria-label="`${qi + 1}번 ${LIKERT_LABELS[n - 1]}`"
+                  @click="setScore(question.id, n)"
+                />
+              </div>
+            </div>
+
+            <!-- 자유서술 -->
+            <div v-else>
+              <p class="flex items-start gap-2.5 text-sm text-[var(--color-ink)]">
+                <span
+                  class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[11px] font-bold text-[var(--color-muted)]"
+                >
+                  {{ qi + 1 }}
+                </span>
+                <span>{{ question.text }}</span>
+              </p>
+              <textarea
+                v-if="questionMode === 'interactive'"
+                v-model="textAnswers[question.id]"
+                rows="3"
+                placeholder="자유롭게 작성해 주세요."
+                class="mt-2 w-full rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-input)] p-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-primary)] focus:outline-none"
+              />
+              <p
+                v-else-if="questionMode === 'readonly'"
+                class="mt-2 pl-7 text-sm leading-6 text-[var(--color-body)]"
+              >
+                {{ submittedText(question.id) }}
+              </p>
+            </div>
+          </li>
+        </ul>
+
+        <template v-if="canSubmit">
+          <p
+            v-if="submitError"
+            role="alert"
+            class="mt-4 text-sm font-semibold text-[var(--color-danger)]"
+          >
+            {{ submitError }}
+          </p>
+          <button
+            type="button"
+            :disabled="isSubmitting"
+            class="mt-5 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-6 text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)] disabled:opacity-50"
+            @click="handleSubmit"
+          >
+            {{ isSubmitting ? '제출 중…' : '회고 제출' }}
+          </button>
+        </template>
       </section>
     </template>
   </div>

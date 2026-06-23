@@ -3,64 +3,80 @@
     {
       "id": "019ef229-895f-70dc-88af-ae592049d5c9",
       "createdBy": "019e6322-392b-7272-9215-01af91d62178",
-      "name": "알고리즘 스터디",
-      "topic": "코딩테스트",
-      "detailKeywords": ["자료구조", "DP", "그래프"],
+      "name": "Algorithm monkey 🐒",
+      "topic": "알고리즘",
+      "detailKeywords": ["알고리즘"],
       "status": "ACTIVE",
-      "maxMembers": 6,
-      "memberCount": 5,
-      "progressPct": 82,
+      "maxMembers": 2,
       "inviteCode": "ViN03q9sIbinsfUx",
-      "startsAt": "2026-05-01",
-      "endsAt": "2026-08-31"
+      "startsAt": "2026-06-23",
+      "endsAt": "2026-08-31",
+      "memberCount": 2,
+      "progressPercent": 72
     },
     {
       "id": "019ef1ca-8fa7-7be0-8453-0c079a9da842",
       "createdBy": "019e6322-392b-7272-9215-01af91d62178",
-      "name": "LEET 언어이해",
-      "topic": "법학적성",
-      "detailKeywords": ["언어이해", "추리논증"],
-      "status": "READY_TO_START",
-      "maxMembers": 6,
-      "memberCount": 6,
-      "progressPct": 100,
+      "name": "Algorithm monkey 🐒",
+      "topic": "알고리즘",
+      "detailKeywords": [
+        "탐색 알고리즘",
+        "데이타 구조 비교 분석",
+        "동적 계획법",
+        "그래프 이론 핵심",
+        "정렬 알고리즘"
+      ],
+      "status": "ACTIVE",
+      "maxMembers": 2,
       "inviteCode": "N7oTsN6CWQwsrbAx",
-      "startsAt": "2026-07-07",
-      "endsAt": "2026-09-28"
+      "startsAt": "2026-06-23",
+      "endsAt": "2026-08-06",
+      "memberCount": 2,
+      "progressPercent": 72
     },
     {
       "id": "019ef1c9-9164-7549-927b-59479312c1ef",
       "createdBy": "019e6322-392b-7272-9215-01af91d62178",
-      "name": "아침 영어회화",
-      "topic": "어학",
-      "detailKeywords": ["회화", "표현"],
-      "status": "ONBOARDING",
-      "maxMembers": 8,
-      "memberCount": 3,
-      "progressPct": 38,
+      "name": "양지훈",
+      "topic": "엽떡",
+      "detailKeywords": ["엽떡"],
+      "status": "READY_TO_START",
+      "maxMembers": 1,
       "inviteCode": "c4LqTYNkq7qEee44",
-      "startsAt": "2026-07-14",
-      "endsAt": "2026-10-06"
+      "startsAt": "2026-06-24",
+      "endsAt": "2026-07-09",
+      "memberCount": 1,
+      "progressPercent": 100
     },
     {
       "id": "019eee94-dbbe-70e9-b482-38c3313c49f7",
       "createdBy": "019e6322-392b-7272-9215-01af91d62178",
-      "name": "점심메뉴 탐험대",
-      "topic": "모임",
-      "detailKeywords": ["맛집탐방", "회식"],
-      "status": "ACTIVE",
-      "maxMembers": 6,
-      "memberCount": 5,
-      "progressPct": 92,
+      "name": "양지훈",
+      "topic": "엽떡",
+      "detailKeywords": ["떡볶이 만드는 법"],
+      "status": "READY_TO_START",
+      "maxMembers": 2,
       "inviteCode": "XxTSBepPiVSrPzXw",
-      "startsAt": "2026-06-01",
-      "endsAt": "2026-08-31"
+      "startsAt": "2026-07-01",
+      "endsAt": "2026-08-08",
+      "memberCount": 2,
+      "progressPercent": 100
+    },
+    {
+      "id": "019ea56e-b68c-7329-a210-cf829988beb1",
+      "createdBy": "019e6322-392b-7272-9215-01af91d62178",
+      "name": "양지훈",
+      "topic": "병원",
+      "detailKeywords": ["성형외과"],
+      "status": "ACTIVE",
+      "maxMembers": 2,
+      "inviteCode": "UVS1nqvaD0w7rskX",
+      "startsAt": "2026-06-08",
+      "endsAt": "2026-06-22",
+      "memberCount": 2,
+      "progressPercent": 72
     }
   ],
-  "groupSummary": {
-    "groupCount": 4,
-    "weeklyActivityCount": 47
-  },
   "createGroupRequest": {
     "name": "Backend Interview Study",
     "topic": "Spring Boot",
@@ -79,7 +95,9 @@
     "maxMembers": 2,
     "inviteCode": "ViN03q9sIbinsfUx",
     "startsAt": "2026-06-24",
-    "endsAt": "2026-08-31"
+    "endsAt": "2026-08-31",
+    "memberCount": 2,
+    "progressPercent": 40
   },
   "detailKeywordSuggestionRequest": {
     "topic": "Spring Boot",
@@ -99,7 +117,9 @@
     "maxMembers": 2,
     "inviteCode": "ViN03q9sIbinsfUx",
     "startsAt": "2026-06-23",
-    "endsAt": "2026-08-31"
+    "endsAt": "2026-08-31",
+    "memberCount": 2,
+    "progressPercent": 72
   },
   "updateGroupRequest": {
     "name": "Spring Boot 실전 스터디",
@@ -132,7 +152,9 @@
     "maxMembers": 6,
     "inviteCode": "sb-active-2026",
     "startsAt": "2026-04-22",
-    "endsAt": "2026-07-07"
+    "endsAt": "2026-07-07",
+    "memberCount": 6,
+    "progressPercent": 72
   },
   "joinGroupRequest": {
     "inviteCode": "sb-onboarding-2026"
@@ -147,7 +169,9 @@
     "maxMembers": 2,
     "inviteCode": "ViN03q9sIbinsfUx",
     "startsAt": "2026-06-24",
-    "endsAt": "2026-08-31"
+    "endsAt": "2026-08-31",
+    "memberCount": 2,
+    "progressPercent": 40
   },
   "groupMembers": [
     {
@@ -157,7 +181,9 @@
       "email": "user@example.com",
       "permission": "OWNER",
       "status": "ACTIVE",
-      "onboardingStatus": "SUBMITTED"
+      "onboardingStatus": "SUBMITTED",
+      "memberCount": 2,
+      "progressPercent": 72
     },
     {
       "id": "018f7a4e-1000-7000-9000-000000000002",
@@ -166,7 +192,9 @@
       "email": "minji@example.com",
       "permission": "MEMBER",
       "status": "ACTIVE",
-      "onboardingStatus": "SUBMITTED"
+      "onboardingStatus": "SUBMITTED",
+      "memberCount": 2,
+      "progressPercent": 72
     },
     {
       "id": "018f7a4e-1000-7000-9000-000000000003",
@@ -175,7 +203,9 @@
       "email": "dohoon@example.com",
       "permission": "MEMBER",
       "status": "ACTIVE",
-      "onboardingStatus": "SUBMITTED"
+      "onboardingStatus": "SUBMITTED",
+      "memberCount": 2,
+      "progressPercent": 72
     },
     {
       "id": "018f7a4e-1000-7000-9000-000000000004",
@@ -184,7 +214,9 @@
       "email": "suin@example.com",
       "permission": "MEMBER",
       "status": "PENDING_ONBOARDING",
-      "onboardingStatus": "DRAFT"
+      "onboardingStatus": "DRAFT",
+      "memberCount": 2,
+      "progressPercent": 0
     },
     {
       "id": "018f7a4e-1000-7000-9000-000000000005",
@@ -193,14 +225,18 @@
       "email": "jaewon@example.com",
       "permission": "MEMBER",
       "status": "PENDING_ONBOARDING",
-      "onboardingStatus": "DRAFT"
+      "onboardingStatus": "DRAFT",
+      "memberCount": 2,
+      "progressPercent": 0
     }
   ],
   "startStudyResponse": {
     "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
     "status": "ACTIVE",
     "curriculumId": "018f7a4e-3000-7000-9000-000000000001",
-    "startedAt": "2026-06-24T20:00:00+09:00"
+    "startedAt": "2026-06-24T20:00:00+09:00",
+    "memberCount": 2,
+    "progressPercent": 72
   },
   "myMemberProfile": {
     "memberId": "018f7a4e-1000-7000-9000-000000000001",
@@ -209,9 +245,26 @@
     "permission": "OWNER",
     "status": "ACTIVE",
     "displayName": "user1",
-    "onboarding": { "submitted": true, "skillLevel": 3, "submittedAt": "2026-05-10T01:00:00Z" },
+    "onboarding": {
+      "submitted": true,
+      "skillLevel": 3,
+      "submittedAt": "2026-05-10T01:00:00Z"
+    },
     "currentWeek": null,
-    "taskCompletion": { "totalCount": 4, "doneCount": 4, "incompleteCount": 0, "skippedCount": 0 },
-    "retrospective": { "feedbackReady": false }
+    "taskCompletion": {
+      "totalCount": 4,
+      "doneCount": 4,
+      "incompleteCount": 0,
+      "skippedCount": 0
+    },
+    "retrospective": {
+      "feedbackReady": false
+    },
+    "memberCount": 2,
+    "progressPercent": 72
+  },
+  "groupSummary": {
+    "groupCount": 5,
+    "weeklyActivityCount": 47
   }
 }
