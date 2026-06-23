@@ -113,7 +113,7 @@ function formatDateRange(startsAt: string, endsAt: string): string {
               :aria-label="`${bookmark.group.name} 찜 해제`"
               :aria-pressed="true"
               :disabled="togglingGroupIds.has(bookmark.groupId)"
-              class="flex h-8 w-8 items-center justify-center rounded text-lg text-[var(--color-primary)] transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              class="flex h-8 w-8 items-center justify-center rounded text-lg text-[var(--color-primary)] transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
               @click="handleToggle(bookmark.groupId)"
             >
               ★

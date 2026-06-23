@@ -68,7 +68,7 @@ function formatDateTime(value?: string | null): string {
     <!-- 벨 버튼 -->
     <button
       type="button"
-      class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+      class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
       aria-label="알림"
       @click="toggle"
     >
@@ -127,7 +127,7 @@ function formatDateTime(value?: string | null): string {
         <button
           type="button"
           :disabled="isMarkingAll || store.unreadCount === 0"
-          class="inline-flex h-7 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-40"
+          class="inline-flex h-7 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-40"
           @click="handleMarkAllRead"
         >
           {{ isMarkingAll ? '처리 중…' : '전체 읽음' }}

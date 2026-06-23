@@ -396,7 +396,7 @@ async function handleStartStudy(): Promise<void> {
           <button
             type="button"
             :disabled="isStartingStudy"
-            class="shrink-0 inline-flex h-12 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-base font-bold text-white shadow-md transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.3)] disabled:opacity-60"
+            class="shrink-0 inline-flex h-12 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-base font-bold text-white shadow-md transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.3)] disabled:opacity-60"
             @click="handleStartStudy"
           >
             {{ isStartingStudy ? '시작 중…' : '🚀 스터디 시작하기' }}
@@ -470,7 +470,7 @@ async function handleStartStudy(): Promise<void> {
           <div v-if="isOwner" class="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+              class="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
               @click="showEditModal = true"
             >
               <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -549,7 +549,7 @@ async function handleStartStudy(): Promise<void> {
         <div class="mt-5 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
             @click="copyInviteCode"
           >
             초대 코드 복사
@@ -618,7 +618,7 @@ async function handleStartStudy(): Promise<void> {
           v-for="link in quickLinks"
           :key="link.routeName"
           :to="{ name: link.routeName, params: { groupId } }"
-          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+          class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-card)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
         >
           <span class="text-base font-bold text-[var(--color-ink)]">{{ link.title }}</span>
           <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">{{ link.caption }}</span>

@@ -30,7 +30,7 @@ const TASK_TYPE_LABEL: Record<string, string> = {
 }
 
 const TASK_TYPE_COLOR: Record<string, string> = {
-  READING: 'bg-[rgba(88,101,242,0.15)] text-[#a5b4fc] border-[rgba(88,101,242,0.3)]',
+  READING: 'bg-[rgba(25, 195, 125,0.15)] text-[#a5b4fc] border-[rgba(25, 195, 125,0.3)]',
   PRACTICE: 'bg-[rgba(35,165,90,0.15)] text-[#4ade80] border-[rgba(35,165,90,0.3)]',
   ASSIGNMENT: 'bg-[rgba(224,149,58,0.15)] text-[#fbbf24] border-[rgba(224,149,58,0.3)]',
   PROJECT: 'bg-[rgba(139,92,246,0.15)] text-[#c4b5fd] border-[rgba(139,92,246,0.3)]',
@@ -578,7 +578,7 @@ function scrollTabs(direction: 'left' | 'right'): void {
                     type="button"
                     :disabled="updatingTaskId === task.id || getCompletionStatus(task) === action.status"
                     :class="[
-                      'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50',
+                      'inline-flex h-8 items-center justify-center rounded border px-3 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50',
                       getCompletionStatus(task) === action.status
                         ? action.status === 'DONE'
                           ? 'border-[rgba(35,165,90,0.5)] bg-[rgba(35,165,90,0.15)] text-[var(--color-success)]'

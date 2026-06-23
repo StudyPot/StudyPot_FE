@@ -715,7 +715,7 @@ function formatDate(value: string): string {
             <SelectDropdown v-model="sortValue" :options="sortOptions" aria-label="정렬 기준" />
             <button
               type="button"
-              class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)]"
+              class="inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)]"
               @click="openCreatePost"
             >
               글 쓰기
@@ -904,7 +904,7 @@ function formatDate(value: string): string {
                 <textarea
                   v-model="editingCommentText"
                   rows="2"
-                  class="mt-2 w-full resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+                  class="mt-2 w-full resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-active)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
                 />
                 <div class="mt-1 flex gap-2">
                   <button
@@ -935,12 +935,12 @@ function formatDate(value: string): string {
               v-model="newCommentText"
               rows="2"
               placeholder="댓글을 입력하세요"
-              class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+              class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
             />
             <button
               type="button"
               :disabled="isSubmittingComment || !newCommentText.trim()"
-              class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
               @click="submitComment"
             >
               등록
@@ -952,7 +952,7 @@ function formatDate(value: string): string {
         <div class="border-t border-[var(--color-line)] px-5 py-4">
           <button
             type="button"
-            class="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+            class="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
             @click="backToList"
           >
             ← 목록으로 돌아가기
@@ -1007,7 +1007,7 @@ function formatDate(value: string): string {
               type="text"
               maxlength="200"
               placeholder="제목을 입력하세요"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             />
           </label>
 
@@ -1018,7 +1018,7 @@ function formatDate(value: string): string {
                 v-model="newPostForm.content"
                 rows="18"
                 placeholder="내용을 입력하세요"
-                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
                 @input="syncPreview"
                 @compositionupdate="syncPreview"
               />
@@ -1055,7 +1055,7 @@ function formatDate(value: string): string {
           <div class="flex justify-end gap-3">
             <button
               type="button"
-              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
               @click="viewMode = 'list'"
             >
               취소
@@ -1063,7 +1063,7 @@ function formatDate(value: string): string {
             <button
               type="submit"
               :disabled="isCreating"
-              class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
             >
               {{ isCreating ? '등록 중…' : '등록' }}
             </button>
@@ -1094,7 +1094,7 @@ function formatDate(value: string): string {
               type="text"
               maxlength="200"
               placeholder="제목을 입력하세요"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             />
           </label>
 
@@ -1105,7 +1105,7 @@ function formatDate(value: string): string {
                 v-model="editPostForm.content"
                 rows="18"
                 placeholder="내용을 입력하세요"
-                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
                 @input="syncEditPreview"
                 @compositionupdate="syncEditPreview"
               />
@@ -1142,7 +1142,7 @@ function formatDate(value: string): string {
           <div class="flex justify-end gap-3">
             <button
               type="button"
-              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+              class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
               @click="viewMode = 'detail'"
             >
               취소
@@ -1150,7 +1150,7 @@ function formatDate(value: string): string {
             <button
               type="submit"
               :disabled="isUpdatingPost"
-              class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
             >
               {{ isUpdatingPost ? '저장 중…' : '저장' }}
             </button>

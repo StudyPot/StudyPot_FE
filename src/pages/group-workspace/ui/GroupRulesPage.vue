@@ -287,7 +287,7 @@ function shortId(value: string): string {
           :key="tab.id"
           type="button"
           :class="[
-            'relative px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[rgba(54,92,255,0.2)]',
+            'relative px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[rgba(25, 195, 125,0.2)]',
             activeTab === tab.id
               ? 'text-[var(--color-primary-deep)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--color-primary)]'
               : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]',
@@ -320,7 +320,7 @@ function shortId(value: string): string {
           <div class="mb-5">
             <button
               type="button"
-              class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+              class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
               @click="showSaveForm = !showSaveForm"
             >
               {{ showSaveForm ? '닫기' : '+ 규칙 추가' }}
@@ -338,7 +338,7 @@ function shortId(value: string): string {
                 <select
                   id="ruleType"
                   v-model="saveForm.ruleType"
-                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
                 >
                   <option
                     v-for="(label, type) in RULE_TYPE_LABEL"
@@ -358,7 +358,7 @@ function shortId(value: string): string {
                   id="ruleDesc"
                   v-model="saveForm.description"
                   rows="2"
-                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+                  class="mt-2 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
                 />
               </div>
 
@@ -369,7 +369,7 @@ function shortId(value: string): string {
               <button
                 type="submit"
                 :disabled="isSaving"
-                class="inline-flex h-10 w-fit items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                class="inline-flex h-10 w-fit items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
               >
                 {{ isSaving ? '저장 중…' : '규칙 저장' }}
               </button>
@@ -415,7 +415,7 @@ function shortId(value: string): string {
                     v-if="rule.active"
                     type="button"
                     :disabled="pendingRuleId === rule.id"
-                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[#fbbf24] hover:text-[#fbbf24] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[#fbbf24] hover:text-[#fbbf24] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
                     @click="handleDeactivate(rule)"
                   >
                     비활성화
@@ -424,7 +424,7 @@ function shortId(value: string): string {
                   <button
                     type="button"
                     :disabled="pendingRuleId === rule.id"
-                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-red-400 hover:text-[var(--color-danger)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-red-400 hover:text-[var(--color-danger)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
                     @click="handleDelete(rule)"
                   >
                     삭제
@@ -505,7 +505,7 @@ function shortId(value: string): string {
                 <button
                   v-if="violation.status === 'OPEN'"
                   type="button"
-                  class="shrink-0 inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+                  class="shrink-0 inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
                   @click="toggleViolationExpand(violation.id)"
                 >
                   {{ expandedViolationId === violation.id ? '닫기' : '처리' }}
@@ -529,7 +529,7 @@ function shortId(value: string): string {
                     v-model="violationNote[violation.id]"
                     rows="2"
                     :maxlength="NOTE_MAX_LENGTH"
-                    class="mt-1.5 w-full rounded border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-1.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.14)]"
+                    class="mt-1.5 w-full rounded border border-[var(--color-line)] bg-[var(--color-active)] px-2.5 py-1.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.14)]"
                   />
                 </div>
 
@@ -537,7 +537,7 @@ function shortId(value: string): string {
                   <button
                     type="button"
                     :disabled="pendingViolationId === violation.id"
-                    class="inline-flex h-8 items-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
                     @click="handleResolve(violation)"
                   >
                     {{ pendingViolationId === violation.id ? '처리 중…' : '해결' }}
@@ -545,7 +545,7 @@ function shortId(value: string): string {
                   <button
                     type="button"
                     :disabled="pendingViolationId === violation.id"
-                    class="inline-flex h-8 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+                    class="inline-flex h-8 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
                     @click="handleWaive(violation)"
                   >
                     면제

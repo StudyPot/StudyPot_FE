@@ -274,7 +274,7 @@ async function handleSubmit(): Promise<void> {
         <button
           type="button"
           :disabled="isSubmitting"
-          class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+          class="mt-5 inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
           @click="handleSubmit"
         >
           {{ isSubmitting ? '제출 중…' : '회고 제출' }}

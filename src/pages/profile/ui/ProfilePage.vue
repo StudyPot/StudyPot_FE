@@ -138,7 +138,7 @@ async function handleSubmit(): Promise<void> {
           <button
             v-if="pageState === 'view'"
             type="button"
-            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.14)]"
+            class="inline-flex h-9 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)]"
             @click="startEdit"
           >
             수정
@@ -192,7 +192,7 @@ async function handleSubmit(): Promise<void> {
               type="text"
               maxlength="50"
               placeholder="닉네임을 입력해 주세요."
-              class="mt-2 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              class="mt-2 w-full rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
             />
             <p
               v-if="fieldError"
@@ -214,7 +214,7 @@ async function handleSubmit(): Promise<void> {
               rows="3"
               maxlength="200"
               placeholder="간단한 자기소개를 입력해 주세요."
-              class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+              class="mt-2 w-full resize-none rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
             />
           </div>
 
@@ -229,7 +229,7 @@ async function handleSubmit(): Promise<void> {
                 name="topic-input"
                 placeholder="주제 입력 후 추가"
                 maxlength="30"
-                class="flex-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+                class="flex-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
                 @keydown.enter.prevent="addTopic"
               />
               <button
@@ -278,7 +278,7 @@ async function handleSubmit(): Promise<void> {
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+              class="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
             >
               {{ isSubmitting ? '저장 중…' : '저장' }}
             </button>

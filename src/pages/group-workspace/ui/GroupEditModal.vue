@@ -220,7 +220,7 @@ async function submit(): Promise<void> {
             name="name"
             type="text"
             maxlength="120"
-            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             @input="clearFieldError('name')"
           />
           <span v-if="fieldErrors.name" role="alert" class="text-xs font-semibold text-[var(--color-danger)]">
@@ -236,7 +236,7 @@ async function submit(): Promise<void> {
             name="topic"
             type="text"
             maxlength="120"
-            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             @input="clearFieldError('topic')"
           />
           <span v-if="fieldErrors.topic" role="alert" class="text-xs font-semibold text-[var(--color-danger)]">
@@ -319,7 +319,7 @@ async function submit(): Promise<void> {
               name="maxMembers"
               type="number"
               min="1"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
               @input="clearFieldError('maxMembers')"
             />
             <span v-if="fieldErrors.maxMembers" role="alert" class="text-xs font-semibold text-[var(--color-danger)]">
@@ -333,7 +333,7 @@ async function submit(): Promise<void> {
               v-model="form.startsAt"
               name="startsAt"
               type="date"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             />
             <span v-if="fieldErrors.startsAt" role="alert" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.startsAt }}
@@ -347,7 +347,7 @@ async function submit(): Promise<void> {
               name="endsAt"
               type="date"
               :min="form.startsAt"
-              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+              class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             />
             <span v-if="fieldErrors.endsAt" role="alert" class="text-xs font-semibold text-[var(--color-danger)]">
               {{ fieldErrors.endsAt }}

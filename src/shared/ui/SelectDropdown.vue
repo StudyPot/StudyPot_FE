@@ -53,7 +53,7 @@ onUnmounted(() => {
       type="button"
       :aria-label="ariaLabel"
       :aria-expanded="isOpen"
-      class="flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] pl-3 pr-2.5 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(54,92,255,0.2)]"
+      class="flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] pl-3 pr-2.5 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25, 195, 125,0.2)]"
       @click="toggle"
     >
       {{ selectedLabel }}

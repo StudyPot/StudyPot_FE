@@ -73,7 +73,7 @@ function getInitialInviteCode(): string {
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
-        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+        class="inline-flex h-9 items-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
       >
         그룹 목록
       </RouterLink>
@@ -94,7 +94,7 @@ function getInitialInviteCode(): string {
             v-model="form.inviteCode"
             name="inviteCode"
             type="text"
-            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.12)]"
+            class="h-11 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.12)]"
             placeholder="초대 코드를 입력해주세요."
           />
           <span v-if="fieldErrors.inviteCode" class="text-xs font-semibold text-[var(--color-danger)]">
@@ -114,13 +114,13 @@ function getInitialInviteCode(): string {
       <div class="flex flex-wrap justify-end gap-3">
         <RouterLink
           :to="{ name: 'groups' }"
-          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.16)]"
+          class="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-5 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.16)]"
         >
           취소
         </RouterLink>
         <button
           type="submit"
-          class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="isSubmitting"
         >
           {{ isSubmitting ? '참여 중' : '그룹 참여' }}
@@ -169,7 +169,7 @@ function getInitialInviteCode(): string {
           <!-- 버튼 -->
           <button
             type="button"
-            class="mt-6 w-full rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(88,101,242,0.25)]"
+            class="mt-6 w-full rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.25)]"
             @click="goToOnboarding"
           >
             온보딩 시작하기

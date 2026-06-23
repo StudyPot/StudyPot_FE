@@ -371,13 +371,13 @@ function renderMarkdown(content: string): string {
             rows="2"
             placeholder="메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)"
             :disabled="isSending"
-            class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(54,92,255,0.14)] disabled:opacity-50"
+            class="flex-1 resize-none rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25, 195, 125,0.14)] disabled:opacity-50"
             @keydown="handleKeydown"
           />
           <button
             type="button"
             :disabled="isSending || !inputText.trim()"
-            class="inline-flex h-full items-center py-2 justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(54,92,255,0.2)] disabled:opacity-50"
+            class="inline-flex h-full items-center py-2 justify-center rounded-md bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25, 195, 125,0.2)] disabled:opacity-50"
             @click="handleSendMessage"
           >
             전송
