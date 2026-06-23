@@ -48,6 +48,14 @@ const { groupId, group, isGroupLoading, groupErrorMessage, reloadGroup, reloadMe
   workspaceContext
 
 const isReadyToStart = computed(() => group.value?.status === 'READY_TO_START')
+
+const canStartStudy = computed(() => {
+  if (!group.value) return false
+  const active = members.value.filter((m) => m.status !== 'LEFT')
+  const allSubmitted = active.every((m) => m.onboardingStatus === 'SUBMITTED')
+  const isFull = active.length >= group.value.maxMembers
+  return allSubmitted && isFull
+})
 const router = useRouter()
 const copyStatusMessage = ref('')
 const onboardingSubmitted = ref(false)
@@ -338,7 +346,7 @@ async function handleStartStudy(): Promise<void> {
     <template v-else-if="group && primaryEntry">
       <!-- 스터디 시작하기 배너 -->
       <section
-        v-if="isReadyToStart && isOwner"
+        v-if="isReadyToStart && isOwner && canStartStudy"
         class="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -363,7 +371,7 @@ async function handleStartStudy(): Promise<void> {
       </section>
 
       <section
-        v-else-if="isReadyToStart && !isOwner"
+        v-else-if="isReadyToStart && !isOwner && canStartStudy"
         class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
       >
         <p class="text-sm font-bold text-[var(--color-primary)]">🎉 모든 멤버가 온보딩을 완료했습니다!</p>
