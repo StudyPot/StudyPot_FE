@@ -140,6 +140,9 @@ export type CurrentLearningActivity = {
 export type DailyActivity = {
   date: string
   count: number
+  // TODO 완료 수 / 게시글 작성 수 분리(없으면 count로 폴백). 홈 누적막대·팀원 'TODO만' 집계에 사용.
+  todoCount?: number
+  postCount?: number
 }
 
 export type MemberActivityRow = {

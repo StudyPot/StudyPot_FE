@@ -43,6 +43,18 @@ export function getGroupMembersActivity(groupId: string): Promise<MemberActivity
   return apiClient<MemberActivityRow[]>(`/groups/${groupId}/learning-activity`)
 }
 
+export type RecentActivityItem = {
+  memberId: string
+  memberNickname: string
+  taskTitle: string
+  completedAt: string
+}
+
+// 그룹 홈 '최근 활동' 피드: 최근 완료된 과제(누가/무슨 과제/언제).
+export function getRecentActivity(groupId: string, limit = 8): Promise<RecentActivityItem[]> {
+  return apiClient<RecentActivityItem[]>(`/groups/${groupId}/activity-feed?limit=${limit}`)
+}
+
 export function listWeeklyTasks(weekId: string): Promise<WeeklyTask[]> {
   return apiClient<WeeklyTask[]>(`/weeks/${weekId}/tasks`)
 }

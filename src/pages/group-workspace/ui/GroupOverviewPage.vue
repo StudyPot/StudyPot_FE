@@ -9,10 +9,11 @@ import {
   type StudyGroup,
 } from '@/entities/group'
 import {
-  getCurriculum,
   getGroupMembersActivity,
+  getRecentActivity,
   startStudy,
   type MemberActivityRow,
+  type RecentActivityItem,
 } from '@/entities/curriculum'
 import { useSessionStore } from '@/features/auth/session'
 import { useInAppNotificationStore } from '@/features/notification'
@@ -66,7 +67,10 @@ const canStartStudy = computed(
 
 // ── 활성: 활동 데이터 ────────────────────────────────────────────
 const activityRows = ref<MemberActivityRow[]>([])
-const curriculumPct = ref(0)
+// 진행률은 BE가 계산한 group.progressPercent를 단일 출처로 사용(메인 그룹 목록과 일치, FE 재계산 제거).
+const curriculumPct = computed(() =>
+  Math.max(0, Math.min(100, Math.round(group.value?.progressPercent ?? 0))),
+)
 const barView = ref<'team' | 'me'>('team')
 
 function todayIso(): string {
@@ -118,20 +122,37 @@ function weekdayLabel(iso?: string): string {
 const weekDates = computed(() =>
   Array.from({ length: 7 }, (_, i) => shiftIso(todayIso(), -(6 - i))),
 )
-function teamCountOn(date: string): number {
-  return activityRows.value.reduce((s, r) => {
-    const found = r.dailyActivity.find((d) => d.date === date)
-    return s + (found?.count ?? 0)
+// 누적막대용 일자별 TODO/게시글 분리 집계 (todoCount/postCount 없으면 count로 폴백).
+function dayRows(scope: 'team' | 'me'): MemberActivityRow[] {
+  if (scope === 'team') return activityRows.value
+  return activityRows.value.filter((r) => r.memberId === myMemberId.value)
+}
+function dayTodoOn(date: string, scope: 'team' | 'me'): number {
+  return dayRows(scope).reduce((s, r) => {
+    const d = r.dailyActivity.find((x) => x.date === date)
+    return s + (d?.todoCount ?? d?.count ?? 0)
   }, 0)
 }
-function myCountOn(date: string): number {
-  if (!myMemberId.value) return 0
-  return countMapFor(myMemberId.value).get(date) ?? 0
+function dayPostOn(date: string, scope: 'team' | 'me'): number {
+  return dayRows(scope).reduce((s, r) => {
+    const d = r.dailyActivity.find((x) => x.date === date)
+    return s + (d?.postCount ?? 0)
+  }, 0)
 }
-const barValues = computed(() =>
-  weekDates.value.map((d) => (barView.value === 'team' ? teamCountOn(d) : myCountOn(d))),
+type BarPart = { todo: number; post: number; total: number }
+const barParts = computed<BarPart[]>(() =>
+  weekDates.value.map((d) => {
+    const todo = dayTodoOn(d, barView.value)
+    const post = dayPostOn(d, barView.value)
+    return { todo, post, total: todo + post }
+  }),
 )
-const maxBar = computed(() => Math.max(1, ...barValues.value))
+// Y축 천장은 항상 '팀 전체' max로 고정 → '나'로 토글하면 팀 대비 비율만큼 막대가 줄어 보인다.
+const barScale = computed(() =>
+  Math.max(1, ...weekDates.value.map((d) => dayTodoOn(d, 'team') + dayPostOn(d, 'team'))),
+)
+// 현재 뷰에서 가장 높은 막대(강조용)
+const maxBar = computed(() => Math.max(1, ...barParts.value.map((p) => p.total)))
 
 type Participation = { memberId: string; nickname: string; pct: number }
 const participation = computed<Participation[]>(() => {
@@ -187,8 +208,18 @@ const mvp = computed<Mvp>(() => {
   return { memberId: best.memberId, nickname: best.memberNickname, count: bestCount, streak }
 })
 
-type RecentItem = { memberId: string; nickname: string; date: string }
+type RecentItem = { memberId: string; nickname: string; date: string; taskTitle?: string }
+// 활동 피드(BE: 완료한 과제 제목 포함). 미제공 시 활동 데이터로 폴백.
+const recentFeed = ref<RecentActivityItem[]>([])
 const recentActivity = computed<RecentItem[]>(() => {
+  if (recentFeed.value.length > 0) {
+    return recentFeed.value.slice(0, 4).map((i) => ({
+      memberId: i.memberId,
+      nickname: i.memberNickname,
+      date: i.completedAt,
+      taskTitle: i.taskTitle,
+    }))
+  }
   const items: RecentItem[] = []
   for (const r of activityRows.value) {
     let latest: string | null = null
@@ -298,18 +329,14 @@ watch(
 )
 
 async function loadDashboard(): Promise<void> {
-  const [activity, curriculum] = await Promise.allSettled([
+  // 진행률(curriculumPct)은 group.progressPercent 기반 computed라 별도 조회 불필요.
+  // 활동 데이터(차트) + 최근 활동 피드(완료 과제 제목)를 함께 로드. 피드 미제공 시 폴백.
+  const [activity, feed] = await Promise.allSettled([
     getGroupMembersActivity(groupId.value),
-    getCurriculum(groupId.value),
+    getRecentActivity(groupId.value),
   ])
   activityRows.value = activity.status === 'fulfilled' ? activity.value : []
-  const weeks = curriculum.status === 'fulfilled' ? (curriculum.value.weeks ?? []) : []
-  if (weeks.length > 0) {
-    const done = weeks.filter((w) => w.status === 'COMPLETED').length
-    const inProgress = weeks.filter((w) => w.status === 'IN_PROGRESS').length
-    // 완료 주차 + 진행 중 주차 절반으로 진행률 근사
-    curriculumPct.value = Math.round(((done + inProgress * 0.5) / weeks.length) * 100)
-  }
+  recentFeed.value = feed.status === 'fulfilled' ? feed.value : []
 }
 
 function formatRelative(date: string): string {
@@ -483,26 +510,36 @@ function formatRelative(date: string): string {
 
           <div class="mt-5 flex h-44 items-stretch justify-between gap-2">
             <div
-              v-for="(value, i) in barValues"
+              v-for="(part, i) in barParts"
               :key="i"
-              class="flex flex-1 flex-col items-center gap-2"
+              class="group flex flex-1 flex-col items-center gap-2"
             >
-              <div class="flex w-full flex-1 items-end justify-center">
+              <div class="relative flex w-full flex-1 items-end justify-center">
+                <!-- hover 시 막대 위 개수 라벨 (TODO·게시글 분리) -->
+                <span
+                  class="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-chip)] bg-[var(--color-ink)] px-1.5 py-0.5 text-[10px] font-bold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+                  :style="{ bottom: `calc(${Math.max(6, (part.total / barScale) * 100)}% + 4px)` }"
+                  >TODO {{ part.todo }} · 글 {{ part.post }}</span
+                >
+                <!-- 누적막대: TODO(진한 그린) 위에 게시글(연한 그린) 쌓기 -->
                 <div
-                  class="w-full max-w-[44px] rounded-t-lg transition-all duration-500"
-                  :class="
-                    value === maxBar && value > 0
-                      ? 'bg-[var(--color-primary)]'
-                      : 'bg-[var(--color-tint-200)]'
-                  "
-                  :style="{ height: `${Math.max(6, (value / maxBar) * 100)}%` }"
-                  :title="`${value}회`"
-                />
+                  class="flex w-full max-w-[44px] flex-col-reverse overflow-hidden rounded-t-lg transition-all duration-500"
+                  :style="{ height: `${Math.max(6, (part.total / barScale) * 100)}%` }"
+                >
+                  <div
+                    class="w-full bg-[var(--color-primary)]"
+                    :style="{ flexBasis: part.total > 0 ? `${(part.todo / part.total) * 100}%` : '100%' }"
+                  />
+                  <div
+                    class="w-full bg-[var(--color-tint-200)]"
+                    :style="{ flexBasis: part.total > 0 ? `${(part.post / part.total) * 100}%` : '0%' }"
+                  />
+                </div>
               </div>
               <span
                 class="text-xs"
                 :class="
-                  value === maxBar && value > 0
+                  part.total === maxBar && part.total > 0
                     ? 'font-bold text-[var(--color-ink)]'
                     : 'text-[var(--color-muted)]'
                 "
@@ -569,8 +606,11 @@ function formatRelative(date: string): string {
                 {{ item.nickname.slice(0, 1).toUpperCase() }}
               </span>
               <div class="min-w-0 flex-1">
-                <p class="text-sm font-semibold text-[var(--color-ink)]">
-                  {{ item.nickname }}님이 학습했어요
+                <p class="truncate text-sm font-semibold text-[var(--color-ink)]">
+                  <template v-if="item.taskTitle">
+                    {{ item.nickname }}님이 «{{ item.taskTitle }}» 완료
+                  </template>
+                  <template v-else>{{ item.nickname }}님이 학습했어요</template>
                 </p>
                 <p class="text-xs text-[var(--color-muted)]">{{ formatRelative(item.date) }}</p>
               </div>

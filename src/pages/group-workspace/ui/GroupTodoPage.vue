@@ -35,12 +35,9 @@ const errorMessage = ref('')
 const curriculum = ref<Curriculum | null>(null)
 const currentWeekCache = ref<CurriculumWeek | null>(null)
 
-// 이동 가능한 주차(생성된 주차 = PENDING 이 아닌 주차), 주차 번호 순
-const navigableWeeks = computed<CurriculumWeekSummary[]>(() =>
-  (curriculum.value?.weeks ?? [])
-    .filter((w) => w.status !== 'PENDING')
-    .slice()
-    .sort((a, b) => a.weekNumber - b.weekNumber),
+// 전체 주차(PENDING 포함), 주차 번호 순
+const allCurriculumWeeks = computed<CurriculumWeekSummary[]>(() =>
+  [...(curriculum.value?.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber),
 )
 
 const selectedWeekId = ref<string>('')
@@ -53,20 +50,25 @@ const completionMap = reactive<Record<string, TaskCompletionStatus>>({})
 const updatingTaskId = ref<string | null>(null)
 const taskError = reactive<Record<string, string>>({})
 
-// ── 주차 네비게이션 ────────────────────────────────────────────
+// ── 주차 네비게이션 (PENDING 포함 전체 주차 기준) ───────────────
 const selectedIndex = computed(() =>
-  navigableWeeks.value.findIndex((w) => w.id === selectedWeekId.value),
+  allCurriculumWeeks.value.findIndex((w) => w.id === selectedWeekId.value),
 )
 const canPrev = computed(() => selectedIndex.value > 0)
 const canNext = computed(
-  () => selectedIndex.value >= 0 && selectedIndex.value < navigableWeeks.value.length - 1,
+  () => selectedIndex.value >= 0 && selectedIndex.value < allCurriculumWeeks.value.length - 1,
 )
 
+const selectedWeekSummary = computed(() =>
+  allCurriculumWeeks.value.find((w) => w.id === selectedWeekId.value),
+)
+const isSelectedWeekPending = computed(() => selectedWeekSummary.value?.status === 'PENDING')
+
 function goPrev(): void {
-  if (canPrev.value) selectWeek(navigableWeeks.value[selectedIndex.value - 1]!.id)
+  if (canPrev.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value - 1]!.id)
 }
 function goNext(): void {
-  if (canNext.value) selectWeek(navigableWeeks.value[selectedIndex.value + 1]!.id)
+  if (canNext.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value + 1]!.id)
 }
 
 // ── 진행률 (스킵 제외) ─────────────────────────────────────────
@@ -83,25 +85,6 @@ function goToRetrospective(): void {
   void router.push({ name: 'group-retrospective', params: { groupId: groupId.value } })
 }
 
-const isLockToastActive = ref(false)
-
-function onLockClick(): void {
-  if (isLockToastActive.value) return
-  isLockToastActive.value = true
-  toastStore.pushToast('아직 열리지 않은 주차예요', '해당 주차가 시작되면 자동으로 열려요.', 'info')
-  setTimeout(() => {
-    isLockToastActive.value = false
-  }, 4000)
-}
-
-// 현재 선택 주차 이후에 PENDING(미생성) 주차가 있으면 자물쇠 표시
-const hasNextPendingWeek = computed(() => {
-  const allWeeks = [...(curriculum.value?.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber)
-  const idx = allWeeks.findIndex((w) => w.id === selectedWeekId.value)
-  if (idx === -1) return false
-  return allWeeks.slice(idx + 1).some((w) => w.status === 'PENDING')
-})
-
 const sortedTasks = computed(() =>
   [...tasks.value].sort((a, b) => {
     const rank = (id: string) =>
@@ -114,7 +97,7 @@ const sortedTasks = computed(() =>
 onMounted(() => void loadInitial())
 
 watch(selectedWeekId, async (weekId) => {
-  if (weekId) await loadWeekDetail(weekId)
+  if (weekId && !isSelectedWeekPending.value) await loadWeekDetail(weekId)
 })
 
 async function loadInitial(): Promise<void> {
@@ -131,8 +114,8 @@ async function loadInitial(): Promise<void> {
     }
     curriculum.value = curriculumData
     currentWeekCache.value = currentWeek
-    const weeks = navigableWeeks.value
-    selectedWeekId.value = currentWeek?.id ?? weeks[weeks.length - 1]?.id ?? ''
+    const fallbackWeek = allCurriculumWeeks.value.filter((w) => w.status !== 'PENDING').pop()
+    selectedWeekId.value = currentWeek?.id ?? fallbackWeek?.id ?? ''
     pageState.value = 'loaded'
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) pageState.value = 'none'
@@ -276,13 +259,16 @@ function formatDate(value: string): string {
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
-                {{ selectedWeek?.weekNumber ?? '-' }}주차
+                {{ selectedWeekSummary?.weekNumber ?? selectedWeek?.weekNumber ?? '-' }}주차
               </h1>
               <p v-if="weekRangeLabel" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 {{ weekRangeLabel }}
               </p>
+              <p v-else-if="isSelectedWeekPending" class="mt-0.5 text-sm text-[var(--color-muted)]">
+                아직 시작 전이에요
+              </p>
             </div>
-            <div class="shrink-0 text-right">
+            <div v-if="!isSelectedWeekPending" class="shrink-0 text-right">
               <p class="text-2xl font-extrabold leading-none">
                 <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
                 <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
@@ -321,27 +307,6 @@ function formatDate(value: string): string {
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
-        <button
-          v-else-if="hasNextPendingWeek"
-          type="button"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-active)] text-[var(--color-muted)] transition hover:bg-[var(--color-hover)]"
-          :disabled="isLockToastActive"
-          aria-label="다음 주차 잠김"
-          @click="onLockClick"
-        >
-          <svg
-            class="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="11" width="18" height="11" rx="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-        </button>
         <div v-else class="h-9 w-9 shrink-0" />
       </div>
 
@@ -354,7 +319,33 @@ function formatDate(value: string): string {
       />
 
       <template v-else>
-        <!-- 안내 배너 -->
+        <!-- PENDING 주차: 잠금 안내 -->
+        <div
+          v-if="isSelectedWeekPending"
+          class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
+        >
+          <div
+            class="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-active)] text-[var(--color-muted)]"
+          >
+            <svg
+              class="h-7 w-7"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <p class="font-semibold text-[var(--color-ink)]">아직 시작되지 않은 주차예요</p>
+          <p class="text-sm text-[var(--color-muted)]">해당 주차가 시작되면 커리큘럼이 공개돼요.</p>
+        </div>
+
+        <!-- 일반 주차 콘텐츠 -->
+        <template v-else>
         <div
           class="mt-4 flex items-center gap-2.5 rounded-[var(--radius-input)] bg-[var(--color-tint-50)] px-4 py-3 text-sm text-[var(--color-primary-text)]"
         >
@@ -507,6 +498,7 @@ function formatDate(value: string): string {
         <p v-else class="mt-6 text-center text-sm text-[var(--color-muted)]">
           이 주차에 등록된 과제가 없어요.
         </p>
+        </template>
       </template>
     </template>
   </div>
