@@ -23,8 +23,9 @@ const toastStore = useInAppNotificationStore()
 
 type PageState = 'loading' | 'empty' | 'ready' | 'error'
 
-// 5점 리커트 라벨 (1 매우 그렇지 않다 … 5 매우 그렇다)
-const LIKERT_LABELS = ['매우 그렇지 않다', '그렇지 않다', '보통', '그렇다', '매우 그렇다']
+// 5점 리커트 라벨 (1 그렇지 않다 … 5 그렇다)
+const LIKERT_LABELS = ['그렇지 않다', '약간 그렇지 않다', '보통', '약간 그렇다', '그렇다']
+const LIKERT_SIZES = ['h-14 w-14', 'h-11 w-11', 'h-9 w-9', 'h-11 w-11', 'h-14 w-14'] as const
 
 // 제출 답변(읽기) 라벨 칩 색
 function likertChipClass(score: number | null): string {
@@ -471,9 +472,9 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
             <!-- 리커트 -->
             <div
               v-if="question.type === 'LIKERT_5'"
-              class="flex items-center justify-between gap-4"
+              class="flex flex-col gap-3"
             >
-              <p class="flex min-w-0 items-start gap-2.5 text-sm text-[var(--color-ink)]">
+              <p class="flex min-w-0 items-start gap-2.5 text-base font-semibold text-[var(--color-ink)]">
                 <span
                   class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[11px] font-bold text-[var(--color-muted)]"
                 >
@@ -484,34 +485,39 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
               <!-- 제출 완료: 답변 라벨 칩 -->
               <span
                 v-if="questionMode === 'readonly'"
-                class="shrink-0 rounded-[var(--radius-chip)] px-3 py-1 text-xs font-bold"
+                class="ml-7 w-fit rounded-[var(--radius-chip)] px-3 py-1 text-xs font-bold"
                 :class="likertChipClass(scoreOf(question.id))"
               >
                 {{ scoreOf(question.id) ? LIKERT_LABELS[scoreOf(question.id)! - 1] : '-' }}
               </span>
-              <!-- 작성/미리보기: 5점 척도 점 -->
-              <div v-else class="flex shrink-0 items-center gap-2">
-                <button
-                  v-for="n in 5"
-                  :key="n"
-                  type="button"
-                  :disabled="questionMode !== 'interactive'"
-                  class="h-4 w-4 rounded-full border-2 transition disabled:cursor-default"
-                  :class="
-                    scoreOf(question.id) === n
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
-                      : 'border-[var(--color-line-strong)] bg-transparent hover:border-[var(--color-primary)]'
-                  "
-                  :title="LIKERT_LABELS[n - 1]"
-                  :aria-label="`${qi + 1}번 ${LIKERT_LABELS[n - 1]}`"
-                  @click="setScore(question.id, n)"
-                />
+              <!-- 작성/미리보기: 5점 척도 -->
+              <div v-else class="flex items-center gap-4 pl-7">
+                <span class="shrink-0 text-sm text-[var(--color-muted)]">{{ LIKERT_LABELS[0] }}</span>
+                <div class="flex items-center gap-4">
+                  <button
+                    v-for="n in 5"
+                    :key="n"
+                    type="button"
+                    :disabled="questionMode !== 'interactive'"
+                    class="shrink-0 rounded-full border-2 border-[var(--color-primary)] transition disabled:cursor-default"
+                    :class="[
+                      LIKERT_SIZES[n - 1],
+                      scoreOf(question.id) === n
+                        ? 'bg-[var(--color-primary)]'
+                        : 'bg-transparent hover:bg-[var(--color-tint-50)]'
+                    ]"
+                    :title="LIKERT_LABELS[n - 1]"
+                    :aria-label="`${qi + 1}번 ${LIKERT_LABELS[n - 1]}`"
+                    @click="setScore(question.id, n)"
+                  />
+                </div>
+                <span class="shrink-0 text-sm text-[var(--color-muted)]">{{ LIKERT_LABELS[4] }}</span>
               </div>
             </div>
 
             <!-- 자유서술 -->
             <div v-else>
-              <p class="flex items-start gap-2.5 text-sm text-[var(--color-ink)]">
+              <p class="flex items-start gap-2.5 text-base font-semibold text-[var(--color-ink)]">
                 <span
                   class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[11px] font-bold text-[var(--color-muted)]"
                 >
