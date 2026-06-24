@@ -5,12 +5,14 @@ import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import {
+  decideAiConversationMessageAction,
   listAiConversationMessages,
   openAiConversation,
   sendAiConversationMessage,
   subscribeToAiConversationStream,
   type AiConversation,
   type AiConversationMessage,
+  type AiMessageActionDecision,
 } from '@/entities/ai'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
@@ -38,6 +40,7 @@ const messagesEndRef = ref<HTMLElement | null>(null)
 const messagesContainerRef = ref<HTMLElement | null>(null)
 const eventSource = ref<EventSource | null>(null)
 const isSseActive = ref(false)
+const actionBusy = ref<Record<string, boolean>>({})
 
 function subscribeToStream(conversationId: string): void {
   closeStream()
@@ -163,6 +166,42 @@ async function handleSendMessage(): Promise<void> {
   }
 }
 
+async function handleDecideAction(
+  message: AiConversationMessage,
+  decision: AiMessageActionDecision,
+): Promise<void> {
+  if (!conversation.value || actionBusy.value[message.id]) {
+    return
+  }
+  actionBusy.value = { ...actionBusy.value, [message.id]: true }
+  sendError.value = ''
+
+  try {
+    const updated = await decideAiConversationMessageAction(
+      conversation.value.id,
+      message.id,
+      decision,
+    )
+    const index = messages.value.findIndex((m) => m.id === message.id)
+    if (index !== -1) {
+      messages.value[index] = updated
+    }
+    await scrollToBottom()
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) {
+      sendError.value = '이 작업을 수행할 권한이 없어요.'
+    } else if (error instanceof ApiError && error.status === 409) {
+      sendError.value = '이미 처리된 제안이에요.'
+    } else {
+      sendError.value = error instanceof ApiError ? error.message : '요청을 처리하지 못했어요.'
+    }
+  } finally {
+    const next = { ...actionBusy.value }
+    delete next[message.id]
+    actionBusy.value = next
+  }
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   if (event.key !== 'Enter' || event.shiftKey) {
     return
@@ -277,10 +316,53 @@ function renderMarkdown(content: string): string {
             >
               <img src="/AIbot.png" alt="" class="h-full w-full object-cover" />
             </span>
-            <div
-              class="ai-markdown max-w-[78%] rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
-              v-html="renderMarkdown(message.content)"
-            />
+            <div class="flex max-w-[78%] flex-col gap-2">
+              <div
+                class="ai-markdown rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
+                v-html="renderMarkdown(message.content)"
+              />
+
+              <!-- 제안 액션: 질문 게시판 공유 (확인 후 실행) -->
+              <div
+                v-if="message.action?.type === 'SHARE_QUESTION' && message.action.status === 'PENDING'"
+                class="flex flex-col gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-soft)]"
+              >
+                <p class="text-xs font-medium text-[var(--color-muted)]">
+                  이 질문을 ‘질문’ 게시판에 올릴까요?
+                </p>
+                <p
+                  v-if="message.action.title"
+                  class="text-sm font-semibold text-[var(--color-ink)]"
+                >
+                  {{ message.action.title }}
+                </p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'CONFIRM')"
+                  >
+                    올리기
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'REJECT')"
+                  >
+                    올리지 않기
+                  </button>
+                </div>
+              </div>
+
+              <p
+                v-else-if="message.action?.type === 'SHARE_QUESTION' && message.action.status === 'EXECUTED'"
+                class="text-xs font-medium text-[var(--color-primary)]"
+              >
+                ✅ 질문 게시판에 올렸어요.
+              </p>
+            </div>
           </div>
         </template>
 

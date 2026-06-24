@@ -34,10 +34,24 @@ export type CreateMessageRequest = {
   content: string
 }
 
+export type AiMessageActionType = 'SHARE_QUESTION'
+
+export type AiMessageActionStatus = 'PENDING' | 'EXECUTED' | 'REJECTED'
+
+export type AiMessageAction = {
+  type: AiMessageActionType
+  status: AiMessageActionStatus
+  title?: string | null
+  summary?: string | null
+}
+
+export type AiMessageActionDecision = 'CONFIRM' | 'REJECT'
+
 export type AiConversationMessage = {
   id: string
   conversationId?: string
   senderType: AiConversationMessageSenderType
   content: string
   createdAt: string
+  action?: AiMessageAction | null
 }

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
 import {
+  decideAiConversationMessageAction,
   listAiConversationMessages,
   openAiConversation,
   type AiConversation,
@@ -10,6 +11,10 @@ import {
 } from '@/entities/ai'
 import { groupWorkspaceContextKey } from '../../model/workspaceContext'
 import GroupAiPage from '../GroupAiPage.vue'
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: {} }),
+}))
 
 vi.mock('@/entities/ai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/entities/ai')>()
@@ -19,6 +24,7 @@ vi.mock('@/entities/ai', async (importOriginal) => {
     listAiConversationMessages: vi.fn(),
     openAiConversation: vi.fn(),
     sendAiConversationMessage: vi.fn(),
+    decideAiConversationMessageAction: vi.fn(),
   }
 })
 
@@ -104,11 +110,51 @@ describe('GroupAiPage', () => {
     expect(openAiConversation).toHaveBeenCalledWith(groupId, {
       conversationType: 'TEAM_LEAD_CHAT',
     })
-    expect(listAiConversationMessages).toHaveBeenCalledWith(conversation.id)
+    expect(listAiConversationMessages).toHaveBeenCalledWith(conversation.id, { cursor: undefined })
     expect(wrapper.text()).toContain('지난번에 이야기한 과제 분량 다시 보여줘.')
     expect(wrapper.text()).toContain('지난 대화에서는 필수 과제를 하나 줄이는 방향을 정리했습니다.')
     expect(wrapper.text()).not.toContain('새 대화 세션')
     expect(FakeEventSource.instances).toHaveLength(1)
     expect(FakeEventSource.instances[0]?.withCredentials).toBe(true)
+  })
+
+  it('confirms a SHARE_QUESTION action and marks it shared', async () => {
+    const actionMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-000000000009',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '영속성 컨텍스트는 ... 게시판에 올려둘까요?',
+      createdAt: '2026-06-04T01:03:00Z',
+      action: {
+        type: 'SHARE_QUESTION',
+        status: 'PENDING',
+        title: 'JPA 영속성 컨텍스트란?',
+        summary: '질문과 답변 요약입니다.',
+      },
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [actionMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+    vi.mocked(decideAiConversationMessageAction).mockResolvedValue({
+      ...actionMessage,
+      action: { ...actionMessage.action!, status: 'EXECUTED' },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const confirmButton = wrapper.findAll('button').find((b) => b.text() === '올리기')
+    expect(confirmButton).toBeTruthy()
+    await confirmButton!.trigger('click')
+    await flushPromises()
+
+    expect(decideAiConversationMessageAction).toHaveBeenCalledWith(
+      conversation.id,
+      actionMessage.id,
+      'CONFIRM',
+    )
+    expect(wrapper.text()).toContain('질문 게시판에 올렸어요')
+    expect(wrapper.findAll('button').some((b) => b.text() === '올리기')).toBe(false)
   })
 })
