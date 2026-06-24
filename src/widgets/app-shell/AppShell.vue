@@ -71,7 +71,7 @@ const loginNotice = computed(() => {
 })
 
 const PUBLIC_CHANNELS: ChannelDef[] = [
-  { routeName: 'group-overview', label: '홈', type: 'home' },
+  { routeName: 'group-overview', label: 'Home', type: 'home' },
   { routeName: 'group-board', label: '게시판', type: 'board' },
   { routeName: 'group-my', label: '팀원', type: 'person' },
 ]
@@ -424,10 +424,12 @@ function startGoogleLogin(): void {
           <div class="flex w-[72px] shrink-0 flex-col items-center">
             <div
               :class="[
-                'flex h-11 w-11 items-center justify-center bg-[var(--color-primary)] font-bold text-white transition-[border-radius] duration-100',
-                !currentGroupId ? 'rounded-2xl text-sm' : 'rounded-3xl text-xs group-hover:rounded-2xl',
+                'flex h-11 w-11 items-center justify-center overflow-hidden bg-[var(--color-primary)] transition-[border-radius] duration-100',
+                !currentGroupId ? 'rounded-2xl' : 'rounded-3xl group-hover:rounded-2xl',
               ]"
-            >SP</div>
+            >
+              <img src="/AIbot.png" alt="Home" class="h-full w-full object-cover" />
+            </div>
             <span
               class="max-w-[60px] truncate text-center text-[10px] font-medium leading-[1.3]"
               :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted-deep)]'"
@@ -438,13 +440,13 @@ function startGoogleLogin(): void {
                 opacity: railHover ? 0 : 1,
                 transition: 'margin-top 150ms, max-height 150ms, opacity 100ms',
               }"
-            >전체</span>
+            >Home</span>
           </div>
           <span
             class="min-w-0 flex-1 truncate whitespace-nowrap text-sm font-semibold"
             :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted)]'"
             :style="{ opacity: railHover ? 1 : 0, transition: 'opacity 120ms 80ms' }"
-          >전체 그룹</span>
+          >Home</span>
         </RouterLink>
 
         <div class="mx-auto my-0.5 h-px w-8 shrink-0 bg-[var(--color-line-strong)]" />
