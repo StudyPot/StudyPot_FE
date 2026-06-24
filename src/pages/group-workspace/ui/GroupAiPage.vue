@@ -2,7 +2,7 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   decideAiConversationMessageAction,
@@ -26,6 +26,7 @@ if (!workspaceContext) {
 
 const { groupId } = workspaceContext
 const route = useRoute()
+const router = useRouter()
 
 type PageState = 'opening' | 'chat' | 'error'
 
@@ -41,6 +42,8 @@ const messagesContainerRef = ref<HTMLElement | null>(null)
 const eventSource = ref<EventSource | null>(null)
 const isSseActive = ref(false)
 const actionBusy = ref<Record<string, boolean>>({})
+const sharedPostId = ref<string | null>(null)
+const showShareDoneModal = ref(false)
 
 function subscribeToStream(conversationId: string): void {
   closeStream()
@@ -186,6 +189,10 @@ async function handleDecideAction(
     if (index !== -1) {
       messages.value[index] = updated
     }
+    if (decision === 'CONFIRM' && updated.action?.status === 'EXECUTED') {
+      sharedPostId.value = updated.action.postId ?? null
+      showShareDoneModal.value = true
+    }
     await scrollToBottom()
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
@@ -200,6 +207,20 @@ async function handleDecideAction(
     delete next[message.id]
     actionBusy.value = next
   }
+}
+
+function goToSharedPost(): void {
+  showShareDoneModal.value = false
+  void router.push({
+    name: 'group-board',
+    params: { groupId: groupId.value },
+    query: sharedPostId.value ? { postId: sharedPostId.value } : {},
+  })
+}
+
+function keepChatting(): void {
+  showShareDoneModal.value = false
+  sharedPostId.value = null
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -450,6 +471,44 @@ function renderMarkdown(content: string): string {
         </button>
       </div>
     </template>
+
+    <!-- 질문 게시판 공유 완료 모달 -->
+    <div
+      v-if="showShareDoneModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      aria-modal="true"
+      @click.self="keepChatting"
+    >
+      <div class="w-full max-w-sm rounded-2xl bg-[var(--color-surface)] p-6 text-center shadow-[var(--shadow-soft)]">
+        <div
+          class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-white"
+          aria-hidden="true"
+        >
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        </div>
+        <p class="text-base font-bold text-[var(--color-ink)]">질문 게시판에 올렸어요</p>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">다른 멤버들도 이 질문과 답변을 볼 수 있어요.</p>
+        <div class="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            class="w-full rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)]"
+            @click="goToSharedPost"
+          >
+            게시판으로 가기
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)]"
+            @click="keepChatting"
+          >
+            AI 팀장과 더 대화하기
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
