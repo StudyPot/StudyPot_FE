@@ -1,4 +1,4 @@
-export { getAiManager, listAiConversationMessages, openAiConversation, sendAiConversationMessage, subscribeToAiConversationStream, updateAiManager } from './api/aiApi'
+export { decideAiConversationMessageAction, getAiManager, listAiConversationMessages, openAiConversation, sendAiConversationMessage, subscribeToAiConversationStream, updateAiManager } from './api/aiApi'
 export type { ListAiMessagesParams } from './api/aiApi'
 export type {
   AiConversation,
@@ -7,6 +7,10 @@ export type {
   AiConversationStatus,
   AiConversationType,
   AiManager,
+  AiMessageAction,
+  AiMessageActionDecision,
+  AiMessageActionStatus,
+  AiMessageActionType,
   CreateMessageRequest,
   OpenConversationRequest,
   UpdateAiManagerRequest,

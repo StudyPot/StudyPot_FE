@@ -4,6 +4,7 @@ import type {
   AiConversation,
   AiConversationMessage,
   AiManager,
+  AiMessageActionDecision,
   CreateMessageRequest,
   OpenConversationRequest,
   UpdateAiManagerRequest,
@@ -57,6 +58,20 @@ export function listAiConversationMessages(
   const query = searchParams.toString()
   return apiClient<CursorPageResponse<AiConversationMessage>>(
     `/ai-conversations/${conversationId}/messages${query ? `?${query}` : ''}`,
+  )
+}
+
+export function decideAiConversationMessageAction(
+  conversationId: string,
+  messageId: string,
+  decision: AiMessageActionDecision,
+): Promise<AiConversationMessage> {
+  return apiClient<AiConversationMessage>(
+    `/ai-conversations/${conversationId}/messages/${messageId}/action`,
+    {
+      method: 'POST',
+      body: { decision },
+    },
   )
 }
 
