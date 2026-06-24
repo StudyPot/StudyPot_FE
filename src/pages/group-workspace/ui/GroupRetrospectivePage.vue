@@ -64,6 +64,7 @@ const displayWeeks = computed<RetrospectiveWeekOverview[]>(() => {
         status: 'PENDING',
         unlocked: false,
         answered: false,
+        reportPosted: false,
         questions: [],
       }
     )
@@ -361,9 +362,38 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
         </RouterLink>
       </section>
 
-      <!-- AI 주간 리포트 발행 안내 (제출 완료/끝난 주차) -->
+      <!-- AI 주간 리포트가 아직 발행 전: 대기 안내 (제출은 했지만 주차 미종료/리포트 미게시) -->
+      <div
+        v-if="selectedWeek && selectedWeek.answered && !selectedWeek.reportPosted"
+        class="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4"
+      >
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-active)] text-[var(--color-muted)]"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+        </span>
+        <span>
+          <span class="block font-bold text-[var(--color-ink)]">회고 제출 완료</span>
+          <span class="block text-sm text-[var(--color-muted)]">
+            주차가 끝나면 팀 회고를 모아 AI 주간 리포트가 생성돼요. 조금만 기다려 주세요.
+          </span>
+        </span>
+      </div>
+
+      <!-- AI 주간 리포트 발행 완료 → 보러 가기 -->
       <RouterLink
-        v-if="selectedWeek && selectedWeek.answered"
+        v-if="selectedWeek && selectedWeek.reportPosted"
         :to="{ name: 'group-board', params: { groupId } }"
         class="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-tint-200)] bg-[var(--color-tint-50)] p-4 transition hover:brightness-[0.98]"
       >
@@ -429,7 +459,14 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
           </p>
         </div>
 
-        <ul class="divide-y divide-[var(--color-line)]">
+        <ul
+          class="divide-y divide-[var(--color-line)]"
+          :class="
+            questionMode === 'locked'
+              ? 'pointer-events-none max-h-44 overflow-hidden [mask-image:linear-gradient(to_bottom,black_30%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,black_30%,transparent)]'
+              : ''
+          "
+        >
           <li v-for="(question, qi) in selectedWeek.questions" :key="question.id" class="py-3.5">
             <!-- 리커트 -->
             <div
