@@ -48,6 +48,7 @@ const isCompleted = computed(
 const aiSuggestions = ref<StudyAiSuggestion[]>([])
 const popularTopics = ref<StudyPopularTopic[]>([])
 const recommendationsLoaded = ref(false)
+const recommendationsLoading = ref(false)
 const hasRecommendations = computed(
   () => aiSuggestions.value.length > 0 || popularTopics.value.length > 0,
 )
@@ -55,6 +56,7 @@ const hasRecommendations = computed(
 async function loadRecommendations(): Promise<void> {
   if (recommendationsLoaded.value) return
   recommendationsLoaded.value = true
+  recommendationsLoading.value = true
   try {
     const res = await getStudyRecommendations(groupId.value)
     aiSuggestions.value = res.aiSuggestions ?? []
@@ -63,6 +65,8 @@ async function loadRecommendations(): Promise<void> {
     // 추천은 부가 정보라 실패해도 화면을 막지 않는다.
     aiSuggestions.value = []
     popularTopics.value = []
+  } finally {
+    recommendationsLoading.value = false
   }
 }
 
@@ -777,13 +781,22 @@ function formatRelative(date: string): string {
 
       <!-- 다음 스터디 추천 -->
       <section
-        v-if="hasRecommendations"
+        v-if="recommendationsLoading || hasRecommendations"
         class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-soft)]"
       >
         <h2 class="text-lg font-extrabold text-[var(--color-ink)]">다음 스터디는 어때요?</h2>
         <p class="mt-1 text-sm text-[var(--color-muted)]">
           추천을 누르면 주제가 채워진 채로 새 스터디 만들기 화면으로 이동해요.
         </p>
+
+        <!-- 로딩 스켈레톤: AI 추천 생성에 몇 초 걸릴 수 있어 자리를 먼저 잡아준다 -->
+        <div v-if="recommendationsLoading" class="mt-5 grid gap-2">
+          <div class="flex items-center gap-2 text-xs font-bold text-[var(--color-primary)]">
+            <span class="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+            맞춤 추천을 불러오는 중…
+          </div>
+          <div v-for="n in 3" :key="`sk-${n}`" class="h-16 animate-pulse rounded-[var(--radius-card)] bg-[var(--color-surface)]" />
+        </div>
 
         <div v-if="aiSuggestions.length" class="mt-5">
           <p class="text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">AI 맞춤 추천</p>
