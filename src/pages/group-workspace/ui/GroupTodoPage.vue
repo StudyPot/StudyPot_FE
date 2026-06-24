@@ -63,6 +63,8 @@ const selectedWeekSummary = computed(() =>
   allCurriculumWeeks.value.find((w) => w.id === selectedWeekId.value),
 )
 const isSelectedWeekPending = computed(() => selectedWeekSummary.value?.status === 'PENDING')
+// 종료(COMPLETED)된 주차는 완료/되돌리기/건너뛰기를 잠근다(미완료는 서버에서 확정됨).
+const isSelectedWeekCompleted = computed(() => selectedWeekSummary.value?.status === 'COMPLETED')
 
 function goPrev(): void {
   if (canPrev.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value - 1]!.id)
@@ -175,6 +177,10 @@ function statusOf(task: WeeklyTask): TaskCompletionStatus {
 
 async function setStatus(taskId: string, status: TaskCompletionStatus): Promise<void> {
   if (updatingTaskId.value) return
+  if (isSelectedWeekCompleted.value) {
+    toastStore.pushToast('종료된 주차예요', '이미 끝난 주차의 할 일은 변경할 수 없어요.', 'info')
+    return
+  }
   updatingTaskId.value = taskId
   delete taskError[taskId]
   try {
@@ -460,14 +466,16 @@ function weekChipClass(week: CurriculumWeekSummary): string {
             <!-- 체크박스 -->
             <button
               type="button"
-              :disabled="updatingTaskId === task.id"
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-50"
+              :disabled="updatingTaskId === task.id || isSelectedWeekCompleted"
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition disabled:cursor-not-allowed disabled:opacity-60"
               :class="
                 statusOf(task) === 'DONE'
                   ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                   : statusOf(task) === 'SKIPPED'
                     ? 'border-[var(--color-line-strong)] bg-[var(--color-active)] text-[var(--color-muted)]'
-                    : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]'
+                    : statusOf(task) === 'INCOMPLETE'
+                      ? 'border-[var(--color-danger)] bg-[rgba(255,82,71,0.12)] text-[var(--color-danger)]'
+                      : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]'
               "
               :aria-label="statusOf(task) === 'DONE' ? '완료 취소' : '완료'"
               @click="toggleCheck(task)"
@@ -495,6 +503,17 @@ function weekChipClass(week: CurriculumWeekSummary): string {
               >
                 <path d="M5 12h14" />
               </svg>
+              <svg
+                v-else-if="statusOf(task) === 'INCOMPLETE'"
+                class="h-3 w-3"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3.5"
+                stroke-linecap="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
             </button>
 
             <!-- 제목 + 메타 -->
@@ -504,7 +523,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                 :class="
                   statusOf(task) === 'DONE'
                     ? 'text-[var(--color-faint)] line-through'
-                    : statusOf(task) === 'SKIPPED'
+                    : statusOf(task) === 'SKIPPED' || statusOf(task) === 'INCOMPLETE'
                       ? 'text-[var(--color-muted)]'
                       : 'text-[var(--color-ink)]'
                 "
@@ -526,6 +545,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
               </template>
               <template v-else-if="statusOf(task) === 'SKIPPED'">
                 <button
+                  v-if="!isSelectedWeekCompleted"
                   type="button"
                   :disabled="updatingTaskId === task.id"
                   class="text-xs font-bold text-[var(--color-primary-text)] transition hover:underline disabled:opacity-50"
@@ -537,6 +557,13 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                   class="rounded-[var(--radius-chip)] bg-[var(--color-active)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-muted)]"
                 >
                   건너뜀
+                </span>
+              </template>
+              <template v-else-if="isSelectedWeekCompleted">
+                <span
+                  class="rounded-[var(--radius-chip)] bg-[rgba(255,82,71,0.12)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-danger)]"
+                >
+                  미완료
                 </span>
               </template>
               <template v-else>
