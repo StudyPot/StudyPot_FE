@@ -50,6 +50,9 @@ function openRail(): void {
   railHover.value = true
 }
 function closeRail(): void {
+  // 새 그룹 팝오버(방 생성/코드 참여)가 열려 있는 동안에는 레일을 닫지 않는다.
+  // 팝오버는 레일 바깥에 떠서, 거기로 마우스를 옮기면 mouseleave 로 드로어가 닫혀버리던 문제 방지.
+  if (showCreateMenu.value) return
   if (railCloseTimer) clearTimeout(railCloseTimer)
   railCloseTimer = setTimeout(() => {
     railHover.value = false
@@ -426,7 +429,7 @@ function startGoogleLogin(): void {
               ]"
             >SP</div>
             <span
-              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-[1.3]"
               :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted-deep)]'"
               :style="{
                 marginTop: railHover ? '0px' : '2px',
@@ -475,7 +478,7 @@ function startGoogleLogin(): void {
               />
             </div>
             <span
-              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-[1.3]"
               :class="currentGroupId === group.id ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted-deep)]'"
               :style="{
                 marginTop: railHover ? '0px' : '2px',
@@ -509,7 +512,7 @@ function startGoogleLogin(): void {
               </svg>
             </span>
             <span
-              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-[1.3] text-[var(--color-muted-deep)]"
               :style="{
                 marginTop: railHover ? '0px' : '2px',
                 maxHeight: railHover ? '0px' : '14px',
@@ -538,7 +541,7 @@ function startGoogleLogin(): void {
               class="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white transition-[border-radius] duration-100 group-hover:rounded-2xl"
             >{{ userInitial }}</div>
             <span
-              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-[1.3] text-[var(--color-muted-deep)]"
               :style="{
                 marginTop: railHover ? '0px' : '2px',
                 maxHeight: railHover ? '0px' : '14px',
@@ -576,7 +579,7 @@ function startGoogleLogin(): void {
           <p
             v-if="currentGroupPhase"
             :class="[
-              'text-[10px] font-medium leading-none mt-0.5',
+              'text-[10px] font-medium leading-[1.3] mt-0.5',
               currentGroupPhase === 'active'
                 ? 'text-[var(--color-success)]'
                 : currentGroupPhase === 'before'
@@ -612,8 +615,8 @@ function startGoogleLogin(): void {
               ]"
               :exact-active-class="
                 ch.type === 'onboard'
-                  ? 'bg-[var(--color-hover)] !text-[#f0a04b]'
-                  : 'bg-[rgba(25,195,125,0.22)] !text-[var(--color-ink)]'
+                  ? '!bg-[var(--color-hover)] !text-[#f0a04b]'
+                  : '!bg-[rgba(25,195,125,0.22)] !text-[var(--color-ink)]'
               "
             >
               <!-- Channel icon -->

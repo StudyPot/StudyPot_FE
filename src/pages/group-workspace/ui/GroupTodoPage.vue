@@ -279,24 +279,30 @@ function formatDate(value: string): string {
                     <path d="M9 18l6-6-6-6" />
                   </svg>
                 </button>
-                <span
-                  v-else
-                  class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-active)] text-[var(--color-muted)]"
-                  title="다음 주차는 아직 잠겨 있어요"
-                  aria-label="다음 주차 잠김"
-                >
-                  <svg
-                    class="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                <span v-else class="group/lock relative flex">
+                  <span
+                    class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-active)] text-[var(--color-muted)]"
+                    aria-label="다음 주차 잠김"
                   >
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
+                    <svg
+                      class="h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <!-- 커스텀 툴팁: hover 즉시 그린 하이라이트로 표시 -->
+                  <span
+                    role="tooltip"
+                    class="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-chip)] bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white opacity-0 shadow-[var(--shadow-soft)] transition-opacity duration-100 group-hover/lock:opacity-100"
+                    >다음 주차는 아직 잠겨 있어요</span
+                  >
                 </span>
               </div>
               <p v-if="weekRangeLabel" class="mt-0.5 text-sm text-[var(--color-muted)]">
