@@ -154,10 +154,49 @@ describe('GroupAiPage', () => {
       conversation.id,
       actionMessage.id,
       'CONFIRM',
+      undefined,
     )
     expect(wrapper.text()).toContain('질문 게시판에 올렸어요')
     expect(wrapper.findAll('button').some((b) => b.text() === '올리기')).toBe(false)
     // 완료 모달 + 게시판 이동 버튼
     expect(wrapper.findAll('button').some((b) => b.text() === '게시판으로 가기')).toBe(true)
+  })
+
+  it("submits a custom instruction via '기타'", async () => {
+    const actionMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-00000000000a',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '답변이에요. 게시판에 올려둘까요?',
+      createdAt: '2026-06-04T01:03:00Z',
+      action: { type: 'SHARE_QUESTION', status: 'PENDING', title: '제목', summary: '요약' },
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [actionMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+    vi.mocked(decideAiConversationMessageAction).mockResolvedValue({
+      ...actionMessage,
+      action: { ...actionMessage.action!, status: 'EXECUTED', postId: 'post-9' },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text() === '기타')!.trigger('click')
+    const textarea = wrapper
+      .findAll('textarea')
+      .find((t) => (t.element as HTMLTextAreaElement).placeholder.includes('원하는 방식'))
+    expect(textarea).toBeTruthy()
+    await textarea!.setValue('예시 코드 포함해서 더 짧게')
+    await wrapper.findAll('button').find((b) => b.text() === '이 방식으로 올리기')!.trigger('click')
+    await flushPromises()
+
+    expect(decideAiConversationMessageAction).toHaveBeenCalledWith(
+      conversation.id,
+      actionMessage.id,
+      'CONFIRM',
+      '예시 코드 포함해서 더 짧게',
+    )
   })
 })
