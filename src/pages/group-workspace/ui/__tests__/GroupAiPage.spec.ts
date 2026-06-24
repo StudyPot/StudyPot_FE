@@ -14,6 +14,7 @@ import GroupAiPage from '../GroupAiPage.vue'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {} }),
+  useRouter: () => ({ push: vi.fn() }),
 }))
 
 vi.mock('@/entities/ai', async (importOriginal) => {
@@ -138,7 +139,7 @@ describe('GroupAiPage', () => {
     })
     vi.mocked(decideAiConversationMessageAction).mockResolvedValue({
       ...actionMessage,
-      action: { ...actionMessage.action!, status: 'EXECUTED' },
+      action: { ...actionMessage.action!, status: 'EXECUTED', postId: 'post-123' },
     })
 
     const wrapper = mountPage()
@@ -156,5 +157,7 @@ describe('GroupAiPage', () => {
     )
     expect(wrapper.text()).toContain('질문 게시판에 올렸어요')
     expect(wrapper.findAll('button').some((b) => b.text() === '올리기')).toBe(false)
+    // 완료 모달 + 게시판 이동 버튼
+    expect(wrapper.findAll('button').some((b) => b.text() === '게시판으로 가기')).toBe(true)
   })
 })

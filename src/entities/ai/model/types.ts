@@ -43,6 +43,7 @@ export type AiMessageAction = {
   status: AiMessageActionStatus
   title?: string | null
   summary?: string | null
+  postId?: string | null
 }
 
 export type AiMessageActionDecision = 'CONFIRM' | 'REJECT'
