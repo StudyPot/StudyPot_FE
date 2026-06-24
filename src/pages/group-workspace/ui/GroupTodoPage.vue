@@ -79,6 +79,21 @@ const isSelectedWeekPending = computed(() => selectedWeekSummary.value?.status =
 // 종료(COMPLETED)된 주차는 완료/되돌리기/건너뛰기를 잠근다(미완료는 서버에서 확정됨).
 const isSelectedWeekCompleted = computed(() => selectedWeekSummary.value?.status === 'COMPLETED')
 
+// 아직 생성되지 않은 미래 주차(placeholder)를 클릭한 상태. 클릭은 되지만 내부는 잠금 안내만 보여준다.
+const selectedPlaceholder = ref<number | null>(null)
+const isViewingLocked = computed(() => isSelectedWeekPending.value || selectedPlaceholder.value !== null)
+const displayedWeekNumber = computed(
+  () =>
+    selectedPlaceholder.value ??
+    selectedWeekSummary.value?.weekNumber ??
+    selectedWeek.value?.weekNumber ??
+    null,
+)
+function selectPlaceholder(weekNumber: number): void {
+  selectedPlaceholder.value = weekNumber
+  selectedWeekId.value = ''
+}
+
 function goPrev(): void {
   if (canPrev.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value - 1]!.id)
 }
@@ -181,6 +196,7 @@ async function loadWeekDetail(weekId: string): Promise<void> {
 }
 
 function selectWeek(weekId: string): void {
+  selectedPlaceholder.value = null
   if (weekId !== selectedWeekId.value) selectedWeekId.value = weekId
 }
 
@@ -267,13 +283,13 @@ function weekChipClass(week: CurriculumWeekSummary): string {
     <template v-else-if="pageState === 'loaded'">
       <!-- ── 주차 탭 ── -->
       <section class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5">
-        <div class="grid grid-cols-5 gap-2 sm:grid-cols-10">
+        <div class="flex gap-2 overflow-x-auto pb-1">
           <template v-for="slot in displayWeeks" :key="slot.weekNumber">
             <!-- 생성된 주차: 선택 가능 -->
             <button
               v-if="slot.week"
               type="button"
-              class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
+              class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
               :class="weekChipClass(slot.week)"
               @click="selectWeek(slot.week.id)"
             >
@@ -304,11 +320,18 @@ function weekChipClass(week: CurriculumWeekSummary): string {
               </svg>
               <span>{{ slot.weekNumber }}주</span>
             </button>
-            <!-- 아직 생성되지 않은 미래 주차: 잠금 -->
-            <div
+            <!-- 아직 생성되지 않은 미래 주차: 클릭 가능(내부는 잠금 안내) -->
+            <button
               v-else
-              class="flex h-16 cursor-not-allowed flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border border-dashed border-[var(--color-line)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-faint)]"
+              type="button"
+              class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border border-dashed text-sm font-bold transition"
+              :class="
+                selectedPlaceholder === slot.weekNumber
+                  ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
+                  : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]'
+              "
               :title="`${slot.weekNumber}주차는 아직 공개되지 않았어요`"
+              @click="selectPlaceholder(slot.weekNumber)"
             >
               <svg
                 class="h-3.5 w-3.5"
@@ -323,7 +346,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
               <span>{{ slot.weekNumber }}주</span>
-            </div>
+            </button>
           </template>
         </div>
       </section>
@@ -358,16 +381,16 @@ function weekChipClass(week: CurriculumWeekSummary): string {
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
-                {{ selectedWeekSummary?.weekNumber ?? selectedWeek?.weekNumber ?? '-' }}주차
+                {{ displayedWeekNumber ?? '-' }}주차
               </h1>
-              <p v-if="weekRangeLabel" class="mt-0.5 text-sm text-[var(--color-muted)]">
+              <p v-if="weekRangeLabel && !isViewingLocked" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 {{ weekRangeLabel }}
               </p>
-              <p v-else-if="isSelectedWeekPending" class="mt-0.5 text-sm text-[var(--color-muted)]">
+              <p v-else-if="isViewingLocked" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 아직 시작 전이에요
               </p>
             </div>
-            <div v-if="!isSelectedWeekPending" class="shrink-0 text-right">
+            <div v-if="!isViewingLocked" class="shrink-0 text-right">
               <p class="text-2xl font-extrabold leading-none">
                 <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
                 <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
@@ -377,6 +400,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
           </div>
 
           <div
+            v-if="!isViewingLocked"
             class="mt-4 h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
           >
             <div
@@ -418,9 +442,9 @@ function weekChipClass(week: CurriculumWeekSummary): string {
       />
 
       <template v-else>
-        <!-- PENDING 주차: 잠금 안내 -->
+        <!-- PENDING/미생성 주차: 잠금 안내 -->
         <div
-          v-if="isSelectedWeekPending"
+          v-if="isViewingLocked"
           class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
         >
           <div
@@ -440,7 +464,13 @@ function weekChipClass(week: CurriculumWeekSummary): string {
             </svg>
           </div>
           <p class="font-semibold text-[var(--color-ink)]">아직 시작되지 않은 주차예요</p>
-          <p class="text-sm text-[var(--color-muted)]">해당 주차가 시작되면 커리큘럼이 공개돼요.</p>
+          <p class="text-sm text-[var(--color-muted)]">
+            {{
+              selectedPlaceholder !== null
+                ? '이 주차는 이전 주차가 끝나면 순서대로 공개돼요.'
+                : '해당 주차가 시작되면 커리큘럼이 공개돼요.'
+            }}
+          </p>
         </div>
 
         <!-- 일반 주차 콘텐츠 -->
