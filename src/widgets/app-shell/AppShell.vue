@@ -458,7 +458,6 @@ function startGoogleLogin(): void {
           :to="{ name: 'group-overview', params: { groupId: group.id } }"
           class="group relative flex h-[72px] w-[240px] shrink-0 items-center hover:bg-[var(--color-active)]"
           :class="currentGroupId === group.id ? 'bg-[var(--color-active)]' : ''"
-          :title="`${group.name} · ${statusLabel[group.status]}`"
           @click="closeRailNow"
         >
           <div
