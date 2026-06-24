@@ -380,14 +380,14 @@ function renderMarkdown(content: string): string {
                 >
                   {{ message.action.title }}
                 </p>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     :disabled="actionBusy[message.id]"
                     class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
                     @click="handleDecideAction(message, 'CONFIRM')"
                   >
-                    올리기
+                    {{ actionBusy[message.id] ? '올리는 중…' : '올리기' }}
                   </button>
                   <button
                     type="button"
@@ -397,7 +397,10 @@ function renderMarkdown(content: string): string {
                   >
                     올리지 않기
                   </button>
+
+                  <!-- '기타': 닫혀 있으면 버튼, 열려 있으면 인라인 한 줄 입력 + 전송 -->
                   <button
+                    v-if="customMessageId !== message.id"
                     type="button"
                     :disabled="actionBusy[message.id]"
                     class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
@@ -405,35 +408,33 @@ function renderMarkdown(content: string): string {
                   >
                     기타
                   </button>
-                </div>
-
-                <!-- '기타' 직접 요청 입력 -->
-                <div v-if="customMessageId === message.id" class="mt-1 flex flex-col gap-2">
-                  <textarea
-                    v-model="customText"
-                    rows="2"
-                    placeholder="원하는 방식을 알려주세요. 예: 예시 코드 포함해서 더 짧게 정리해줘"
-                    :disabled="actionBusy[message.id]"
-                    class="w-full resize-none rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm leading-6 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50"
-                  />
-                  <div class="flex gap-2">
+                  <template v-else>
+                    <input
+                      v-model="customText"
+                      type="text"
+                      placeholder="원하는 방식 (예: 더 짧게)"
+                      :disabled="actionBusy[message.id]"
+                      class="h-8 min-w-[120px] flex-1 rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50"
+                      @keydown.enter.prevent="submitCustomShare(message)"
+                    />
                     <button
                       type="button"
                       :disabled="actionBusy[message.id] || !customText.trim()"
-                      class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
+                      class="shrink-0 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
                       @click="submitCustomShare(message)"
                     >
-                      이 방식으로 올리기
+                      {{ actionBusy[message.id] ? '올리는 중…' : '전송' }}
                     </button>
                     <button
                       type="button"
                       :disabled="actionBusy[message.id]"
-                      class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                      aria-label="취소"
+                      class="shrink-0 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-2 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] disabled:opacity-40"
                       @click="cancelCustomShare"
                     >
-                      취소
+                      ✕
                     </button>
-                  </div>
+                  </template>
                 </div>
               </div>
 

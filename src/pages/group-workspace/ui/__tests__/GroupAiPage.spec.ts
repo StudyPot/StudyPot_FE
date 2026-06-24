@@ -184,12 +184,12 @@ describe('GroupAiPage', () => {
     await flushPromises()
 
     await wrapper.findAll('button').find((b) => b.text() === '기타')!.trigger('click')
-    const textarea = wrapper
-      .findAll('textarea')
-      .find((t) => (t.element as HTMLTextAreaElement).placeholder.includes('원하는 방식'))
-    expect(textarea).toBeTruthy()
-    await textarea!.setValue('예시 코드 포함해서 더 짧게')
-    await wrapper.findAll('button').find((b) => b.text() === '이 방식으로 올리기')!.trigger('click')
+    const input = wrapper
+      .findAll('input')
+      .find((t) => (t.element as HTMLInputElement).placeholder.includes('원하는 방식'))
+    expect(input).toBeTruthy()
+    await input!.setValue('예시 코드 포함해서 더 짧게')
+    await wrapper.findAll('button').find((b) => b.text() === '전송')!.trigger('click')
     await flushPromises()
 
     expect(decideAiConversationMessageAction).toHaveBeenCalledWith(
