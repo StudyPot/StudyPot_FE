@@ -348,7 +348,7 @@ function renderMarkdown(content: string): string {
 
         <template v-for="message in messages" :key="message.id">
           <!-- USER (우측 그린 버블) -->
-          <div v-if="message.senderType === 'USER'" class="flex justify-end">
+          <div v-if="message.senderType === 'USER'" class="flex justify-end mr-3">
             <p
               class="max-w-[78%] rounded-2xl rounded-tr-md bg-[var(--color-primary)] px-4 py-2.5 text-sm leading-6 text-white"
             >
