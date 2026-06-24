@@ -221,6 +221,42 @@ describe('GroupAiPage', () => {
     expect(wrapper.text()).toContain('완료로 처리했어요')
   })
 
+  it('confirms an ADD_TASK action', async () => {
+    const actionMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-00000000000d',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '이번 주에 추가할까요?',
+      createdAt: '2026-06-04T01:06:00Z',
+      action: { type: 'ADD_TASK', status: 'PENDING', title: '트랜잭션 실습', summary: '예제 따라하기' },
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [actionMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+    vi.mocked(decideAiConversationMessageAction).mockResolvedValue({
+      ...actionMessage,
+      action: { ...actionMessage.action!, status: 'EXECUTED' },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('트랜잭션 실습')
+    const confirmButton = wrapper.findAll('button').find((b) => b.text() === '추가하기')
+    expect(confirmButton).toBeTruthy()
+    await confirmButton!.trigger('click')
+    await flushPromises()
+
+    expect(decideAiConversationMessageAction).toHaveBeenCalledWith(
+      conversation.id,
+      actionMessage.id,
+      'CONFIRM',
+      undefined,
+    )
+    expect(wrapper.text()).toContain('이번 주 과제에 추가했어요')
+  })
+
   it("submits a custom instruction via '기타'", async () => {
     const actionMessage: AiConversationMessage = {
       id: '018f7a4e-4000-7000-9000-00000000000a',
