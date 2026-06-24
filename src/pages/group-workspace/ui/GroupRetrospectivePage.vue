@@ -226,9 +226,10 @@ async function handleSubmit(): Promise<void> {
 function chipClasses(week: RetrospectiveWeekOverview): string {
   const selected = week.weekId === selectedWeekId.value
   if (!week.unlocked) {
+    const dashed = week.weekId.startsWith('placeholder-') ? 'border-dashed ' : ''
     return selected
-      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-      : 'border-dashed border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]'
+      ? `${dashed}border-[var(--color-primary)] bg-[var(--color-primary)] text-white`
+      : `${dashed}border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]`
   }
   if (week.answered) {
     return selected
@@ -316,50 +317,44 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
       </section>
 
       <!-- 잠김 안내 -->
-      <section
+      <div
         v-if="selectedWeek && !selectedWeek.unlocked"
-        class="flex flex-col gap-3 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between"
+        class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
       >
-        <div class="flex items-center gap-4">
-          <div
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[var(--color-muted)]"
-          >
-            <svg
-              class="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
-          <div>
-            <p class="font-bold text-[var(--color-ink)]">
-              {{ selectedWeek.weekNumber }}주차 회고는 아직 잠겨 있어요
-            </p>
-            <p v-if="selectedWeek.status === 'PENDING'" class="mt-1 text-sm text-[var(--color-muted)]">
-              아직 시작하지 않은 주차예요. 이전 주차가 끝나면 순서대로 공개돼요.
-            </p>
-            <p v-else class="mt-1 text-sm text-[var(--color-muted)]">
-              이번 주 할 일을 모두 완료하면 회고가 열려요.<template v-if="taskProgress">
-                지금은 {{ taskProgress.done }}/{{ taskProgress.total }} 완료 ·
-                {{ Math.max(0, taskProgress.total - taskProgress.done) }}개 남음</template
-              >
-            </p>
-          </div>
-        </div>
-        <RouterLink
-          v-if="selectedWeek.status !== 'PENDING'"
-          :to="{ name: 'group-todo', params: { groupId } }"
-          class="inline-flex h-10 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)]"
+        <div
+          class="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-active)] text-[var(--color-muted)]"
         >
-          할 일 하러 가기
-        </RouterLink>
-      </section>
+          <svg
+            class="h-7 w-7"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <p class="font-bold text-[var(--color-ink)]">아직 시작되지 않은 주차에요</p>
+        <p v-if="selectedWeek.status === 'PENDING'" class="text-sm text-[var(--color-muted)]">
+          이 주차는 이전 주차가 끝나면 순서대로 공개돼요.
+        </p>
+        <template v-else>
+          <p class="text-sm text-[var(--color-muted)]">
+            이번 주 할 일을 모두 완료하면 회고가 열려요.<template v-if="taskProgress">
+              ({{ taskProgress.done }}/{{ taskProgress.total }} 완료)</template
+            >
+          </p>
+          <RouterLink
+            :to="{ name: 'group-todo', params: { groupId } }"
+            class="mt-1 inline-flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)]"
+          >
+            할 일 하러 가기
+          </RouterLink>
+        </template>
+      </div>
 
       <!-- AI 주간 리포트가 아직 발행 전: 대기 안내 (제출은 했지만 주차 미종료/리포트 미게시) -->
       <div
