@@ -899,8 +899,12 @@ function formatDate(value: string): string {
                 <span>·</span>
                 <span>{{ formatRelativeDate(post.createdAt) }}</span>
                 <template v-if="post.commentCount > 0">
-                  <span>·</span>
-                  <span>{{ getCommentLabel(post.boardId) }} {{ post.commentCount }}</span>
+                  <span class="flex items-center gap-1">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    {{ getCommentLabel(post.boardId) }} {{ post.commentCount }}
+                  </span>
                 </template>
               </template>
             </div>
