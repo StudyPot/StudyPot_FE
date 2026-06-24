@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getBoardPost, listAllPosts } from '@/entities/board/api/boardApi'
@@ -107,6 +107,40 @@ async function openReportModal(): Promise<void> {
 
 function closeReportModal(): void {
   showReportModal.value = false
+}
+
+// 수료 리포트는 완료 직후 생성되지만 몇 초 걸릴 수 있어, 준비될 때까지 '생성 중'으로 표시하고 잠시 폴링한다.
+const reportReady = ref(false)
+let reportPollTimer: ReturnType<typeof setInterval> | null = null
+let reportPollCount = 0
+
+async function checkReportReady(): Promise<void> {
+  try {
+    const page = await listAllPosts(groupId.value, { pageSize: 50 })
+    if (page.items.some((p) => p.title === REPORT_TITLE)) reportReady.value = true
+  } catch {
+    // 조회 실패는 무시(다음 폴링에서 재시도)
+  }
+}
+
+function stopReportWatch(): void {
+  if (reportPollTimer) {
+    clearInterval(reportPollTimer)
+    reportPollTimer = null
+  }
+}
+
+function startReportWatch(): void {
+  if (reportReady.value || reportPollTimer) return
+  void checkReportReady()
+  reportPollCount = 0
+  reportPollTimer = setInterval(() => {
+    reportPollCount += 1
+    void checkReportReady().then(() => {
+      // 준비됐거나 ~2분(24*5s) 지나면 폴링 종료
+      if (reportReady.value || reportPollCount >= 24) stopReportWatch()
+    })
+  }, 5000)
 }
 
 const myUserId = computed(() => sessionStore.user?.id ?? null)
@@ -392,12 +426,19 @@ onMounted(() => {
   void reloadMembers?.()
 })
 
+onUnmounted(() => {
+  stopReportWatch()
+})
+
 watch(
   () => group.value?.status,
   (status) => {
     if (status === 'ACTIVE') void loadDashboard()
     else activityRows.value = []
-    if (status === 'COMPLETED' || status === 'ARCHIVED') void loadRecommendations()
+    if (status === 'COMPLETED' || status === 'ARCHIVED') {
+      void loadRecommendations()
+      startReportWatch()
+    }
   },
   { immediate: true },
 )
@@ -764,12 +805,20 @@ function formatRelative(date: string): string {
             회고 돌아보기
           </RouterLink>
           <button
+            v-if="reportReady"
             type="button"
             class="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
             @click="openReportModal"
           >
             수료 리포트 보기
           </button>
+          <div
+            v-else
+            class="flex h-12 items-center justify-center gap-2 rounded-[var(--radius-button)] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-faint)]"
+          >
+            <span class="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-tint-50)] border-t-[var(--color-primary)]" />
+            수료 리포트 생성 중…
+          </div>
           <RouterLink
             :to="{ name: 'group-curriculum', params: { groupId } }"
             class="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
