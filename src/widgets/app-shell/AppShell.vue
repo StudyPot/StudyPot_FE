@@ -409,7 +409,7 @@ function startGoogleLogin(): void {
         <!-- Home -->
         <RouterLink
           :to="{ name: 'groups' }"
-          class="group relative flex w-[240px] shrink-0 items-center py-1.5 hover:bg-[var(--color-active)]"
+          class="group relative flex h-[72px] w-[240px] shrink-0 items-center hover:bg-[var(--color-active)]"
           :class="!currentGroupId ? 'bg-[var(--color-active)]' : ''"
           @click="closeRailNow"
         >
@@ -418,8 +418,7 @@ function startGoogleLogin(): void {
             :class="!currentGroupId ? 'h-8' : 'h-0 group-hover:h-5'"
             style="transition: height 100ms"
           />
-          <!-- 아이콘 + 접힌 상태 레이블 -->
-          <div class="flex w-[72px] shrink-0 flex-col items-center gap-0.5">
+          <div class="flex w-[72px] shrink-0 flex-col items-center">
             <div
               :class="[
                 'flex h-11 w-11 items-center justify-center bg-[var(--color-primary)] font-bold text-white transition-[border-radius] duration-100',
@@ -427,12 +426,17 @@ function startGoogleLogin(): void {
               ]"
             >SP</div>
             <span
-              class="max-w-[60px] truncate text-[10px] font-medium leading-none"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none"
               :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted-deep)]'"
-              :style="{ opacity: railHover ? 0 : 1, transition: 'opacity 80ms' }"
+              :style="{
+                marginTop: railHover ? '0px' : '2px',
+                maxHeight: railHover ? '0px' : '14px',
+                overflow: 'hidden',
+                opacity: railHover ? 0 : 1,
+                transition: 'margin-top 150ms, max-height 150ms, opacity 100ms',
+              }"
             >전체</span>
           </div>
-          <!-- 펼친 상태 텍스트 -->
           <span
             class="min-w-0 flex-1 truncate whitespace-nowrap text-sm font-semibold"
             :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted)]'"
@@ -447,7 +451,7 @@ function startGoogleLogin(): void {
           v-for="group in groupListStore.groups"
           :key="group.id"
           :to="{ name: 'group-overview', params: { groupId: group.id } }"
-          class="group relative flex w-[240px] shrink-0 items-center py-1.5 hover:bg-[var(--color-active)]"
+          class="group relative flex h-[72px] w-[240px] shrink-0 items-center hover:bg-[var(--color-active)]"
           :class="currentGroupId === group.id ? 'bg-[var(--color-active)]' : ''"
           :title="`${group.name} · ${statusLabel[group.status]}`"
           @click="closeRailNow"
@@ -457,7 +461,7 @@ function startGoogleLogin(): void {
             :class="currentGroupId === group.id ? 'h-8' : 'h-0 group-hover:h-5'"
             style="transition: height 100ms"
           />
-          <div class="flex w-[72px] shrink-0 flex-col items-center gap-0.5">
+          <div class="flex w-[72px] shrink-0 flex-col items-center">
             <div class="relative">
               <div
                 :class="getIconClasses(group, currentGroupId === group.id)"
@@ -471,9 +475,15 @@ function startGoogleLogin(): void {
               />
             </div>
             <span
-              class="max-w-[60px] truncate text-[10px] font-medium leading-none"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none"
               :class="currentGroupId === group.id ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted-deep)]'"
-              :style="{ opacity: railHover ? 0 : 1, transition: 'opacity 80ms' }"
+              :style="{
+                marginTop: railHover ? '0px' : '2px',
+                maxHeight: railHover ? '0px' : '14px',
+                overflow: 'hidden',
+                opacity: railHover ? 0 : 1,
+                transition: 'margin-top 150ms, max-height 150ms, opacity 100ms',
+              }"
             >{{ group.name }}</span>
           </div>
           <span
@@ -487,10 +497,10 @@ function startGoogleLogin(): void {
         <!-- 새 그룹 추가 -->
         <button
           type="button"
-          class="group flex w-[240px] shrink-0 items-center py-1.5 text-left hover:bg-[var(--color-hover)]"
+          class="group relative flex h-[72px] w-[240px] shrink-0 items-center text-left hover:bg-[var(--color-hover)]"
           @click="toggleCreateMenu"
         >
-          <div class="flex w-[72px] shrink-0 flex-col items-center gap-0.5">
+          <div class="flex w-[72px] shrink-0 flex-col items-center">
             <span
               class="flex h-11 w-11 items-center justify-center rounded-3xl bg-[var(--color-active)] text-[var(--color-success)] transition-[border-radius,background-color] duration-100 group-hover:rounded-2xl group-hover:bg-[var(--color-success)] group-hover:text-white"
             >
@@ -499,8 +509,14 @@ function startGoogleLogin(): void {
               </svg>
             </span>
             <span
-              class="text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
-              :style="{ opacity: railHover ? 0 : 1, transition: 'opacity 80ms' }"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
+              :style="{
+                marginTop: railHover ? '0px' : '2px',
+                maxHeight: railHover ? '0px' : '14px',
+                overflow: 'hidden',
+                opacity: railHover ? 0 : 1,
+                transition: 'margin-top 150ms, max-height 150ms, opacity 100ms',
+              }"
             >추가</span>
           </div>
           <span
@@ -514,16 +530,22 @@ function startGoogleLogin(): void {
       <div class="shrink-0 border-t border-[var(--color-line)]">
         <RouterLink
           :to="{ name: 'profile' }"
-          class="group flex w-[240px] items-center py-1.5 hover:bg-[var(--color-hover)]"
+          class="group relative flex h-[72px] w-[240px] items-center hover:bg-[var(--color-hover)]"
           @click="closeRailNow"
         >
-          <div class="flex w-[72px] shrink-0 flex-col items-center gap-0.5">
+          <div class="flex w-[72px] shrink-0 flex-col items-center">
             <div
               class="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white transition-[border-radius] duration-100 group-hover:rounded-2xl"
             >{{ userInitial }}</div>
             <span
-              class="text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
-              :style="{ opacity: railHover ? 0 : 1, transition: 'opacity 80ms' }"
+              class="max-w-[60px] truncate text-center text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
+              :style="{
+                marginTop: railHover ? '0px' : '2px',
+                maxHeight: railHover ? '0px' : '14px',
+                overflow: 'hidden',
+                opacity: railHover ? 0 : 1,
+                transition: 'margin-top 150ms, max-height 150ms, opacity 100ms',
+              }"
             >프로필</span>
           </div>
           <div
