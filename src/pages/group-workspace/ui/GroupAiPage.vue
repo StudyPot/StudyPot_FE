@@ -44,6 +44,8 @@ const isSseActive = ref(false)
 const actionBusy = ref<Record<string, boolean>>({})
 const sharedPostId = ref<string | null>(null)
 const showShareDoneModal = ref(false)
+const customMessageId = ref<string | null>(null)
+const customText = ref('')
 
 function subscribeToStream(conversationId: string): void {
   closeStream()
@@ -169,9 +171,29 @@ async function handleSendMessage(): Promise<void> {
   }
 }
 
+function openCustomShare(message: AiConversationMessage): void {
+  customMessageId.value = message.id
+  customText.value = ''
+}
+
+function cancelCustomShare(): void {
+  customMessageId.value = null
+  customText.value = ''
+}
+
+async function submitCustomShare(message: AiConversationMessage): Promise<void> {
+  const instruction = customText.value.trim()
+  if (!instruction) {
+    return
+  }
+  await handleDecideAction(message, 'CONFIRM', instruction)
+  cancelCustomShare()
+}
+
 async function handleDecideAction(
   message: AiConversationMessage,
   decision: AiMessageActionDecision,
+  instruction?: string,
 ): Promise<void> {
   if (!conversation.value || actionBusy.value[message.id]) {
     return
@@ -184,6 +206,7 @@ async function handleDecideAction(
       conversation.value.id,
       message.id,
       decision,
+      instruction,
     )
     const index = messages.value.findIndex((m) => m.id === message.id)
     if (index !== -1) {
@@ -357,7 +380,7 @@ function renderMarkdown(content: string): string {
                 >
                   {{ message.action.title }}
                 </p>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <button
                     type="button"
                     :disabled="actionBusy[message.id]"
@@ -374,6 +397,43 @@ function renderMarkdown(content: string): string {
                   >
                     올리지 않기
                   </button>
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                    @click="openCustomShare(message)"
+                  >
+                    기타
+                  </button>
+                </div>
+
+                <!-- '기타' 직접 요청 입력 -->
+                <div v-if="customMessageId === message.id" class="mt-1 flex flex-col gap-2">
+                  <textarea
+                    v-model="customText"
+                    rows="2"
+                    placeholder="원하는 방식을 알려주세요. 예: 예시 코드 포함해서 더 짧게 정리해줘"
+                    :disabled="actionBusy[message.id]"
+                    class="w-full resize-none rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-2 text-sm leading-6 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50"
+                  />
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      :disabled="actionBusy[message.id] || !customText.trim()"
+                      class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
+                      @click="submitCustomShare(message)"
+                    >
+                      이 방식으로 올리기
+                    </button>
+                    <button
+                      type="button"
+                      :disabled="actionBusy[message.id]"
+                      class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                      @click="cancelCustomShare"
+                    >
+                      취소
+                    </button>
+                  </div>
                 </div>
               </div>
 

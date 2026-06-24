@@ -65,12 +65,13 @@ export function decideAiConversationMessageAction(
   conversationId: string,
   messageId: string,
   decision: AiMessageActionDecision,
+  instruction?: string,
 ): Promise<AiConversationMessage> {
   return apiClient<AiConversationMessage>(
     `/ai-conversations/${conversationId}/messages/${messageId}/action`,
     {
       method: 'POST',
-      body: { decision },
+      body: instruction ? { decision, instruction } : { decision },
     },
   )
 }
