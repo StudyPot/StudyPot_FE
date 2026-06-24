@@ -188,6 +188,8 @@ watch(
       isLoadingComments.value = false
     }
   },
+  // 다른 페이지(AI 팀장 등)에서 ?postId= 로 바로 진입할 때도 상세를 열도록 초기 실행.
+  { immediate: true },
 )
 
 async function loadBoards(): Promise<void> {
