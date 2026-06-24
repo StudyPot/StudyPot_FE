@@ -706,6 +706,26 @@ function getCommentLabel(boardId: string): string {
   return boardMap.value[boardId]?.boardType === 'QUESTION' ? '답변' : '댓글'
 }
 
+function stripMarkdown(text: string | null | undefined): string {
+  if (!text) return ''
+  return text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]+`/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^>\s*/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/^[-*_]{3,}$/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'short',
@@ -862,7 +882,7 @@ function formatDate(value: string): string {
               v-if="post.contentPreview && !isLeaderReport(post.boardId)"
               class="mt-0.5 line-clamp-1 text-sm text-[var(--color-muted)]"
             >
-              {{ post.contentPreview }}
+              {{ stripMarkdown(post.contentPreview) }}
             </p>
 
             <!-- 푸터 -->
