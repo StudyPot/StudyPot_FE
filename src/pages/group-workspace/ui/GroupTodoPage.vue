@@ -207,6 +207,16 @@ const weekRangeLabel = computed(() => {
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(new Date(value))
 }
+
+function weekChipClass(week: CurriculumWeekSummary): string {
+  if (week.id === selectedWeekId.value) {
+    return 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+  }
+  if (week.status === 'PENDING') {
+    return 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]'
+  }
+  return 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:border-[var(--color-line-strong)] hover:text-[var(--color-ink)]'
+}
 </script>
 
 <template>
@@ -236,6 +246,47 @@ function formatDate(value: string): string {
     />
 
     <template v-else-if="pageState === 'loaded'">
+      <!-- ── 주차 탭 ── -->
+      <section class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5">
+        <div class="grid grid-cols-5 gap-2 sm:grid-cols-10">
+          <button
+            v-for="week in allCurriculumWeeks"
+            :key="week.id"
+            type="button"
+            class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
+            :class="weekChipClass(week)"
+            @click="selectWeek(week.id)"
+          >
+            <svg
+              v-if="week.status === 'COMPLETED'"
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            <svg
+              v-else-if="week.status === 'PENDING'"
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span>{{ week.weekNumber }}주</span>
+          </button>
+        </div>
+      </section>
+
       <!-- ── 주차 헤더 (이전 버튼 | 카드 | 다음 버튼) ── -->
       <div class="flex items-center gap-3">
         <!-- 이전 주차 버튼 -->
