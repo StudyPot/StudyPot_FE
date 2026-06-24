@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, type RouteLocationRaw } from 'vue-router'
 
+import { useGroupListStore } from '@/entities/group'
 import type { Notification, NotificationType } from '@/entities/notification'
 import { useInAppNotificationStore } from '../model/inAppNotificationStore'
 
@@ -25,7 +26,14 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
 }
 
 const store = useInAppNotificationStore()
+const groupListStore = useGroupListStore()
 const router = useRouter()
+
+// 알림이 어느 그룹 것인지 표시 — 내가 속한 그룹 목록에서 이름을 찾는다(없으면 미표시).
+function groupNameOf(notification: Notification): string | null {
+  if (!notification.groupId) return null
+  return groupListStore.groups.find((g) => g.id === notification.groupId)?.name ?? null
+}
 const isOpen = ref(false)
 const isMarkingAll = ref(false)
 const markingId = ref<string | null>(null)
@@ -207,6 +215,12 @@ function formatDateTime(value?: string | null): string {
                   NOTIFICATION_TYPE_LABEL[notification.notificationType] ??
                   notification.notificationType
                 }}
+              </span>
+              <span
+                v-if="groupNameOf(notification)"
+                class="max-w-[120px] truncate rounded bg-[var(--color-tint-50)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-primary-text)]"
+              >
+                {{ groupNameOf(notification) }}
               </span>
               <span class="font-semibold text-[var(--color-ink)]">{{ notification.title }}</span>
             </div>

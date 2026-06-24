@@ -371,6 +371,24 @@ function formatRelative(date: string): string {
         <div>
           <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">{{ group.name }}</h1>
           <p class="mt-0.5 text-sm text-[var(--color-muted)]">이번 주 학습 현황을 확인하세요.</p>
+          <p
+            v-if="group.startsAt && group.endsAt"
+            class="mt-1.5 inline-flex items-center gap-1.5 rounded-[var(--radius-chip)] bg-[var(--color-active)] px-2.5 py-1 text-xs font-semibold text-[var(--color-muted)]"
+          >
+            <svg
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            {{ group.startsAt.replace(/-/g, '.') }} ~ {{ group.endsAt.replace(/-/g, '.') }}
+          </p>
         </div>
         <div v-if="isOwner" class="flex shrink-0 gap-2">
           <button
