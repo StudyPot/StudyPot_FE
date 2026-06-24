@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import {
@@ -110,6 +110,48 @@ async function loadMyProfileOnly(): Promise<void> {
     members.value = []
   }
 }
+
+// 온보딩 제출 알림은 방장에게만 가도록 바뀌어(다른 멤버는 SSE 이벤트가 없음), 멤버들의 온보딩 현황이
+// 새로고침 전까지 갱신되지 않는다. 알림과 무관하게 멤버 목록을 주기적·탭 포커스 복귀 시 다시 불러와
+// '제출 완료/미제출', '스터디 시작' 게이트 등이 근실시간으로 반영되도록 한다.
+const MEMBER_POLL_INTERVAL_MS = 20000
+let memberPollTimer: ReturnType<typeof setInterval> | null = null
+
+function refreshMembersIfVisible(): void {
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+  if (!groupId.value) return
+  void loadMembers()
+}
+
+function startMemberPolling(): void {
+  stopMemberPolling()
+  memberPollTimer = setInterval(refreshMembersIfVisible, MEMBER_POLL_INTERVAL_MS)
+}
+
+function stopMemberPolling(): void {
+  if (memberPollTimer) {
+    clearInterval(memberPollTimer)
+    memberPollTimer = null
+  }
+}
+
+function handleVisibilityChange(): void {
+  if (document.visibilityState === 'visible') refreshMembersIfVisible()
+}
+
+onMounted(() => {
+  startMemberPolling()
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
+})
+
+onBeforeUnmount(() => {
+  stopMemberPolling()
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
+})
 </script>
 
 <template>
