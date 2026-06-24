@@ -222,20 +222,18 @@ async function handleSubmit(): Promise<void> {
 }
 
 // 칩 상태/스타일 — 잠긴(미시작/미생성) 주차도 클릭은 되고, 안에서 잠금 안내를 보여준다.
-function isLockedWeek(week: RetrospectiveWeekOverview): boolean {
-  return !week.unlocked && week.status === 'PENDING'
-}
 
-// 완료(제출) 주차: 초록(선택 시 진한 초록). 현재/열림 주차: 흰색(선택 시 다크). 미생성: 회색 잠금.
 function chipClasses(week: RetrospectiveWeekOverview): string {
   const selected = week.weekId === selectedWeekId.value
-  if (isLockedWeek(week)) {
-    return 'border-[var(--color-line)] bg-[var(--color-panel)] text-[var(--color-faint)]'
+  if (!week.unlocked) {
+    return selected
+      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+      : 'border-dashed border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]'
   }
   if (week.answered) {
     return selected
       ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-      : 'border-[var(--color-tint-200)] bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
+      : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-muted)]'
   }
   return selected
     ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
@@ -300,7 +298,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
               <path d="M20 6L9 17l-5-5" />
             </svg>
             <svg
-              v-else-if="isLockedWeek(week)"
+              v-else-if="!week.unlocked"
               class="h-3.5 w-3.5"
               viewBox="0 0 24 24"
               fill="none"
