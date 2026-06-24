@@ -34,7 +34,6 @@ const currentGroupId = computed(() => String(route.params.groupId ?? ''))
 const currentGroup = ref<StudyGroup | null>(null)
 const myOnboardingSubmitted = ref(false)
 const isLoggingOut = ref(false)
-const showUserMenu = ref(false)
 
 // 새 그룹 팝오버 + 코드 참여 모달
 const showCreateMenu = ref(false)
@@ -43,6 +42,24 @@ const showJoinModal = ref(false)
 const joinCode = ref('')
 const joinError = ref('')
 const isJoining = ref(false)
+
+// 레일 hover 드로어: 마우스를 올리면 그룹 목록이 옆으로 펼쳐진다.
+const railHover = ref(false)
+let railCloseTimer: ReturnType<typeof setTimeout> | undefined
+function openRail(): void {
+  if (railCloseTimer) clearTimeout(railCloseTimer)
+  railHover.value = true
+}
+function closeRail(): void {
+  if (railCloseTimer) clearTimeout(railCloseTimer)
+  railCloseTimer = setTimeout(() => {
+    railHover.value = false
+  }, 120)
+}
+function closeRailNow(): void {
+  if (railCloseTimer) clearTimeout(railCloseTimer)
+  railHover.value = false
+}
 
 const loginNotice = computed(() => {
   if (route.query.error === 'oauth') return 'Google 로그인에 실패했습니다. 다시 시도해주세요.'
@@ -142,6 +159,14 @@ watch(
   { immediate: true },
 )
 
+// 페이지 이동 시 레일 hover 드로어를 닫는다.
+watch(
+  () => route.fullPath,
+  () => {
+    closeRailNow()
+  },
+)
+
 // 실시간 알림(SSE)으로 스터디 시작/주차 시작 등 현재 그룹 이벤트가 오면
 // 그룹 상태를 다시 불러와 사이드바 탭(Todo·AI 팀장·회고 등)이 새로고침 없이 즉시 나타나게 한다.
 const LIVE_REFRESH_TYPES = new Set([
@@ -219,13 +244,7 @@ function getIconBg(status: StudyGroupStatus): string {
   return '#c0c4cc'
 }
 
-function toggleUserMenu(event: Event): void {
-  event.stopPropagation()
-  showUserMenu.value = !showUserMenu.value
-}
-
 function closeMenus(): void {
-  showUserMenu.value = false
   showCreateMenu.value = false
 }
 
@@ -378,16 +397,18 @@ function startGoogleLogin(): void {
   </div>
 
   <!-- Discord layout (authenticated) -->
-  <div v-else class="flex h-full overflow-hidden">
+  <div v-else class="relative flex h-full overflow-hidden">
     <!-- ── Server rail (72px) ── -->
     <nav
-      class="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-surface)] py-3"
+      class="flex w-[72px] shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-surface)] py-3"
       aria-label="스터디 그룹"
+      @mouseenter="openRail"
+      @mouseleave="closeRail"
     >
       <!-- Home button -->
       <RouterLink
         :to="{ name: 'groups' }"
-        class="group relative mb-1 flex shrink-0 items-center justify-center"
+        class="group relative flex w-full shrink-0 flex-col items-center gap-1 py-1"
         title="전체 그룹"
       >
         <div
@@ -398,71 +419,245 @@ function startGoogleLogin(): void {
         >
           SP
         </div>
+        <span
+          class="max-w-[64px] truncate text-[10px] font-medium leading-none"
+          :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-muted-deep)]'"
+        >
+          전체
+        </span>
         <div
-          class="absolute -left-[13px] top-1/2 w-[3px] -translate-y-1/2 rounded-r-sm bg-white"
+          class="absolute -left-[13px] top-[18px] w-[3px] -translate-y-1/2 rounded-r-sm bg-[var(--color-primary)]"
           :class="!currentGroupId ? 'h-10' : 'h-0 group-hover:h-5'"
           style="transition: height 100ms"
         />
       </RouterLink>
 
-      <div class="mx-auto h-px w-8 bg-[var(--color-line-strong)]" />
+      <div class="my-0.5 h-px w-8 bg-[var(--color-line-strong)]" />
 
       <!-- Group server icons (status-aware) -->
       <RouterLink
         v-for="group in groupListStore.groups"
         :key="group.id"
         :to="{ name: 'group-overview', params: { groupId: group.id } }"
-        class="group relative flex shrink-0 items-center justify-center"
+        class="group relative flex w-full shrink-0 flex-col items-center gap-1 py-1"
         :title="`${group.name} · ${statusLabel[group.status]}`"
       >
         <!-- Icon -->
-        <div
-          :class="getIconClasses(group, currentGroupId === group.id)"
-          :style="{ backgroundColor: getIconBg(group.status) }"
-        >
-          {{ getGroupInitials(group.name) }}
+        <div class="relative">
+          <div
+            :class="getIconClasses(group, currentGroupId === group.id)"
+            :style="{ backgroundColor: getIconBg(group.status) }"
+          >
+            {{ getGroupInitials(group.name) }}
+          </div>
+          <!-- Status dot (bottom-right) -->
+          <span
+            :class="[
+              'pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--color-surface)]',
+              getDotClass(group.status),
+            ]"
+          />
         </div>
 
-        <!-- Status dot (bottom-right) -->
         <span
-          :class="[
-            'pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[var(--color-rail)]',
-            getDotClass(group.status),
-          ]"
-        />
+          class="max-w-[64px] truncate text-[10px] font-medium leading-none"
+          :class="
+            currentGroupId === group.id
+              ? 'text-[var(--color-ink)]'
+              : 'text-[var(--color-muted-deep)]'
+          "
+        >
+          {{ group.name }}
+        </span>
 
         <!-- Selection pill -->
         <div
-          class="absolute -left-[13px] top-1/2 w-[3px] -translate-y-1/2 rounded-r-sm bg-white"
+          class="absolute -left-[13px] top-[18px] w-[3px] -translate-y-1/2 rounded-r-sm bg-[var(--color-primary)]"
           :class="currentGroupId === group.id ? 'h-10' : 'h-0 group-hover:h-5'"
           style="transition: height 100ms"
         />
       </RouterLink>
 
-      <div class="mx-auto h-px w-8 bg-[var(--color-line-strong)]" />
+      <div class="my-0.5 h-px w-8 bg-[var(--color-line-strong)]" />
 
       <!-- 새 그룹 / 코드 참여 (팝오버) -->
       <button
         type="button"
-        class="group flex h-12 w-12 shrink-0 items-center justify-center rounded-3xl bg-[var(--color-active)] text-[var(--color-success)] transition-[border-radius,background-color] duration-100 hover:rounded-2xl hover:bg-[var(--color-success)] hover:text-white"
+        class="group flex w-full shrink-0 flex-col items-center gap-1 py-1"
         title="새 그룹 / 코드 참여"
         @click="toggleCreateMenu"
       >
-        <svg
-          class="h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
+        <span
+          class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[var(--color-active)] text-[var(--color-success)] transition-[border-radius,background-color] duration-100 group-hover:rounded-2xl group-hover:bg-[var(--color-success)] group-hover:text-white"
         >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
+        <span class="text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
+          >추가</span
+        >
       </button>
+
+      <!-- Profile (bottom) -->
+      <RouterLink
+        :to="{ name: 'profile' }"
+        class="group relative mt-auto flex w-full shrink-0 flex-col items-center gap-1 py-1"
+        title="내 프로필"
+      >
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-3xl bg-[var(--color-primary)] text-sm font-bold text-white transition-[border-radius] duration-100 group-hover:rounded-2xl"
+        >
+          {{ userInitial }}
+        </div>
+        <span class="text-[10px] font-medium leading-none text-[var(--color-muted-deep)]"
+          >프로필</span
+        >
+      </RouterLink>
     </nav>
 
-    <!-- ── Channel panel (240px) ── -->
+    <!-- ── Rail hover drawer (레일 위로 펼쳐지는 단일 패널) ── -->
+    <aside
+      class="absolute left-0 top-0 z-40 flex h-full w-[264px] flex-col border-r border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-strong)]"
+      :style="{
+        transition: 'transform 200ms ease-out, opacity 160ms ease-out',
+        transformOrigin: 'left center',
+        transform: railHover ? 'translateX(0)' : 'translateX(-16px)',
+        opacity: railHover ? 1 : 0,
+        pointerEvents: railHover ? 'auto' : 'none',
+      }"
+      :aria-hidden="!railHover"
+      aria-label="그룹 빠른 이동"
+      @mouseenter="openRail"
+      @mouseleave="closeRail"
+    >
+      <nav class="flex-1 overflow-y-auto p-2">
+        <!-- 전체 그룹 -->
+        <RouterLink
+          :to="{ name: 'groups' }"
+          class="flex h-11 items-center gap-3 rounded-[var(--radius-button)] px-2.5 text-sm font-semibold transition-colors hover:bg-[var(--color-hover)]"
+          :class="!currentGroupId ? 'bg-[var(--color-active)]' : ''"
+          @click="closeRailNow"
+        >
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-[11px] font-bold text-white"
+          >
+            SP
+          </span>
+          <span :class="!currentGroupId ? 'text-[var(--color-ink)]' : 'text-[var(--color-body)]'"
+            >전체 그룹</span
+          >
+        </RouterLink>
+
+        <p class="mb-1 mt-3 px-2.5 text-[11px] font-medium text-[var(--color-muted-deep)]">
+          참여 중인 그룹
+        </p>
+
+        <RouterLink
+          v-for="g in groupListStore.groups"
+          :key="g.id"
+          :to="{ name: 'group-overview', params: { groupId: g.id } }"
+          class="flex h-11 items-center gap-3 rounded-[var(--radius-button)] px-2.5 text-sm transition-colors hover:bg-[var(--color-hover)]"
+          :class="currentGroupId === g.id ? 'bg-[var(--color-active)]' : ''"
+          @click="closeRailNow"
+        >
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold text-white"
+            :style="{ backgroundColor: getIconBg(g.status) }"
+          >
+            {{ getGroupInitials(g.name) }}
+          </span>
+          <span class="min-w-0 flex-1 truncate font-medium text-[var(--color-ink)]">{{
+            g.name
+          }}</span>
+          <span class="h-2 w-2 shrink-0 rounded-full" :class="getDotClass(g.status)" />
+        </RouterLink>
+
+        <p
+          v-if="groupListStore.groups.length === 0"
+          class="px-2.5 py-3 text-xs leading-5 text-[var(--color-muted)]"
+        >
+          아직 참여 중인 그룹이 없어요.
+        </p>
+
+        <button
+          type="button"
+          class="mt-1 flex h-11 w-full items-center gap-3 rounded-[var(--radius-button)] px-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-hover)]"
+          @click="goCreateGroup"
+        >
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-active)] text-[var(--color-success)]"
+          >
+            <svg
+              class="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          새 그룹 만들기
+        </button>
+      </nav>
+
+      <!-- Profile row -->
+      <div
+        class="flex h-[60px] shrink-0 items-center gap-2.5 border-t border-[var(--color-line)] px-3"
+      >
+        <RouterLink
+          :to="{ name: 'profile' }"
+          class="flex min-w-0 flex-1 items-center gap-2.5 rounded-[var(--radius-button)] px-1.5 py-1.5 transition-colors hover:bg-[var(--color-hover)]"
+          @click="closeRailNow"
+        >
+          <div
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white"
+          >
+            {{ userInitial }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[13px] font-semibold text-[var(--color-ink)]">
+              {{ sessionStore.user?.nickname }}
+            </p>
+            <p class="truncate text-[10px] text-[var(--color-muted-deep)]">
+              {{ sessionStore.user?.email }}
+            </p>
+          </div>
+        </RouterLink>
+        <button
+          type="button"
+          :disabled="isLoggingOut"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-muted-deep)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-danger)] disabled:opacity-40"
+          :title="isLoggingOut ? '로그아웃 중...' : '로그아웃'"
+          @click="handleLogout"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── Channel panel (240px, 그룹 워크스페이스에서만) ── -->
     <div
+      v-if="currentGroupId"
       class="flex w-60 shrink-0 flex-col overflow-hidden border-r border-[var(--color-line)] bg-[var(--color-surface)]"
     >
       <!-- Panel header -->
@@ -471,7 +666,7 @@ function startGoogleLogin(): void {
       >
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-[var(--color-ink)]">
-            {{ currentGroupId ? (currentGroup?.name ?? '...') : '내 스터디' }}
+            {{ currentGroup?.name ?? '...' }}
           </p>
           <!-- Status badge for current group -->
           <p
@@ -576,135 +771,7 @@ function startGoogleLogin(): void {
             </RouterLink>
           </template>
         </template>
-
-        <!-- No group selected: 참여 중인 스터디 목록 -->
-        <template v-else>
-          <RouterLink
-            :to="{ name: 'groups' }"
-            class="mb-1 flex h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
-            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
-          >
-            <svg
-              class="h-4 w-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-            </svg>
-            <span>전체 그룹</span>
-          </RouterLink>
-
-          <p class="mb-1 mt-3 px-2 text-[11px] font-medium text-[var(--color-muted-deep)]">
-            참여 중
-          </p>
-          <RouterLink
-            v-for="g in groupListStore.groups"
-            :key="g.id"
-            :to="{ name: 'group-overview', params: { groupId: g.id } }"
-            class="flex h-10 items-center gap-2.5 rounded-lg px-2 text-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-hover)]"
-            active-class="bg-[var(--color-active)]"
-          >
-            <span
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white"
-              :style="{ backgroundColor: getIconBg(g.status) }"
-            >
-              {{ getGroupInitials(g.name) }}
-            </span>
-            <span class="min-w-0 flex-1 truncate font-medium">{{ g.name }}</span>
-            <span class="h-2 w-2 shrink-0 rounded-full" :class="getDotClass(g.status)" />
-          </RouterLink>
-
-          <p
-            v-if="groupListStore.groups.length === 0"
-            class="px-2 py-4 text-xs leading-5 text-[var(--color-muted)]"
-          >
-            아직 참여 중인 그룹이 없어요.<br />레일의 + 로 새 그룹을 만들어 보세요.
-          </p>
-        </template>
       </nav>
-
-      <!-- User menu popup -->
-      <Transition
-        enter-active-class="transition-all duration-150 ease-out"
-        enter-from-class="opacity-0 translate-y-1"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition-all duration-100 ease-in"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-1"
-      >
-        <div v-if="showUserMenu" class="border-t border-[var(--color-line)] py-1" @click.stop>
-          <RouterLink
-            :to="{ name: 'profile' }"
-            class="flex h-8 items-center gap-2 px-4 text-sm text-[var(--color-muted)] transition-colors hover:bg-[rgba(25,195,125,0.11)] hover:text-[var(--color-ink)]"
-            active-class="!text-[var(--color-ink)]"
-            @click="showUserMenu = false"
-          >
-            <svg
-              class="h-4 w-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span>내 프로필</span>
-          </RouterLink>
-        </div>
-      </Transition>
-
-      <!-- User panel -->
-      <div
-        class="flex h-[52px] shrink-0 cursor-pointer items-center gap-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-2 transition-colors hover:bg-[var(--color-hover)]"
-        role="button"
-        tabindex="0"
-        @click="toggleUserMenu"
-        @keydown.enter="toggleUserMenu"
-        @keydown.space.prevent="toggleUserMenu"
-      >
-        <div
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white"
-        >
-          {{ userInitial }}
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-[13px] font-medium text-[var(--color-ink)]">
-            {{ sessionStore.user?.nickname }}
-          </p>
-          <p class="truncate text-[10px] text-[var(--color-muted-deep)]">
-            {{ sessionStore.user?.email }}
-          </p>
-        </div>
-        <button
-          type="button"
-          :disabled="isLoggingOut"
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded text-[var(--color-muted-deep)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-danger)] disabled:opacity-40"
-          :title="isLoggingOut ? '로그아웃 중...' : '로그아웃'"
-          @click.stop="handleLogout"
-        >
-          <svg
-            class="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
-        </button>
-      </div>
     </div>
 
     <!-- ── Main content ── -->
