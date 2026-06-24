@@ -32,5 +32,6 @@ export type RetrospectiveWeekOverview = {
   status: string
   unlocked: boolean
   answered: boolean
+  reportPosted: boolean
   questions: RetrospectiveQuestion[]
 }

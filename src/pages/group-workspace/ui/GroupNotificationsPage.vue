@@ -15,6 +15,7 @@ import {
   type LlmUsagePurpose,
   type LlmUsageStatus,
 } from '@/entities/operation'
+import { useGroupListStore } from '@/entities/group'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -64,6 +65,13 @@ if (!workspaceContext) {
 }
 
 const { groupId } = workspaceContext
+
+const groupListStore = useGroupListStore()
+// '내 알림'은 여러 그룹의 알림이 섞여 있어, 각 알림이 어느 그룹 것인지 이름을 함께 보여준다.
+function groupNameOf(notification: Notification): string | null {
+  if (!notification.groupId) return null
+  return groupListStore.groups.find((g) => g.id === notification.groupId)?.name ?? null
+}
 
 const activeTab = ref<Tab>('my')
 
@@ -308,6 +316,12 @@ function formatNumber(value: number): string {
                     class="rounded border border-[var(--color-line)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-muted)]"
                   >
                     {{ NOTIFICATION_TYPE_LABEL[notification.notificationType] }}
+                  </span>
+                  <span
+                    v-if="groupNameOf(notification)"
+                    class="max-w-[140px] truncate rounded bg-[var(--color-tint-50)] px-1.5 py-0.5 text-xs font-semibold text-[var(--color-primary-text)]"
+                  >
+                    {{ groupNameOf(notification) }}
                   </span>
                   <span class="font-semibold text-[var(--color-ink)]">{{
                     notification.title

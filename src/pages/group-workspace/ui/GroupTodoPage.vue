@@ -63,15 +63,6 @@ const completionMap = reactive<Record<string, TaskCompletionStatus>>({})
 const updatingTaskId = ref<string | null>(null)
 const taskError = reactive<Record<string, string>>({})
 
-// ── 주차 네비게이션 (PENDING 포함 전체 주차 기준) ───────────────
-const selectedIndex = computed(() =>
-  allCurriculumWeeks.value.findIndex((w) => w.id === selectedWeekId.value),
-)
-const canPrev = computed(() => selectedIndex.value > 0)
-const canNext = computed(
-  () => selectedIndex.value >= 0 && selectedIndex.value < allCurriculumWeeks.value.length - 1,
-)
-
 const selectedWeekSummary = computed(() =>
   allCurriculumWeeks.value.find((w) => w.id === selectedWeekId.value),
 )
@@ -92,13 +83,6 @@ const displayedWeekNumber = computed(
 function selectPlaceholder(weekNumber: number): void {
   selectedPlaceholder.value = weekNumber
   selectedWeekId.value = ''
-}
-
-function goPrev(): void {
-  if (canPrev.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value - 1]!.id)
-}
-function goNext(): void {
-  if (canNext.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value + 1]!.id)
 }
 
 // ── 진행률 (스킵 제외) ─────────────────────────────────────────
@@ -351,30 +335,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
         </div>
       </section>
 
-      <!-- ── 주차 헤더 (이전 버튼 | 카드 | 다음 버튼) ── -->
-      <div class="flex items-center gap-3">
-        <!-- 이전 주차 버튼 -->
-        <button
-          type="button"
-          :disabled="!canPrev"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label="이전 주차"
-          @click="goPrev"
-        >
-          <svg
-            class="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-
-        <!-- 주차 정보 카드 -->
+      <!-- ── 주차 정보 카드 -->
         <section
           class="min-w-0 flex-1 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
         >
@@ -409,29 +370,6 @@ function weekChipClass(week: CurriculumWeekSummary): string {
             />
           </div>
         </section>
-
-        <!-- 다음 주차: 이동 가능 → 화살표 / PENDING 주차 있음 → 자물쇠 / 없음 → 공백 -->
-        <button
-          v-if="canNext"
-          type="button"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)]"
-          aria-label="다음 주차"
-          @click="goNext"
-        >
-          <svg
-            class="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-        <div v-else class="h-9 w-9 shrink-0" />
-      </div>
 
       <!-- 주차 상세 로딩 -->
       <ScreenState
