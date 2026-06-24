@@ -132,6 +132,7 @@ export const boardHandlers = [
 
     const body = (await request.json()) as Record<string, unknown>
     const updated = { ...post }
+    if (body.boardId !== undefined) updated.boardId = String(body.boardId)
     if (body.title !== undefined) updated.title = String(body.title)
     if (body.content !== undefined) {
       updated.content = String(body.content)

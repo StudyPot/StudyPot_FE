@@ -86,6 +86,7 @@ const isCreating = ref(false)
 const createError = ref('')
 
 const editPostForm = ref({ title: '', content: '', pinned: false })
+const editPostBoardId = ref('')
 const isUpdatingPost = ref(false)
 const editPostError = ref('')
 
@@ -262,6 +263,7 @@ function backToList(): void {
 
 function openEditPost(): void {
   if (!selectedPost.value) return
+  editPostBoardId.value = selectedPost.value.boardId
   editPostForm.value = {
     title: selectedPost.value.title,
     content: selectedPost.value.content,
@@ -274,6 +276,10 @@ function openEditPost(): void {
 
 async function submitEditPost(): Promise<void> {
   if (!selectedPost.value) return
+  if (!editPostBoardId.value) {
+    editPostError.value = '카테고리를 선택해주세요.'
+    return
+  }
   if (!editPostForm.value.title.trim() || !editPostForm.value.content.trim()) {
     editPostError.value = '제목과 내용을 입력해주세요.'
     return
@@ -282,6 +288,7 @@ async function submitEditPost(): Promise<void> {
   editPostError.value = ''
   try {
     const updated = await updateBoardPost(groupId.value, selectedPost.value.id, {
+      boardId: editPostBoardId.value,
       title: editPostForm.value.title.trim(),
       content: editPostForm.value.content.trim(),
       pinned: editPostForm.value.pinned,
@@ -1218,6 +1225,29 @@ function formatDate(value: string): string {
         <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">게시글 수정</h2>
 
         <form class="mt-5 grid gap-4" @submit.prevent="submitEditPost">
+          <!-- 카테고리 선택 -->
+          <div class="grid gap-2">
+            <span class="text-sm font-semibold text-[var(--color-ink)]">
+              카테고리 <span class="text-[var(--color-danger)]">*</span>
+            </span>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="board in writableBoards"
+                :key="board.id"
+                type="button"
+                :class="[
+                  'rounded-md border px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
+                  editPostBoardId === board.id
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                    : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                ]"
+                @click="editPostBoardId = board.id"
+              >
+                {{ board.name }}
+              </button>
+            </div>
+          </div>
+
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-[var(--color-ink)]">제목</span>
             <input
