@@ -154,7 +154,11 @@ onMounted(() => {
 watch(
   () => route.query.postId,
   async (postId) => {
-    if (!postId || viewMode.value === 'detail') return
+    if (!postId) {
+      if (viewMode.value === 'detail') backToList()
+      return
+    }
+    if (viewMode.value === 'detail') return
     const id = String(postId)
     viewMode.value = 'detail'
     selectedPost.value = null
