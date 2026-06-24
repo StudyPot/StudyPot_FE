@@ -301,13 +301,10 @@ function formatDate(value?: string | null): string {
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
             <div
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+              class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)]"
               aria-hidden="true"
             >
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
-                <path d="M5.5 15l.8 2.4L8.7 18l-2.4.8L5.5 21l-.8-2.2L2.3 18l2.4-.6L5.5 15z" />
-              </svg>
+              <img src="/AIbot.png" alt="" class="h-full w-full object-cover" />
             </div>
             <div class="flex flex-col">
               <div class="flex items-center gap-2">
@@ -530,11 +527,9 @@ function formatDate(value?: string | null): string {
         >
           <div class="flex items-center gap-3">
             <div
-              class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+              class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)]"
             >
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
-              </svg>
+              <img src="/AIbot.png" alt="" class="h-full w-full object-cover" />
             </div>
             <div>
               <h2 id="persona-modal-title" class="text-base font-bold text-[var(--color-ink)]">

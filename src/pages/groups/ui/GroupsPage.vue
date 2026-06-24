@@ -34,6 +34,14 @@ const searchQuery = ref('')
 const activeStatus = ref<StatusFilterOption>('ALL')
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
+const sortedGroups = computed(() =>
+  [...groups.value].sort((a, b) => {
+    const aBookmarked = bookmarkedGroupIds.value.has(a.id) ? 0 : 1
+    const bBookmarked = bookmarkedGroupIds.value.has(b.id) ? 0 : 1
+    return aBookmarked - bBookmarked
+  }),
+)
+
 const hasGroups = computed(() => groups.value.length > 0)
 const activeCount = computed(() => groups.value.filter((g) => g.status === 'ACTIVE').length)
 const summary = ref<GroupSummary | null>(null)
@@ -286,7 +294,7 @@ const STATUS_DOT: Record<StudyGroupStatus, string> = {
     <!-- 그룹 카드 그리드 -->
     <div v-else class="grid gap-4 lg:grid-cols-2">
       <RouterLink
-        v-for="group in groups"
+        v-for="group in sortedGroups"
         :key="group.id"
         :to="{ name: 'group-overview', params: { groupId: group.id } }"
         class="group relative block rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--color-line-strong)] hover:shadow-[var(--shadow-strong)]"

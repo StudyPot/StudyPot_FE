@@ -272,12 +272,10 @@ function renderMarkdown(content: string): string {
           <!-- ASSISTANT (좌측 아바타 + 흰 버블) -->
           <div v-else-if="message.senderType === 'ASSISTANT'" class="flex items-start gap-2.5">
             <span
-              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+              class="mt-0.5 flex h-8 w-8 shrink-0 overflow-hidden rounded-xl bg-[var(--color-primary)]"
               aria-hidden="true"
             >
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
-              </svg>
+              <img src="/AIbot.png" alt="" class="h-full w-full object-cover" />
             </span>
             <div
               class="ai-markdown max-w-[78%] rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
@@ -304,12 +302,10 @@ function renderMarkdown(content: string): string {
             class="flex items-start gap-2.5"
           >
             <span
-              class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
+              class="mt-0.5 flex h-8 w-8 shrink-0 overflow-hidden rounded-xl bg-[var(--color-primary)]"
               aria-hidden="true"
             >
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
-              </svg>
+              <img src="/AIbot.png" alt="" class="h-full w-full object-cover" />
             </span>
             <div
               class="flex items-center gap-1.5 rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-soft)]"
