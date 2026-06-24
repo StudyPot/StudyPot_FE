@@ -369,8 +369,6 @@ function formatRelative(date: string): string {
       <!-- 헤더 -->
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">{{ group.name }}</h1>
-          <p class="mt-0.5 text-sm text-[var(--color-muted)]">이번 주 학습 현황을 확인하세요.</p>
           <p
             v-if="group.startsAt && group.endsAt"
             class="mt-1.5 inline-flex items-center gap-1.5 rounded-[var(--radius-chip)] bg-[var(--color-active)] px-2.5 py-1 text-xs font-semibold text-[var(--color-muted)]"
@@ -389,6 +387,8 @@ function formatRelative(date: string): string {
             </svg>
             {{ group.startsAt.replace(/-/g, '.') }} ~ {{ group.endsAt.replace(/-/g, '.') }}
           </p>
+          <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">{{ group.name }}</h1>
+          <p class="mt-0.5 text-sm text-[var(--color-muted)]">이번 주 학습 현황을 확인하세요.</p>
         </div>
         <div v-if="isOwner" class="flex shrink-0 gap-2">
           <button
