@@ -35,12 +35,9 @@ const errorMessage = ref('')
 const curriculum = ref<Curriculum | null>(null)
 const currentWeekCache = ref<CurriculumWeek | null>(null)
 
-// 이동 가능한 주차(생성된 주차 = PENDING 이 아닌 주차), 주차 번호 순
-const navigableWeeks = computed<CurriculumWeekSummary[]>(() =>
-  (curriculum.value?.weeks ?? [])
-    .filter((w) => w.status !== 'PENDING')
-    .slice()
-    .sort((a, b) => a.weekNumber - b.weekNumber),
+// 전체 주차(PENDING 포함), 주차 번호 순
+const allCurriculumWeeks = computed<CurriculumWeekSummary[]>(() =>
+  [...(curriculum.value?.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber),
 )
 
 const selectedWeekId = ref<string>('')
@@ -53,20 +50,25 @@ const completionMap = reactive<Record<string, TaskCompletionStatus>>({})
 const updatingTaskId = ref<string | null>(null)
 const taskError = reactive<Record<string, string>>({})
 
-// ── 주차 네비게이션 ────────────────────────────────────────────
+// ── 주차 네비게이션 (PENDING 포함 전체 주차 기준) ───────────────
 const selectedIndex = computed(() =>
-  navigableWeeks.value.findIndex((w) => w.id === selectedWeekId.value),
+  allCurriculumWeeks.value.findIndex((w) => w.id === selectedWeekId.value),
 )
 const canPrev = computed(() => selectedIndex.value > 0)
 const canNext = computed(
-  () => selectedIndex.value >= 0 && selectedIndex.value < navigableWeeks.value.length - 1,
+  () => selectedIndex.value >= 0 && selectedIndex.value < allCurriculumWeeks.value.length - 1,
 )
 
+const selectedWeekSummary = computed(() =>
+  allCurriculumWeeks.value.find((w) => w.id === selectedWeekId.value),
+)
+const isSelectedWeekPending = computed(() => selectedWeekSummary.value?.status === 'PENDING')
+
 function goPrev(): void {
-  if (canPrev.value) selectWeek(navigableWeeks.value[selectedIndex.value - 1]!.id)
+  if (canPrev.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value - 1]!.id)
 }
 function goNext(): void {
-  if (canNext.value) selectWeek(navigableWeeks.value[selectedIndex.value + 1]!.id)
+  if (canNext.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value + 1]!.id)
 }
 
 // ── 진행률 (스킵 제외) ─────────────────────────────────────────
@@ -95,7 +97,14 @@ const sortedTasks = computed(() =>
 onMounted(() => void loadInitial())
 
 watch(selectedWeekId, async (weekId) => {
-  if (weekId) await loadWeekDetail(weekId)
+  if (!weekId) return
+  if (isSelectedWeekPending.value) {
+    selectedWeek.value = null
+    tasks.value = []
+    Object.keys(completionMap).forEach((k) => delete completionMap[k])
+  } else {
+    await loadWeekDetail(weekId)
+  }
 })
 
 async function loadInitial(): Promise<void> {
@@ -112,8 +121,8 @@ async function loadInitial(): Promise<void> {
     }
     curriculum.value = curriculumData
     currentWeekCache.value = currentWeek
-    const weeks = navigableWeeks.value
-    selectedWeekId.value = currentWeek?.id ?? weeks[weeks.length - 1]?.id ?? ''
+    const fallbackWeek = allCurriculumWeeks.value.filter((w) => w.status !== 'PENDING').pop()
+    selectedWeekId.value = currentWeek?.id ?? fallbackWeek?.id ?? ''
     pageState.value = 'loaded'
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) pageState.value = 'none'
@@ -227,108 +236,86 @@ function formatDate(value: string): string {
     />
 
     <template v-else-if="pageState === 'loaded'">
-      <!-- ── 주차 헤더 (주차 네비 + 완료 카운트 + 진행바) ── -->
-      <section
-        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex min-w-0 items-start gap-3">
-            <!-- 이전 주차 (주차 제목 줄에 맞춰 상단 정렬) -->
-            <button
-              type="button"
-              :disabled="!canPrev"
-              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="이전 주차"
-              @click="goPrev"
-            >
-              <svg
-                class="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
+      <!-- ── 주차 헤더 (이전 버튼 | 카드 | 다음 버튼) ── -->
+      <div class="flex items-center gap-3">
+        <!-- 이전 주차 버튼 -->
+        <button
+          type="button"
+          :disabled="!canPrev"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="이전 주차"
+          @click="goPrev"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
 
+        <!-- 주차 정보 카드 -->
+        <section
+          class="min-w-0 flex-1 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
-                  {{ selectedWeek?.weekNumber ?? '-' }}주차
-                </h1>
-                <!-- 다음 주차: 이동 가능 → 화살표 / 마지막·미생성 → 잠금 -->
-                <button
-                  v-if="canNext"
-                  type="button"
-                  class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
-                  aria-label="다음 주차"
-                  @click="goNext"
-                >
-                  <svg
-                    class="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-                <span v-else class="group/lock relative flex">
-                  <span
-                    class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-active)] text-[var(--color-muted)]"
-                    aria-label="다음 주차 잠김"
-                  >
-                    <svg
-                      class="h-3.5 w-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <rect x="3" y="11" width="18" height="11" rx="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </span>
-                  <!-- 커스텀 툴팁: hover 즉시 그린 하이라이트로 표시 -->
-                  <span
-                    role="tooltip"
-                    class="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-chip)] bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white opacity-0 shadow-[var(--shadow-soft)] transition-opacity duration-100 group-hover/lock:opacity-100"
-                    >다음 주차는 아직 잠겨 있어요</span
-                  >
-                </span>
-              </div>
+              <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
+                {{ selectedWeekSummary?.weekNumber ?? selectedWeek?.weekNumber ?? '-' }}주차
+              </h1>
               <p v-if="weekRangeLabel" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 {{ weekRangeLabel }}
               </p>
+              <p v-else-if="isSelectedWeekPending" class="mt-0.5 text-sm text-[var(--color-muted)]">
+                아직 시작 전이에요
+              </p>
+            </div>
+            <div v-if="!isSelectedWeekPending" class="shrink-0 text-right">
+              <p class="text-2xl font-extrabold leading-none">
+                <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
+                <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
+              </p>
+              <p class="mt-1 text-xs text-[var(--color-muted)]">완료</p>
             </div>
           </div>
 
-          <div class="shrink-0 text-right">
-            <p class="text-2xl font-extrabold leading-none">
-              <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
-              <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
-            </p>
-            <p class="mt-1 text-xs text-[var(--color-muted)]">완료</p>
-          </div>
-        </div>
-
-        <div
-          class="mt-4 h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
-        >
           <div
-            class="h-full rounded-[var(--radius-chip)] bg-[var(--color-primary)] transition-[width] duration-500"
-            :style="{ width: `${progressPercent}%` }"
-          />
-        </div>
-      </section>
+            class="mt-4 h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
+          >
+            <div
+              class="h-full rounded-[var(--radius-chip)] bg-[var(--color-primary)] transition-[width] duration-500"
+              :style="{ width: `${progressPercent}%` }"
+            />
+          </div>
+        </section>
+
+        <!-- 다음 주차: 이동 가능 → 화살표 / PENDING 주차 있음 → 자물쇠 / 없음 → 공백 -->
+        <button
+          v-if="canNext"
+          type="button"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)]"
+          aria-label="다음 주차"
+          @click="goNext"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+        <div v-else class="h-9 w-9 shrink-0" />
+      </div>
 
       <!-- 주차 상세 로딩 -->
       <ScreenState
@@ -339,7 +326,33 @@ function formatDate(value: string): string {
       />
 
       <template v-else>
-        <!-- 안내 배너 -->
+        <!-- PENDING 주차: 잠금 안내 -->
+        <div
+          v-if="isSelectedWeekPending"
+          class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
+        >
+          <div
+            class="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-active)] text-[var(--color-muted)]"
+          >
+            <svg
+              class="h-7 w-7"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <p class="font-semibold text-[var(--color-ink)]">아직 시작되지 않은 주차예요</p>
+          <p class="text-sm text-[var(--color-muted)]">해당 주차가 시작되면 커리큘럼이 공개돼요.</p>
+        </div>
+
+        <!-- 일반 주차 콘텐츠 -->
+        <template v-else>
         <div
           class="mt-4 flex items-center gap-2.5 rounded-[var(--radius-input)] bg-[var(--color-tint-50)] px-4 py-3 text-sm text-[var(--color-primary-text)]"
         >
@@ -492,6 +505,7 @@ function formatDate(value: string): string {
         <p v-else class="mt-6 text-center text-sm text-[var(--color-muted)]">
           이 주차에 등록된 과제가 없어요.
         </p>
+        </template>
       </template>
     </template>
   </div>
