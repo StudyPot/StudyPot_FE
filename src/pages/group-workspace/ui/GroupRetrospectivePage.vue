@@ -78,7 +78,7 @@ const isSubmitting = ref(false)
 const submitError = ref('')
 
 const selectedWeek = computed<RetrospectiveWeekOverview | null>(
-  () => weeks.value.find((w) => w.weekId === selectedWeekId.value) ?? null,
+  () => displayWeeks.value.find((w) => w.weekId === selectedWeekId.value) ?? null,
 )
 
 const questionMode = computed<'interactive' | 'readonly' | 'locked'>(() => {
@@ -219,13 +219,9 @@ async function handleSubmit(): Promise<void> {
   }
 }
 
-// 칩 상태/스타일
+// 칩 상태/스타일 — 잠긴(미시작/미생성) 주차도 클릭은 되고, 안에서 잠금 안내를 보여준다.
 function isLockedWeek(week: RetrospectiveWeekOverview): boolean {
   return !week.unlocked && week.status === 'PENDING'
-}
-
-function chipDisabled(week: RetrospectiveWeekOverview): boolean {
-  return isLockedWeek(week)
 }
 
 // 완료(제출) 주차: 초록(선택 시 진한 초록). 현재/열림 주차: 흰색(선택 시 다크). 미생성: 회색 잠금.
@@ -280,15 +276,14 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
           <p class="text-xs text-[var(--color-muted)]">할 일을 모두 끝낸 주차만 열려요</p>
         </div>
 
-        <div class="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10">
+        <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
           <button
             v-for="week in displayWeeks"
             :key="week.weekId"
             type="button"
-            :disabled="chipDisabled(week)"
-            class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition disabled:cursor-not-allowed"
+            class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
             :class="chipClasses(week)"
-            @click="!chipDisabled(week) && selectWeek(week)"
+            @click="selectWeek(week)"
           >
             <svg
               v-if="week.answered"
@@ -346,7 +341,10 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
             <p class="font-bold text-[var(--color-ink)]">
               {{ selectedWeek.weekNumber }}주차 회고는 아직 잠겨 있어요
             </p>
-            <p class="mt-1 text-sm text-[var(--color-muted)]">
+            <p v-if="selectedWeek.status === 'PENDING'" class="mt-1 text-sm text-[var(--color-muted)]">
+              아직 시작하지 않은 주차예요. 이전 주차가 끝나면 순서대로 공개돼요.
+            </p>
+            <p v-else class="mt-1 text-sm text-[var(--color-muted)]">
               이번 주 할 일을 모두 완료하면 회고가 열려요.<template v-if="taskProgress">
                 지금은 {{ taskProgress.done }}/{{ taskProgress.total }} 완료 ·
                 {{ Math.max(0, taskProgress.total - taskProgress.done) }}개 남음</template
@@ -355,6 +353,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
           </div>
         </div>
         <RouterLink
+          v-if="selectedWeek.status !== 'PENDING'"
           :to="{ name: 'group-todo', params: { groupId } }"
           class="inline-flex h-10 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)]"
         >
