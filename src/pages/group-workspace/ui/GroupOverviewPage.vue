@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { getBoardPost, listAllPosts } from '@/entities/board/api/boardApi'
 import {
   deleteGroup,
   getGroupCategoryColor,
@@ -65,6 +68,41 @@ async function loadRecommendations(): Promise<void> {
 
 function startStudyWithTopic(topic: string): void {
   void router.push({ name: 'group-create', query: { topic } })
+}
+
+// ── 수료 리포트 모달 ─────────────────────────────────────────────
+const REPORT_TITLE = '수료 리포트'
+const showReportModal = ref(false)
+const reportLoading = ref(false)
+const reportError = ref('')
+const reportHtml = ref('')
+const reportTitle = ref(REPORT_TITLE)
+
+async function openReportModal(): Promise<void> {
+  showReportModal.value = true
+  if (reportHtml.value || reportLoading.value) return
+  reportLoading.value = true
+  reportError.value = ''
+  try {
+    const page = await listAllPosts(groupId.value, { pageSize: 50 })
+    const summary = page.items.find((p) => p.title === REPORT_TITLE)
+    if (!summary) {
+      reportError.value = '아직 수료 리포트가 준비되지 않았어요. 잠시 후 다시 확인해 주세요.'
+      return
+    }
+    const post = await getBoardPost(groupId.value, summary.id)
+    reportTitle.value = post.title || REPORT_TITLE
+    reportHtml.value = DOMPurify.sanitize(marked.parse(post.content ?? '', { async: false }) as string)
+  } catch (error) {
+    reportError.value =
+      error instanceof ApiError ? error.message : '수료 리포트를 불러오지 못했어요.'
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+function closeReportModal(): void {
+  showReportModal.value = false
 }
 
 const myUserId = computed(() => sessionStore.user?.id ?? null)
@@ -721,12 +759,13 @@ function formatRelative(date: string): string {
           >
             회고 돌아보기
           </RouterLink>
-          <RouterLink
-            :to="{ name: 'group-board', params: { groupId } }"
+          <button
+            type="button"
             class="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
+            @click="openReportModal"
           >
-            팀장 리포트 보기
-          </RouterLink>
+            수료 리포트 보기
+          </button>
           <RouterLink
             :to="{ name: 'group-curriculum', params: { groupId } }"
             class="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
@@ -931,6 +970,40 @@ function formatRelative(date: string): string {
     />
   </Teleport>
 
+  <!-- 수료 리포트 모달 -->
+  <Teleport to="body">
+    <div
+      v-if="showReportModal"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+      @click.self="closeReportModal"
+    >
+      <div
+        class="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[var(--radius-card)] bg-[var(--color-card)] shadow-[var(--shadow-soft)] sm:rounded-[var(--radius-card)]"
+      >
+        <div class="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-4">
+          <h3 class="text-base font-extrabold text-[var(--color-ink)]">{{ reportTitle }}</h3>
+          <button
+            type="button"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
+            aria-label="닫기"
+            @click="closeReportModal"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="overflow-y-auto px-5 py-5">
+          <p v-if="reportLoading" class="text-sm text-[var(--color-muted)]">불러오는 중…</p>
+          <p v-else-if="reportError" class="text-sm text-[var(--color-muted)]">{{ reportError }}</p>
+          <div
+            v-else
+            class="report-markdown text-sm leading-7 text-[var(--color-ink)]"
+            v-html="reportHtml"
+          />
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- 그룹 삭제 확인 -->
   <Teleport to="body">
     <Transition
@@ -1070,5 +1143,45 @@ function formatRelative(date: string): string {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 수료 리포트 마크다운 */
+.report-markdown :deep(h1) {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0.25rem 0 0.75rem;
+  color: var(--color-ink);
+}
+.report-markdown :deep(h2) {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 1.1rem 0 0.5rem;
+  color: var(--color-ink);
+}
+.report-markdown :deep(h3) {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0.9rem 0 0.4rem;
+}
+.report-markdown :deep(p) {
+  margin: 0.5rem 0;
+}
+.report-markdown :deep(ul),
+.report-markdown :deep(ol) {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  list-style: revert;
+}
+.report-markdown :deep(li) {
+  margin: 0.2rem 0;
+}
+.report-markdown :deep(strong) {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.report-markdown :deep(hr) {
+  margin: 1rem 0;
+  border: none;
+  border-top: 1px solid var(--color-line);
 }
 </style>
