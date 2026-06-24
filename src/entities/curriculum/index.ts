@@ -5,6 +5,7 @@ export {
   getCurriculum,
   getGroupMembersActivity,
   getMyWeekProgress,
+  getRecentActivity,
   getWeek,
   listCurriculumWeeks,
   listWeeklyTasks,
@@ -14,6 +15,7 @@ export {
   startStudy,
   updateMyWeekProgress,
 } from './api/curriculumApi'
+export type { RecentActivityItem } from './api/curriculumApi'
 export type {
   CurrentLearningActivity,
   CurrentLearningActivityTask,

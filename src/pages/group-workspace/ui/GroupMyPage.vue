@@ -197,11 +197,15 @@ function countMapFor(memberId: string): Map<string, number> {
   return map
 }
 
+// "이번 주 완료"는 TODO 완료만 집계(게시글 작성 제외). todoCount 없으면 count로 폴백.
 function thisWeekCount(memberId: string): number {
-  const map = countMapFor(memberId)
+  const row = activityRows.value.find((r: MemberActivityRow) => r.memberId === memberId)
+  if (!row) return 0
+  const todoByDate = new Map<string, number>()
+  for (const d of row.dailyActivity) todoByDate.set(d.date, d.todoCount ?? d.count)
   const today = todayIso()
   let sum = 0
-  for (let i = 0; i < 7; i += 1) sum += map.get(shiftIso(today, -i)) ?? 0
+  for (let i = 0; i < 7; i += 1) sum += todoByDate.get(shiftIso(today, -i)) ?? 0
   return sum
 }
 

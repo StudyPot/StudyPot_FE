@@ -7,7 +7,7 @@
  * #10/#11 board list/detail: controller + service validate board lookup, post ownership, sorting,
  *     cursor page metadata, 404 not-found, and comment counts through GroupBoardControllerTest.
  */
-import { inject, onMounted, ref, computed, watch } from 'vue'
+import { inject, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -146,8 +146,17 @@ function syncEditPreview(event: Event): void {
   editPreviewContent.value = (event.target as HTMLTextAreaElement).value
 }
 
+// 상대시간 라벨 실시간 갱신용 (30초마다 now 갱신)
+const nowMs = ref(Date.now())
+let nowTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
   void loadBoards()
+  nowTimer = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 30_000)
+})
+onUnmounted(() => {
+  if (nowTimer) clearInterval(nowTimer)
 })
 
 // postId 쿼리 파라미터로 딥링크 진입 시 해당 게시글을 자동으로 열기
@@ -655,9 +664,9 @@ function escapeAttribute(value: string): string {
 }
 
 function formatRelativeDate(value: string): string {
-  const now = new Date()
   const date = new Date(value)
-  const diffMs = now.getTime() - date.getTime()
+  // nowMs(반응형)에 의존 → 30초마다 갱신돼 "방금→N분 전"이 실시간으로 흐른다.
+  const diffMs = nowMs.value - date.getTime()
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
