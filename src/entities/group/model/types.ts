@@ -62,6 +62,22 @@ export type DetailKeywordSuggestionsResponse = {
   keywords: string[]
 }
 
+export type StudyAiSuggestion = {
+  title: string
+  reason: string
+}
+
+export type StudyPopularTopic = {
+  groupName: string
+  topic: string
+  memberCount: number
+}
+
+export type StudyRecommendationsResponse = {
+  aiSuggestions: StudyAiSuggestion[]
+  popularTopics: StudyPopularTopic[]
+}
+
 export type JoinGroupRequest = {
   inviteCode: string
 }
