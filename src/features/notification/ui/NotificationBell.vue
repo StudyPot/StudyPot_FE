@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter, type RouteLocationRaw } from 'vue-router'
 
-import type { NotificationType } from '@/entities/notification'
+import type { Notification, NotificationType } from '@/entities/notification'
 import { useInAppNotificationStore } from '../model/inAppNotificationStore'
 
 const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
@@ -24,9 +25,52 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
 }
 
 const store = useInAppNotificationStore()
+const router = useRouter()
 const isOpen = ref(false)
 const isMarkingAll = ref(false)
 const markingId = ref<string | null>(null)
+
+function getNotificationRoute(notification: Notification): RouteLocationRaw | null {
+  const { groupId, notificationType, payload } = notification
+
+  if (notificationType === 'GROUP_DELETED') return { name: 'groups' }
+  if (!groupId) return null
+
+  const p = payload as Record<string, unknown> | undefined
+
+  switch (notificationType) {
+    case 'ONBOARDING_REQUESTED':
+    case 'ONBOARDING_COMPLETED':
+      return { name: 'group-onboarding', params: { groupId } }
+    case 'MEMBER_JOINED':
+    case 'ONBOARDING_SUBMITTED':
+      return { name: 'group-my', params: { groupId } }
+    case 'WEEK_STARTED':
+    case 'TASK_DUE_REMINDER':
+    case 'TASK_OVERDUE_CHECK':
+    case 'INCOMPLETE_REASON_REQUESTED':
+      return { name: 'group-todo', params: { groupId } }
+    case 'NEXT_WEEK_ADJUSTED':
+    case 'RETROSPECTIVE_REMINDER':
+    case 'RETROSPECTIVE_READY':
+      return { name: 'group-retrospective', params: { groupId } }
+    case 'NOTICE_POSTED': {
+      const postId = typeof p?.postId === 'string' ? p.postId : undefined
+      return { name: 'group-board', params: { groupId }, query: postId ? { postId } : {} }
+    }
+    case 'LEADER_REPORT_POSTED':
+      return { name: 'group-ai', params: { groupId } }
+    default:
+      return { name: 'group-overview', params: { groupId } }
+  }
+}
+
+async function handleNotificationClick(notification: Notification): Promise<void> {
+  if (isUnread(notification)) void store.markRead(notification.id)
+  close()
+  const route = getNotificationRoute(notification)
+  if (route) await router.push(route)
+}
 
 function toggle(): void {
   isOpen.value = !isOpen.value
@@ -140,9 +184,10 @@ function formatDateTime(value?: string | null): string {
           v-for="notification in store.notifications"
           :key="notification.id"
           :class="[
-            'flex items-start gap-3 px-4 py-3 text-sm transition',
-            isUnread(notification) ? 'bg-[var(--color-card)]' : 'bg-[var(--color-card)]',
+            'flex cursor-pointer items-start gap-3 px-4 py-3 text-sm transition hover:bg-[var(--color-hover)]',
+            isUnread(notification) ? 'bg-[var(--color-card)]' : 'bg-[var(--color-bg)]',
           ]"
+          @click="handleNotificationClick(notification)"
         >
           <!-- 읽지 않음 표시 점 -->
           <span
@@ -176,7 +221,7 @@ function formatDateTime(value?: string | null): string {
             type="button"
             :disabled="markingId === notification.id"
             class="mt-0.5 shrink-0 inline-flex h-6 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-1.5 text-[10px] font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none disabled:opacity-50"
-            @click="handleMarkRead(notification.id)"
+            @click.stop="handleMarkRead(notification.id)"
           >
             읽음
           </button>

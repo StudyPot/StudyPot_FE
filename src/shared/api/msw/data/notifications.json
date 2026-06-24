@@ -1,127 +1,140 @@
 {
   "notifications": [
     {
-      "id": "018f7a4e-9000-7000-9000-000000000001",
-      "type": "INCOMPLETE_REASON_REQUESTED",
+      "id": "019ef6b7-531a-7b81-b4e0-91024a24c3ce",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "notificationType": "RETROSPECTIVE_REMINDER",
       "channel": "IN_APP",
+      "title": "이번 주 회고를 작성해 주세요",
+      "body": "이번 주차 마감이 한 시간 남았어요. AI 팀장과 함께 회고를 시작해 보세요.",
       "status": "DELIVERED",
-      "title": "미완료 사유가 필요합니다",
-      "body": "도훈 - 2주차 인가 정책 정리의 미완료 사유를 남겨주세요.",
+      "scheduledAt": null,
+      "deliveredAt": "2026-06-23T23:01:10.042194Z",
+      "readAt": null,
+      "recipientUserId": "019e6322-392b-7272-9215-01af91d62178",
       "payload": {
-        "action": "WRITE_INCOMPLETE_REASON",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002",
-        "taskId": "018f7a4e-5000-7000-9000-000000000099"
+        "deepLink": "/weeks/019ef22f-95fd-7fb1-8cbd-df87962e3e27/retrospectives/me",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "weekId": "019ef22f-95fd-7fb1-8cbd-df87962e3e27"
       },
       "relatedResourceIds": {
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002",
-        "taskId": "018f7a4e-5000-7000-9000-000000000099"
+        "weekId": "019ef22f-95fd-7fb1-8cbd-df87962e3e27",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
       },
-      "deliveredAt": "2026-05-18T09:00:00+09:00",
-      "readAt": null,
-      "createdAt": "2026-05-18T09:00:00+09:00"
+      "createdAt": "2026-06-23T23:01:10.042194Z"
     },
     {
-      "id": "018f7a4e-9000-7000-9000-000000000002",
-      "type": "RETROSPECTIVE_READY",
+      "id": "019ef373-95d8-7419-86b8-6880282f4b1e",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "notificationType": "NOTICE_POSTED",
       "channel": "IN_APP",
+      "title": "새 공지가 등록됐어요",
+      "body": "양지훈 일해라",
+      "status": "DELIVERED",
+      "scheduledAt": null,
+      "deliveredAt": "2026-06-23T07:48:19.032384Z",
+      "readAt": null,
+      "recipientUserId": "019e6322-392b-7272-9215-01af91d62178",
+      "payload": {
+        "deepLink": "/groups/019ef229-895f-70dc-88af-ae592049d5c9/posts/board-006",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "title": "양지훈 일해라",
+        "postId": "board-006"
+      },
+      "relatedResourceIds": {
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "postId": "board-006"
+      },
+      "createdAt": "2026-06-23T07:48:19.032384Z"
+    },
+    {
+      "id": "019ef22f-9688-7142-8acd-afec0a1aff91",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "notificationType": "WEEK_STARTED",
+      "channel": "IN_APP",
+      "title": "1주차 학습이 시작됐어요",
+      "body": "Week 1: 기본기 리셋(정렬/이분탐색/투포인터) todo를 확인해 주세요.",
       "status": "READ",
-      "title": "2주차 회고가 준비되었어요",
-      "body": "AI 팀장이 다음 주 조정안을 함께 제안했어요.",
+      "scheduledAt": null,
+      "deliveredAt": "2026-06-23T01:54:25.544954Z",
+      "readAt": "2026-06-23T07:05:12.333439Z",
+      "recipientUserId": "019e6322-392b-7272-9215-01af91d62178",
       "payload": {
-        "action": "OPEN_RETROSPECTIVE",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002"
+        "weekTitle": "Week 1: 기본기 리셋(정렬/이분탐색/투포인터)",
+        "deepLink": "/weeks/019ef22f-95fd-7fb1-8cbd-df87962e3e27/tasks",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+        "weekNumber": 1,
+        "weekId": "019ef22f-95fd-7fb1-8cbd-df87962e3e27"
       },
       "relatedResourceIds": {
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002"
+        "weekId": "019ef22f-95fd-7fb1-8cbd-df87962e3e27",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
       },
-      "deliveredAt": "2026-05-18T10:00:00+09:00",
-      "readAt": "2026-05-18T10:05:00+09:00",
-      "createdAt": "2026-05-18T10:00:00+09:00"
+      "createdAt": "2026-06-23T01:54:25.544954Z"
     },
     {
-      "id": "018f7a4e-9000-7000-9000-000000000003",
-      "type": "WEEK_STARTED",
+      "id": "019ef22a-219a-7b9a-99af-f9ac9615376f",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "notificationType": "ONBOARDING_COMPLETED",
       "channel": "IN_APP",
-      "status": "DELIVERED",
-      "title": "이번 주 할 일이 게시되었어요",
-      "body": "Spring Security 구조 이해 - 3개 할 일이 준비됐습니다.",
+      "title": "모든 팀원이 온보딩을 완료했어요",
+      "body": "이제 스터디를 시작할 수 있어요.",
+      "status": "READ",
+      "scheduledAt": null,
+      "deliveredAt": "2026-06-23T01:48:27.930032Z",
+      "readAt": "2026-06-23T01:50:54.414613Z",
+      "recipientUserId": "019e6322-392b-7272-9215-01af91d62178",
       "payload": {
-        "action": "OPEN_CURRENT_WEEK",
-        "weekId": "018f7a4e-4000-7000-9000-000000000003"
+        "deepLink": "/groups/019ef229-895f-70dc-88af-ae592049d5c9",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
       },
       "relatedResourceIds": {
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "weekId": "018f7a4e-4000-7000-9000-000000000003"
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
       },
-      "deliveredAt": "2026-05-18T09:14:00+09:00",
-      "readAt": null,
-      "createdAt": "2026-05-18T09:14:00+09:00"
+      "createdAt": "2026-06-23T01:48:27.930032Z"
+    },
+    {
+      "id": "019ef22a-2196-7a56-b06e-9b365784b1de",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "notificationType": "MEMBER_JOINED",
+      "channel": "IN_APP",
+      "title": "새로운 멤버가 참여했어요",
+      "body": "새 멤버가 그룹에 참여했어요. 팀원 목록에서 확인해 주세요.",
+      "status": "READ",
+      "scheduledAt": null,
+      "deliveredAt": "2026-06-23T01:48:27.926845Z",
+      "readAt": "2026-06-23T01:50:54.414613Z",
+      "recipientUserId": "019e6322-392b-7272-9215-01af91d62178",
+      "payload": {
+        "deepLink": "/groups/019ef229-895f-70dc-88af-ae592049d5c9",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
+      },
+      "relatedResourceIds": {
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
+      },
+      "createdAt": "2026-06-23T01:48:27.926845Z"
+    },
+    {
+      "id": "019ef229-896b-72af-9cd9-1072edf96c23",
+      "groupId": "019ef229-895f-70dc-88af-ae592049d5c9",
+      "notificationType": "ONBOARDING_REQUESTED",
+      "channel": "IN_APP",
+      "title": "온보딩을 작성해 주세요",
+      "body": "스터디 시작 전 온보딩을 완료해 주세요.",
+      "status": "READ",
+      "scheduledAt": null,
+      "deliveredAt": "2026-06-23T01:47:48.971259Z",
+      "readAt": "2026-06-23T01:50:54.414613Z",
+      "recipientUserId": "019e6322-392b-7272-9215-01af91d62178",
+      "payload": {
+        "deepLink": "/groups/019ef229-895f-70dc-88af-ae592049d5c9/onboarding",
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
+      },
+      "relatedResourceIds": {
+        "groupId": "019ef229-895f-70dc-88af-ae592049d5c9"
+      },
+      "createdAt": "2026-06-23T01:47:48.971259Z"
     }
   ],
-  "groupNotificationLogs": [
-    {
-      "id": "018f7a4e-9000-7000-9000-000000000001",
-      "recipientUserId": "018f7a4e-0000-7000-9000-000000000003",
-      "type": "INCOMPLETE_REASON_REQUESTED",
-      "channel": "IN_APP",
-      "status": "DELIVERED",
-      "title": "미완료 사유가 필요합니다",
-      "body": "도훈 - 2주차 인가 정책 정리의 미완료 사유를 남겨주세요.",
-      "payload": {
-        "action": "WRITE_INCOMPLETE_REASON",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002",
-        "taskId": "018f7a4e-5000-7000-9000-000000000099"
-      },
-      "relatedResourceIds": {
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002",
-        "taskId": "018f7a4e-5000-7000-9000-000000000099"
-      },
-      "deliveredAt": "2026-05-18T09:00:00+09:00",
-      "readAt": null,
-      "createdAt": "2026-05-18T09:00:00+09:00"
-    },
-    {
-      "id": "018f7a4e-9000-7000-9000-000000000002",
-      "recipientUserId": "018f7a4e-0000-7000-9000-000000000001",
-      "type": "RETROSPECTIVE_READY",
-      "channel": "IN_APP",
-      "status": "READ",
-      "title": "2주차 회고가 준비되었어요",
-      "body": "AI 팀장이 다음 주 조정안을 함께 제안했어요.",
-      "payload": {
-        "action": "OPEN_RETROSPECTIVE",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002"
-      },
-      "relatedResourceIds": {
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "weekId": "018f7a4e-4000-7000-9000-000000000002"
-      },
-      "deliveredAt": "2026-05-18T10:00:00+09:00",
-      "readAt": "2026-05-18T10:05:00+09:00",
-      "createdAt": "2026-05-18T10:00:00+09:00"
-    },
-    {
-      "id": "018f7a4e-9000-7000-9000-000000000003",
-      "recipientUserId": "018f7a4e-0000-7000-9000-000000000001",
-      "type": "WEEK_STARTED",
-      "channel": "IN_APP",
-      "status": "DELIVERED",
-      "title": "이번 주 할 일이 게시되었어요",
-      "body": "Spring Security 구조 이해 - 3개 할 일이 준비됐습니다.",
-      "payload": {
-        "action": "OPEN_CURRENT_WEEK",
-        "weekId": "018f7a4e-4000-7000-9000-000000000003"
-      },
-      "relatedResourceIds": {
-        "groupId": "018f7a4e-0000-7000-9000-000000000011",
-        "weekId": "018f7a4e-4000-7000-9000-000000000003"
-      },
-      "deliveredAt": "2026-05-18T09:14:00+09:00",
-      "readAt": null,
-      "createdAt": "2026-05-18T09:14:00+09:00"
-    }
-  ]
+  "groupNotificationLogs": []
 }
