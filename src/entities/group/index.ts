@@ -18,6 +18,7 @@ export {
   getGroupListPrimaryEntry,
   getGroupOverviewPrimaryEntry,
   getGroupStatusLabel,
+  getGroupStatusOrder,
 } from './model/entry'
 export type { GroupEntryAction, GroupEntryRouteName } from './model/entry'
 export { getGroupCategoryColor, getGroupCategoryIndex } from './model/category'

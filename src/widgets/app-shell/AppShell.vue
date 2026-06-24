@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import {
   getGroup,
+  getGroupStatusOrder,
   joinGroupByInviteCode,
   type StudyGroup,
   type StudyGroupStatus,
@@ -29,6 +30,13 @@ const sessionStore = useSessionStore()
 const groupListStore = useGroupListStore()
 const onboardingStatusStore = useOnboardingStatusStore()
 const notificationStore = useInAppNotificationStore()
+
+// 사이드바 그룹: 활성 → 온보딩 → 완료 순으로 정렬(동일 상태는 기존 순서 유지).
+const orderedGroups = computed(() =>
+  [...groupListStore.groups].sort(
+    (a, b) => getGroupStatusOrder(a.status) - getGroupStatusOrder(b.status),
+  ),
+)
 
 const currentGroupId = computed(() => String(route.params.groupId ?? ''))
 const currentGroup = ref<StudyGroup | null>(null)
@@ -450,7 +458,7 @@ function startGoogleLogin(): void {
 
         <!-- 그룹 목록 -->
         <RouterLink
-          v-for="group in groupListStore.groups"
+          v-for="group in orderedGroups"
           :key="group.id"
           :to="{ name: 'group-overview', params: { groupId: group.id } }"
           class="group relative flex h-[72px] w-[240px] shrink-0 items-center hover:bg-[var(--color-active)]"

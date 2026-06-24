@@ -88,6 +88,20 @@ const overviewPrimaryEntries: Record<StudyGroupStatus, GroupEntryAction> = {
   },
 }
 
+// 목록/사이드바 정렬 우선순위: 활성 → 시작대기 → 온보딩 → 준비 → 완료 → 보관.
+const statusOrder: Record<StudyGroupStatus, number> = {
+  ACTIVE: 0,
+  READY_TO_START: 1,
+  ONBOARDING: 2,
+  DRAFT: 3,
+  COMPLETED: 4,
+  ARCHIVED: 5,
+}
+
+export function getGroupStatusOrder(status: StudyGroupStatus): number {
+  return statusOrder[status] ?? 99
+}
+
 export function getGroupStatusLabel(status: StudyGroupStatus): string {
   return statusLabels[status]
 }
