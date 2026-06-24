@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   completeTask,
@@ -24,6 +25,7 @@ const workspaceContext = inject(groupWorkspaceContextKey)
 if (!workspaceContext) throw new Error('GroupTodoPage must be used inside GroupWorkspacePage.')
 const { groupId } = workspaceContext
 
+const router = useRouter()
 const toastStore = useInAppNotificationStore()
 
 type PageState = 'loading' | 'loaded' | 'none' | 'error'
@@ -75,6 +77,11 @@ const countableTotal = computed(
 const progressPercent = computed(() =>
   countableTotal.value > 0 ? Math.round((doneCount.value / countableTotal.value) * 100) : 0,
 )
+const allDone = computed(() => countableTotal.value > 0 && doneCount.value === countableTotal.value)
+
+function goToRetrospective(): void {
+  void router.push({ name: 'group-retrospective', params: { groupId: groupId.value } })
+}
 
 const sortedTasks = computed(() =>
   [...tasks.value].sort((a, b) => {
@@ -343,6 +350,33 @@ function formatDate(value: string): string {
             <path d="M12 16v-4M12 8h.01" />
           </svg>
           할 일을 완료하면 학습 인증이 자동으로 기록돼요.
+        </div>
+
+        <!-- 전체 완료 시 회고 유도 배너 -->
+        <div
+          v-if="allDone"
+          class="mt-4 flex items-center justify-between gap-4 rounded-[var(--radius-card)] border border-[var(--color-primary)] bg-[var(--color-tint-50)] px-5 py-4"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white"
+            >
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-bold text-[var(--color-ink)]">이번 주 할 일을 모두 마쳤어요!</p>
+              <p class="mt-0.5 text-sm text-[var(--color-muted)]">회고를 작성하고 한 주를 마무리해 보세요.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="shrink-0 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            @click="goToRetrospective"
+          >
+            회고하러 가기
+          </button>
         </div>
 
         <!-- ── 태스크 목록 ── -->
