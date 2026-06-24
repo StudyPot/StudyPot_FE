@@ -776,7 +776,7 @@ function formatRelative(date: string): string {
               >
                 <span class="min-w-0">
                   <span class="block truncate text-sm font-bold text-[var(--color-ink)]">{{ t.topic }}</span>
-                  <span class="mt-0.5 block truncate text-xs text-[var(--color-muted)]">{{ t.groupName }} · 멤버 {{ t.memberCount }}명</span>
+                  <span class="mt-0.5 block truncate text-xs text-[var(--color-muted)]">{{ t.groupCount }}개 그룹 · {{ t.memberCount }}명 학습 중</span>
                 </span>
                 <span class="shrink-0 text-xs font-bold text-[var(--color-primary)] group-hover:underline">만들기 →</span>
               </button>
