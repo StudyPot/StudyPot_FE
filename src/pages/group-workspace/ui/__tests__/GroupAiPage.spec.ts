@@ -219,6 +219,9 @@ describe('GroupAiPage', () => {
       undefined,
     )
     expect(wrapper.text()).toContain('완료로 처리했어요')
+    // 과제 완료는 질문 공유 완료 모달을 띄우면 안 됨
+    expect(wrapper.text()).not.toContain('질문 게시판에 올렸어요')
+    expect(wrapper.findAll('button').some((b) => b.text() === '게시판으로 가기')).toBe(false)
   })
 
   it('confirms an ADD_TASK action', async () => {

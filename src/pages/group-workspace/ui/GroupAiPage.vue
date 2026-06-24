@@ -212,7 +212,11 @@ async function handleDecideAction(
     if (index !== -1) {
       messages.value[index] = updated
     }
-    if (decision === 'CONFIRM' && updated.action?.status === 'EXECUTED') {
+    if (
+      decision === 'CONFIRM' &&
+      updated.action?.type === 'SHARE_QUESTION' &&
+      updated.action.status === 'EXECUTED'
+    ) {
       sharedPostId.value = updated.action.postId ?? null
       showShareDoneModal.value = true
     }
