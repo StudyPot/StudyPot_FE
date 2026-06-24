@@ -134,16 +134,34 @@ const barValues = computed(() =>
 const maxBar = computed(() => Math.max(1, ...barValues.value))
 
 type Participation = { memberId: string; nickname: string; pct: number }
-const participation = computed<Participation[]>(() =>
-  activityRows.value
-    .map((r) => ({
+const participation = computed<Participation[]>(() => {
+  const total = weeklyTotal.value
+
+  const rows = activityRows.value.map((r) => {
+    const count = memberWeekCount(r.memberId)
+    const exact = total > 0 ? (count / total) * 100 : 0
+    return {
       memberId: r.memberId,
       nickname: r.memberNickname,
-      pct: Math.round((memberActiveDays(r.memberId) / 7) * 100),
-    }))
+      floor: Math.floor(exact),
+      remainder: exact - Math.floor(exact),
+    }
+  })
+
+  if (total > 0) {
+    const floorSum = rows.reduce((s, r) => s + r.floor, 0)
+    const toDistribute = 100 - floorSum
+    rows
+      .slice()
+      .sort((a, b) => b.remainder - a.remainder)
+      .slice(0, toDistribute)
+      .forEach((r) => { r.floor += 1 })
+  }
+
+  return rows
+    .map((r) => ({ memberId: r.memberId, nickname: r.nickname, pct: r.floor }))
     .sort((a, b) => b.pct - a.pct)
-    .slice(0, 6),
-)
+})
 
 type Mvp = { memberId: string; nickname: string; count: number; streak: number } | null
 const mvp = computed<Mvp>(() => {

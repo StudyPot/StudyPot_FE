@@ -83,6 +83,25 @@ function goToRetrospective(): void {
   void router.push({ name: 'group-retrospective', params: { groupId: groupId.value } })
 }
 
+const isLockToastActive = ref(false)
+
+function onLockClick(): void {
+  if (isLockToastActive.value) return
+  isLockToastActive.value = true
+  toastStore.pushToast('아직 열리지 않은 주차예요', '해당 주차가 시작되면 자동으로 열려요.', 'info')
+  setTimeout(() => {
+    isLockToastActive.value = false
+  }, 4000)
+}
+
+// 현재 선택 주차 이후에 PENDING(미생성) 주차가 있으면 자물쇠 표시
+const hasNextPendingWeek = computed(() => {
+  const allWeeks = [...(curriculum.value?.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber)
+  const idx = allWeeks.findIndex((w) => w.id === selectedWeekId.value)
+  if (idx === -1) return false
+  return allWeeks.slice(idx + 1).some((w) => w.status === 'PENDING')
+})
+
 const sortedTasks = computed(() =>
   [...tasks.value].sort((a, b) => {
     const rank = (id: string) =>
@@ -227,102 +246,104 @@ function formatDate(value: string): string {
     />
 
     <template v-else-if="pageState === 'loaded'">
-      <!-- ── 주차 헤더 (주차 네비 + 완료 카운트 + 진행바) ── -->
-      <section
-        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex min-w-0 items-start gap-3">
-            <!-- 이전 주차 (주차 제목 줄에 맞춰 상단 정렬) -->
-            <button
-              type="button"
-              :disabled="!canPrev"
-              class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="이전 주차"
-              @click="goPrev"
-            >
-              <svg
-                class="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
+      <!-- ── 주차 헤더 (이전 버튼 | 카드 | 다음 버튼) ── -->
+      <div class="flex items-center gap-3">
+        <!-- 이전 주차 버튼 -->
+        <button
+          type="button"
+          :disabled="!canPrev"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="이전 주차"
+          @click="goPrev"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
 
+        <!-- 주차 정보 카드 -->
+        <section
+          class="min-w-0 flex-1 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        >
+          <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
-                  {{ selectedWeek?.weekNumber ?? '-' }}주차
-                </h1>
-                <!-- 다음 주차: 이동 가능 → 화살표 / 마지막·미생성 → 잠금 -->
-                <button
-                  v-if="canNext"
-                  type="button"
-                  class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
-                  aria-label="다음 주차"
-                  @click="goNext"
-                >
-                  <svg
-                    class="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-                <span
-                  v-else
-                  class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-active)] text-[var(--color-muted)]"
-                  title="다음 주차는 아직 잠겨 있어요"
-                  aria-label="다음 주차 잠김"
-                >
-                  <svg
-                    class="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </span>
-              </div>
+              <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
+                {{ selectedWeek?.weekNumber ?? '-' }}주차
+              </h1>
               <p v-if="weekRangeLabel" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 {{ weekRangeLabel }}
               </p>
             </div>
+            <div class="shrink-0 text-right">
+              <p class="text-2xl font-extrabold leading-none">
+                <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
+                <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
+              </p>
+              <p class="mt-1 text-xs text-[var(--color-muted)]">완료</p>
+            </div>
           </div>
 
-          <div class="shrink-0 text-right">
-            <p class="text-2xl font-extrabold leading-none">
-              <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
-              <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
-            </p>
-            <p class="mt-1 text-xs text-[var(--color-muted)]">완료</p>
-          </div>
-        </div>
-
-        <div
-          class="mt-4 h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
-        >
           <div
-            class="h-full rounded-[var(--radius-chip)] bg-[var(--color-primary)] transition-[width] duration-500"
-            :style="{ width: `${progressPercent}%` }"
-          />
-        </div>
-      </section>
+            class="mt-4 h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
+          >
+            <div
+              class="h-full rounded-[var(--radius-chip)] bg-[var(--color-primary)] transition-[width] duration-500"
+              :style="{ width: `${progressPercent}%` }"
+            />
+          </div>
+        </section>
+
+        <!-- 다음 주차: 이동 가능 → 화살표 / PENDING 주차 있음 → 자물쇠 / 없음 → 공백 -->
+        <button
+          v-if="canNext"
+          type="button"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-hover)]"
+          aria-label="다음 주차"
+          @click="goNext"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+        <button
+          v-else-if="hasNextPendingWeek"
+          type="button"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-active)] text-[var(--color-muted)] transition hover:bg-[var(--color-hover)]"
+          :disabled="isLockToastActive"
+          aria-label="다음 주차 잠김"
+          @click="onLockClick"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </button>
+        <div v-else class="h-9 w-9 shrink-0" />
+      </div>
 
       <!-- 주차 상세 로딩 -->
       <ScreenState
