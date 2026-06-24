@@ -97,7 +97,14 @@ const sortedTasks = computed(() =>
 onMounted(() => void loadInitial())
 
 watch(selectedWeekId, async (weekId) => {
-  if (weekId && !isSelectedWeekPending.value) await loadWeekDetail(weekId)
+  if (!weekId) return
+  if (isSelectedWeekPending.value) {
+    selectedWeek.value = null
+    tasks.value = []
+    Object.keys(completionMap).forEach((k) => delete completionMap[k])
+  } else {
+    await loadWeekDetail(weekId)
+  }
 })
 
 async function loadInitial(): Promise<void> {
