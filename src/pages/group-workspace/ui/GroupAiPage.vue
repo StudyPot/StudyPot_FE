@@ -232,13 +232,17 @@ async function handleDecideAction(
   }
 }
 
-function goToSharedPost(): void {
-  showShareDoneModal.value = false
+function navigateToPost(postId: string | null): void {
   void router.push({
     name: 'group-board',
     params: { groupId: groupId.value },
-    query: sharedPostId.value ? { postId: sharedPostId.value } : {},
+    query: postId ? { postId } : {},
   })
+}
+
+function goToSharedPost(): void {
+  showShareDoneModal.value = false
+  navigateToPost(sharedPostId.value)
 }
 
 function keepChatting(): void {
@@ -444,6 +448,31 @@ function renderMarkdown(content: string): string {
               >
                 ✅ 질문 게시판에 올렸어요.
               </p>
+
+              <!-- 기존 유사 게시물 안내 -->
+              <div
+                v-else-if="message.action?.type === 'SHOW_EXISTING_POST'"
+                class="flex flex-col gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-soft)]"
+              >
+                <p class="text-xs font-medium text-[var(--color-muted)]">
+                  이 질문은 게시판에 비슷한 글이 이미 있어요.
+                </p>
+                <p
+                  v-if="message.action.title"
+                  class="text-sm font-semibold text-[var(--color-ink)]"
+                >
+                  {{ message.action.title }}
+                </p>
+                <div>
+                  <button
+                    type="button"
+                    class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)]"
+                    @click="navigateToPost(message.action.postId ?? null)"
+                  >
+                    게시물 보러가기
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </template>

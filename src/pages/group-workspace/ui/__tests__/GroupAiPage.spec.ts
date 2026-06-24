@@ -162,6 +162,29 @@ describe('GroupAiPage', () => {
     expect(wrapper.findAll('button').some((b) => b.text() === '게시판으로 가기')).toBe(true)
   })
 
+  it('renders a link to an existing post for SHOW_EXISTING_POST', async () => {
+    const actionMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-00000000000b',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '이미 비슷한 글이 있어요.',
+      createdAt: '2026-06-04T01:04:00Z',
+      action: { type: 'SHOW_EXISTING_POST', status: null, title: 'JPA 영속성 컨텍스트', postId: 'post-7' },
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [actionMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('JPA 영속성 컨텍스트')
+    expect(wrapper.findAll('button').some((b) => b.text() === '게시물 보러가기')).toBe(true)
+    // 확인 API 는 호출되지 않아야 함(표시 전용)
+    expect(decideAiConversationMessageAction).not.toHaveBeenCalled()
+  })
+
   it("submits a custom instruction via '기타'", async () => {
     const actionMessage: AiConversationMessage = {
       id: '018f7a4e-4000-7000-9000-00000000000a',

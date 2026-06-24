@@ -34,13 +34,13 @@ export type CreateMessageRequest = {
   content: string
 }
 
-export type AiMessageActionType = 'SHARE_QUESTION'
+export type AiMessageActionType = 'SHARE_QUESTION' | 'SHOW_EXISTING_POST'
 
 export type AiMessageActionStatus = 'PENDING' | 'EXECUTED' | 'REJECTED'
 
 export type AiMessageAction = {
   type: AiMessageActionType
-  status: AiMessageActionStatus
+  status?: AiMessageActionStatus | null
   title?: string | null
   summary?: string | null
   postId?: string | null
