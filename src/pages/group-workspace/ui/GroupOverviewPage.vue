@@ -521,7 +521,7 @@ function formatRelative(date: string): string {
                   :style="{ bottom: `calc(${Math.max(6, (part.total / barScale) * 100)}% + 4px)` }"
                   >TODO {{ part.todo }} · 글 {{ part.post }}</span
                 >
-                <!-- 누적막대: TODO(진한 그린) 위에 게시글(연한 그린) 쌓기 -->
+                <!-- 누적막대: TODO(진한 그린) 위에 게시글(블루) 쌓기 -->
                 <div
                   class="flex w-full max-w-[44px] flex-col-reverse overflow-hidden rounded-t-lg transition-all duration-500"
                   :style="{ height: `${Math.max(6, (part.total / barScale) * 100)}%` }"
@@ -531,7 +531,7 @@ function formatRelative(date: string): string {
                     :style="{ flexBasis: part.total > 0 ? `${(part.todo / part.total) * 100}%` : '100%' }"
                   />
                   <div
-                    class="w-full bg-[var(--color-tint-200)]"
+                    class="w-full bg-[var(--color-info)]"
                     :style="{ flexBasis: part.total > 0 ? `${(part.post / part.total) * 100}%` : '0%' }"
                   />
                 </div>
