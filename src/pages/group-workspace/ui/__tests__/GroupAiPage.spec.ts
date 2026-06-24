@@ -185,6 +185,42 @@ describe('GroupAiPage', () => {
     expect(decideAiConversationMessageAction).not.toHaveBeenCalled()
   })
 
+  it('confirms a COMPLETE_TASK action', async () => {
+    const actionMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-00000000000c',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '수고했어요! 완료로 표시할까요?',
+      createdAt: '2026-06-04T01:05:00Z',
+      action: { type: 'COMPLETE_TASK', status: 'PENDING', title: 'JPA 실습', completionStatus: 'DONE' },
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [actionMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+    vi.mocked(decideAiConversationMessageAction).mockResolvedValue({
+      ...actionMessage,
+      action: { ...actionMessage.action!, status: 'EXECUTED' },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('JPA 실습')
+    const confirmButton = wrapper.findAll('button').find((b) => b.text() === '완료 처리')
+    expect(confirmButton).toBeTruthy()
+    await confirmButton!.trigger('click')
+    await flushPromises()
+
+    expect(decideAiConversationMessageAction).toHaveBeenCalledWith(
+      conversation.id,
+      actionMessage.id,
+      'CONFIRM',
+      undefined,
+    )
+    expect(wrapper.text()).toContain('완료로 처리했어요')
+  })
+
   it("submits a custom instruction via '기타'", async () => {
     const actionMessage: AiConversationMessage = {
       id: '018f7a4e-4000-7000-9000-00000000000a',

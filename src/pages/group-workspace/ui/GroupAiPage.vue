@@ -473,6 +473,47 @@ function renderMarkdown(content: string): string {
                   </button>
                 </div>
               </div>
+
+              <!-- 과제 완료/미완료 처리 (확인 후 실행) -->
+              <div
+                v-else-if="message.action?.type === 'COMPLETE_TASK' && message.action.status === 'PENDING'"
+                class="flex flex-col gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-soft)]"
+              >
+                <p class="text-xs font-medium text-[var(--color-muted)]">
+                  이 과제를 {{ message.action.completionStatus === 'DONE' ? '완료' : '미완료' }}로 처리할까요?
+                </p>
+                <p
+                  v-if="message.action.title"
+                  class="text-sm font-semibold text-[var(--color-ink)]"
+                >
+                  {{ message.action.title }}
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'CONFIRM')"
+                  >
+                    {{ actionBusy[message.id] ? '처리 중…' : (message.action.completionStatus === 'DONE' ? '완료 처리' : '미완료 처리') }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'REJECT')"
+                  >
+                    아니요
+                  </button>
+                </div>
+              </div>
+
+              <p
+                v-else-if="message.action?.type === 'COMPLETE_TASK' && message.action.status === 'EXECUTED'"
+                class="text-xs font-medium text-[var(--color-primary)]"
+              >
+                ✅ 과제를 {{ message.action.completionStatus === 'DONE' ? '완료' : '미완료' }}로 처리했어요.
+              </p>
             </div>
           </div>
         </template>
