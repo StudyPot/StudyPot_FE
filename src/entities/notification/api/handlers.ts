@@ -80,7 +80,7 @@ function toNotificationType(value?: string): NotificationType {
   const knownTypes: NotificationType[] = [
     'GROUP_INVITE_CREATED',
     'MEMBER_JOINED',
-    'ONBOARDING_REQUESTED',
+    'ONBOARDING_REQUESTED', 
     'ONBOARDING_SUBMITTED',
     'ONBOARDING_COMPLETED',
     'STUDY_STARTED',

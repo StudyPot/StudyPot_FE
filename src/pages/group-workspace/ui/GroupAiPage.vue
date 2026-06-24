@@ -338,12 +338,8 @@ function renderMarkdown(content: string): string {
         class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-2"
       >
         <div v-if="messages.length === 0" class="mt-10 text-center">
-          <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white"
-          >
-            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l1.6 4.8L18 8.4l-4.4 1.6L12 15l-1.6-5L6 8.4l4.4-1.6L12 2z" />
-            </svg>
+          <div class="mx-auto h-12 w-12">
+            <img src="/AIbot.png" alt="AI 팀장" class="h-12 w-12 rounded-xl object-cover" />
           </div>
           <p class="mt-3 text-sm text-[var(--color-muted)]">
             무엇이든 물어보세요. AI 팀장이 도와드릴게요.
