@@ -789,13 +789,13 @@ function formatRelative(date: string): string {
           추천을 누르면 주제가 채워진 채로 새 스터디 만들기 화면으로 이동해요.
         </p>
 
-        <!-- 로딩 스켈레톤: AI 추천 생성에 몇 초 걸릴 수 있어 자리를 먼저 잡아준다 -->
-        <div v-if="recommendationsLoading" class="mt-5 grid gap-2">
-          <div class="flex items-center gap-2 text-xs font-bold text-[var(--color-primary)]">
-            <span class="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
-            맞춤 추천을 불러오는 중…
-          </div>
-          <div v-for="n in 3" :key="`sk-${n}`" class="h-16 animate-pulse rounded-[var(--radius-card)] bg-[var(--color-surface)]" />
+        <!-- 로딩: AI 추천 생성에 몇 초 걸릴 수 있어 박스 가운데에 스피너를 보여준다 -->
+        <div
+          v-if="recommendationsLoading"
+          class="flex flex-col items-center justify-center gap-3 py-16 text-center"
+        >
+          <span class="h-10 w-10 animate-spin rounded-full border-[3px] border-[var(--color-tint-50)] border-t-[var(--color-primary)]" />
+          <p class="text-sm font-bold text-[var(--color-muted)]">맞춤 추천을 불러오는 중…</p>
         </div>
 
         <div v-if="aiSuggestions.length" class="mt-5">
