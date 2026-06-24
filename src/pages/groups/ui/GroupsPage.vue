@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   getGroupCategoryColor,
   getGroupStatusLabel,
+  getGroupStatusOrder,
   getGroupSummary,
   listGroups,
   type GroupSummary,
@@ -36,9 +37,11 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const sortedGroups = computed(() =>
   [...groups.value].sort((a, b) => {
+    // 1) 북마크 먼저, 2) 상태순(활성→온보딩→완료)
     const aBookmarked = bookmarkedGroupIds.value.has(a.id) ? 0 : 1
     const bBookmarked = bookmarkedGroupIds.value.has(b.id) ? 0 : 1
-    return aBookmarked - bBookmarked
+    if (aBookmarked !== bBookmarked) return aBookmarked - bBookmarked
+    return getGroupStatusOrder(a.status) - getGroupStatusOrder(b.status)
   }),
 )
 
