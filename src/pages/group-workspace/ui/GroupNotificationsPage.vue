@@ -27,6 +27,7 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   ONBOARDING_SUBMITTED: '온보딩 제출',
   ONBOARDING_COMPLETED: '온보딩 완료',
   STUDY_STARTED: '스터디 시작',
+  STUDY_COMPLETED: '스터디 완주',
   WEEK_STARTED: '주차 시작',
   TASK_DUE_REMINDER: '마감 알림',
   TASK_OVERDUE_CHECK: '지연 확인',
