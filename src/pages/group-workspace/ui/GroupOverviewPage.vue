@@ -35,6 +35,9 @@ const groupListStore = useGroupListStore()
 const toastStore = useInAppNotificationStore()
 
 const isActive = computed(() => group.value?.status === 'ACTIVE')
+const isCompleted = computed(
+  () => group.value?.status === 'COMPLETED' || group.value?.status === 'ARCHIVED',
+)
 
 const myUserId = computed(() => sessionStore.user?.id ?? null)
 const myMemberId = computed(
@@ -660,6 +663,49 @@ function formatRelative(date: string): string {
           </RouterLink>
         </div>
       </div>
+    </template>
+
+    <!-- ════════ 완료: 수료 화면 ════════ -->
+    <template v-else-if="group && isCompleted">
+      <section
+        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-6 text-center shadow-[var(--shadow-soft)]"
+      >
+        <div
+          class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-white"
+          aria-hidden="true"
+        >
+          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        </div>
+        <h1 class="mt-4 text-2xl font-extrabold text-[var(--color-ink)]">스터디를 완주했어요 🎉</h1>
+        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+          <b class="text-[var(--color-ink)]">{{ group.name }}</b> 스터디가 마무리됐어요. 그동안의 회고와 팀장 리포트를 돌아보세요.
+        </p>
+        <p v-if="group.startsAt && group.endsAt" class="mt-1 text-xs text-[var(--color-muted)]">
+          {{ group.startsAt }} ~ {{ group.endsAt }}
+        </p>
+        <div class="mx-auto mt-6 grid max-w-md gap-2">
+          <RouterLink
+            :to="{ name: 'group-retrospective', params: { groupId } }"
+            class="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] text-sm font-bold text-white transition hover:bg-[var(--color-primary-deep)]"
+          >
+            회고 돌아보기
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'group-board', params: { groupId } }"
+            class="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
+          >
+            팀장 리포트 보기
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'group-curriculum', params: { groupId } }"
+            class="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)]"
+          >
+            커리큘럼 다시 보기
+          </RouterLink>
+        </div>
+      </section>
     </template>
 
     <!-- ════════ 시작 전: 온보딩 준비 ════════ -->
