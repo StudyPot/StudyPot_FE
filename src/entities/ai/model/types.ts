@@ -34,7 +34,11 @@ export type CreateMessageRequest = {
   content: string
 }
 
-export type AiMessageActionType = 'SHARE_QUESTION' | 'SHOW_EXISTING_POST'
+export type AiMessageActionType =
+  | 'SHARE_QUESTION'
+  | 'SHOW_EXISTING_POST'
+  | 'COMPLETE_TASK'
+  | 'ADD_TASK'
 
 export type AiMessageActionStatus = 'PENDING' | 'EXECUTED' | 'REJECTED'
 
@@ -44,6 +48,7 @@ export type AiMessageAction = {
   title?: string | null
   summary?: string | null
   postId?: string | null
+  completionStatus?: string | null
 }
 
 export type AiMessageActionDecision = 'CONFIRM' | 'REJECT'
