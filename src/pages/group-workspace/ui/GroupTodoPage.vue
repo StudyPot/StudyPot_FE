@@ -311,7 +311,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
               class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border border-dashed text-sm font-bold transition"
               :class="
                 selectedPlaceholder === slot.weekNumber
-                  ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                   : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]'
               "
               :title="`${slot.weekNumber}주차는 아직 공개되지 않았어요`"
