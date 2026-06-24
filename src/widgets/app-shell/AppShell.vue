@@ -639,11 +639,11 @@ function startGoogleLogin(): void {
         leave-from-class="opacity-100 translate-y-0"
         leave-to-class="opacity-0 translate-y-1"
       >
-        <div v-if="showUserMenu" class="border-t border-[var(--color-line)] px-2 py-1" @click.stop>
+        <div v-if="showUserMenu" class="border-t border-[var(--color-line)] py-1" @click.stop>
           <RouterLink
             :to="{ name: 'profile' }"
-            class="flex h-8 items-center gap-2 rounded px-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
-            active-class="bg-[var(--color-active)] !text-[var(--color-ink)]"
+            class="flex h-8 items-center gap-2 px-4 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+            active-class="!text-[var(--color-ink)]"
             @click="showUserMenu = false"
           >
             <svg

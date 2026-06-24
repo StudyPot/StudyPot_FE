@@ -8,11 +8,29 @@
  * AuthControllerTest verifies PATCH /api/v1/users/me nickname, bio, preferredTopics, and skillLevel.
  */
 import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { getCurrentUser, updateCurrentUser } from '@/entities/user/api/currentUser'
 import type { User } from '@/entities/user/model/types'
+import { useSessionStore } from '@/features/auth/session'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
+
+const router = useRouter()
+const sessionStore = useSessionStore()
+
+const isLoggingOut = ref(false)
+
+async function handleLogout(): Promise<void> {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try {
+    await sessionStore.logoutCurrentSession()
+    await router.replace({ name: 'login', query: { signedOut: 'current' } })
+  } finally {
+    isLoggingOut.value = false
+  }
+}
 
 type PageState = 'loading' | 'view' | 'edit'
 
@@ -119,16 +137,6 @@ async function handleSubmit(): Promise<void> {
     />
 
     <template v-else>
-      <!-- 프로필 아이콘 -->
-      <div class="mt-6 flex justify-center">
-        <div
-          class="flex h-20 w-20 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-card)] text-4xl shadow-[var(--shadow-soft)]"
-          aria-label="프로필 아이콘"
-        >
-          👤
-        </div>
-      </div>
-
       <!-- 프로필 정보 섹션 -->
       <section
         class="mt-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
@@ -285,6 +293,29 @@ async function handleSubmit(): Promise<void> {
           </div>
         </form>
       </section>
+
+      <!-- 로그아웃 -->
+      <div class="mt-6">
+        <button
+          type="button"
+          :disabled="isLoggingOut"
+          class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-card)] text-sm font-semibold text-[var(--color-danger)] transition hover:bg-[rgba(237,66,69,0.06)] disabled:opacity-50"
+          @click="handleLogout"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          {{ isLoggingOut ? '로그아웃 중…' : '로그아웃' }}
+        </button>
+      </div>
     </template>
   </div>
 </template>
