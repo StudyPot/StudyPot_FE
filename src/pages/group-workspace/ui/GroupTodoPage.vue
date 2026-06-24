@@ -40,6 +40,19 @@ const allCurriculumWeeks = computed<CurriculumWeekSummary[]>(() =>
   [...(curriculum.value?.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber),
 )
 
+// 커리큘럼은 주차마다 점진 생성되지만(생성된 주차만 실제 데이터 존재), 전체 계획 주차 수(totalWeeks)는
+// 미리 알 수 있다. 아직 생성되지 않은 미래 주차는 잠금 슬롯으로 함께 보여준다.
+const totalWeeks = computed(() =>
+  Math.max(curriculum.value?.totalWeeks ?? 0, allCurriculumWeeks.value.length),
+)
+const displayWeeks = computed<{ weekNumber: number; week: CurriculumWeekSummary | null }[]>(() => {
+  const byNumber = new Map(allCurriculumWeeks.value.map((w) => [w.weekNumber, w]))
+  return Array.from({ length: totalWeeks.value }, (_, i) => ({
+    weekNumber: i + 1,
+    week: byNumber.get(i + 1) ?? null,
+  }))
+})
+
 const selectedWeekId = ref<string>('')
 const selectedWeek = ref<CurriculumWeek | null>(null)
 const isWeekLoading = ref(false)
@@ -255,41 +268,63 @@ function weekChipClass(week: CurriculumWeekSummary): string {
       <!-- ── 주차 탭 ── -->
       <section class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5">
         <div class="grid grid-cols-5 gap-2 sm:grid-cols-10">
-          <button
-            v-for="week in allCurriculumWeeks"
-            :key="week.id"
-            type="button"
-            class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
-            :class="weekChipClass(week)"
-            @click="selectWeek(week.id)"
-          >
-            <svg
-              v-if="week.status === 'COMPLETED'"
-              class="h-3.5 w-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          <template v-for="slot in displayWeeks" :key="slot.weekNumber">
+            <!-- 생성된 주차: 선택 가능 -->
+            <button
+              v-if="slot.week"
+              type="button"
+              class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
+              :class="weekChipClass(slot.week)"
+              @click="selectWeek(slot.week.id)"
             >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-            <svg
-              v-else-if="week.status === 'PENDING'"
-              class="h-3.5 w-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              <svg
+                v-if="slot.week.status === 'COMPLETED'"
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <svg
+                v-else-if="slot.week.status === 'PENDING'"
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>{{ slot.weekNumber }}주</span>
+            </button>
+            <!-- 아직 생성되지 않은 미래 주차: 잠금 -->
+            <div
+              v-else
+              class="flex h-16 cursor-not-allowed flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border border-dashed border-[var(--color-line)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-faint)]"
+              :title="`${slot.weekNumber}주차는 아직 공개되지 않았어요`"
             >
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-            <span>{{ week.weekNumber }}주</span>
-          </button>
+              <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>{{ slot.weekNumber }}주</span>
+            </div>
+          </template>
         </div>
       </section>
 

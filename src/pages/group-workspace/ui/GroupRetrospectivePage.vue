@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 
-import { listWeeklyTasks } from '@/entities/curriculum'
+import { getCurriculum, listWeeklyTasks } from '@/entities/curriculum'
 import {
   getMyRetrospective,
   getRetrospectiveOverview,
@@ -47,7 +47,28 @@ function likertChipClass(score: number | null): string {
 const pageState = ref<PageState>('loading')
 const errorMessage = ref('')
 const weeks = ref<RetrospectiveWeekOverview[]>([])
+const totalWeeks = ref(0)
 const selectedWeekId = ref<string | null>(null)
+
+// 커리큘럼은 주차마다 점진 생성되므로 overview 에는 생성된 주차만 온다.
+// 전체 계획 주차(totalWeeks)까지 아직 생성되지 않은 미래 주차를 잠금 슬롯으로 함께 보여준다.
+const displayWeeks = computed<RetrospectiveWeekOverview[]>(() => {
+  const byNumber = new Map(weeks.value.map((w) => [w.weekNumber, w]))
+  const count = Math.max(totalWeeks.value, weeks.value.length)
+  return Array.from({ length: count }, (_, i) => {
+    const weekNumber = i + 1
+    return (
+      byNumber.get(weekNumber) ?? {
+        weekId: `placeholder-${weekNumber}`,
+        weekNumber,
+        status: 'PENDING',
+        unlocked: false,
+        answered: false,
+        questions: [],
+      }
+    )
+  })
+})
 
 const scoreAnswers = reactive<Record<string, number>>({})
 const textAnswers = reactive<Record<string, string>>({})
@@ -76,8 +97,12 @@ async function loadOverview(): Promise<void> {
   pageState.value = 'loading'
   errorMessage.value = ''
   try {
-    const overview = await getRetrospectiveOverview(groupId.value)
+    const [overview, curriculum] = await Promise.all([
+      getRetrospectiveOverview(groupId.value),
+      getCurriculum(groupId.value).catch(() => null),
+    ])
     weeks.value = [...overview].sort((a, b) => a.weekNumber - b.weekNumber)
+    totalWeeks.value = curriculum?.totalWeeks ?? weeks.value.length
     if (weeks.value.length === 0) {
       pageState.value = 'empty'
       return
@@ -257,7 +282,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
 
         <div class="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10">
           <button
-            v-for="week in weeks"
+            v-for="week in displayWeeks"
             :key="week.weekId"
             type="button"
             :disabled="chipDisabled(week)"
