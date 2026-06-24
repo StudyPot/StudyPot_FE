@@ -212,10 +212,7 @@ async function loadCurrentGroup(): Promise<void> {
 }
 
 function getGroupInitials(name: string): string {
-  const words = name.trim().split(/\s+/)
-  return words.length >= 2
-    ? (words[0]![0]! + words[1]![0]!).toUpperCase()
-    : name.slice(0, 2).toUpperCase()
+  return ([...name.trim()][0] ?? '').toUpperCase()
 }
 
 function getStatusPhase(status: StudyGroupStatus): StatusPhase {
