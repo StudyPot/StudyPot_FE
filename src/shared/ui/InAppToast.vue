@@ -44,7 +44,7 @@ function variantOf(v: ToastVariant | undefined): ToastVariant {
         <div
           v-for="toast in store.toasts"
           :key="toast.id"
-          class="pointer-events-auto flex w-80 max-w-full items-start gap-3 rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-strong)]"
+          class="pointer-events-auto flex w-80 max-w-full items-center gap-3 rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-strong)]"
           role="alert"
         >
           <div
