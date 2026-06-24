@@ -506,15 +506,15 @@ function startGoogleLogin(): void {
               :key="ch.routeName"
               :to="{ name: ch.routeName, params: { groupId: currentGroupId } }"
               :class="[
-                'group flex h-8 items-center gap-2 rounded px-2 text-sm transition-colors',
+                'group flex h-10 items-center gap-2 rounded px-2 text-sm transition-colors',
                 ch.type === 'onboard'
-                  ? 'text-[#e0953a] hover:bg-[var(--color-hover)] hover:text-[#f0a04b]'
-                  : 'text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]',
+                  ? 'text-[#e0953a] hover:bg-[rgba(25,195,125,0.11)] hover:text-[#f0a04b]'
+                  : 'text-[var(--color-muted)] hover:bg-[rgba(25,195,125,0.11)] hover:text-[var(--color-ink)]',
               ]"
               :exact-active-class="
                 ch.type === 'onboard'
                   ? 'bg-[var(--color-hover)] !text-[#f0a04b]'
-                  : 'bg-[var(--color-active)] !text-[var(--color-ink)]'
+                  : 'bg-[rgba(25,195,125,0.22)] !text-[var(--color-ink)]'
               "
             >
               <!-- Channel icon -->
@@ -642,7 +642,7 @@ function startGoogleLogin(): void {
         <div v-if="showUserMenu" class="border-t border-[var(--color-line)] py-1" @click.stop>
           <RouterLink
             :to="{ name: 'profile' }"
-            class="flex h-8 items-center gap-2 px-4 text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+            class="flex h-8 items-center gap-2 px-4 text-sm text-[var(--color-muted)] transition-colors hover:bg-[rgba(25,195,125,0.11)] hover:text-[var(--color-ink)]"
             active-class="!text-[var(--color-ink)]"
             @click="showUserMenu = false"
           >
