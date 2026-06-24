@@ -60,6 +60,7 @@ export type CreatePostRequest = {
 }
 
 export type UpdatePostRequest = {
+  boardId?: string
   title?: string
   content?: string
   pinned?: boolean

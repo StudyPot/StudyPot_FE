@@ -86,6 +86,7 @@ const isCreating = ref(false)
 const createError = ref('')
 
 const editPostForm = ref({ title: '', content: '', pinned: false })
+const editPostBoardId = ref('')
 const isUpdatingPost = ref(false)
 const editPostError = ref('')
 
@@ -271,6 +272,7 @@ function backToList(): void {
 
 function openEditPost(): void {
   if (!selectedPost.value) return
+  editPostBoardId.value = selectedPost.value.boardId
   editPostForm.value = {
     title: selectedPost.value.title,
     content: selectedPost.value.content,
@@ -283,6 +285,10 @@ function openEditPost(): void {
 
 async function submitEditPost(): Promise<void> {
   if (!selectedPost.value) return
+  if (!editPostBoardId.value) {
+    editPostError.value = '카테고리를 선택해주세요.'
+    return
+  }
   if (!editPostForm.value.title.trim() || !editPostForm.value.content.trim()) {
     editPostError.value = '제목과 내용을 입력해주세요.'
     return
@@ -291,6 +297,7 @@ async function submitEditPost(): Promise<void> {
   editPostError.value = ''
   try {
     const updated = await updateBoardPost(groupId.value, selectedPost.value.id, {
+      boardId: editPostBoardId.value,
       title: editPostForm.value.title.trim(),
       content: editPostForm.value.content.trim(),
       pinned: editPostForm.value.pinned,
@@ -708,6 +715,26 @@ function getCommentLabel(boardId: string): string {
   return boardMap.value[boardId]?.boardType === 'QUESTION' ? '답변' : '댓글'
 }
 
+function stripMarkdown(text: string | null | undefined): string {
+  if (!text) return ''
+  return text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]+`/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^>\s*/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/^[-*_]{3,}$/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'short',
@@ -864,7 +891,7 @@ function formatDate(value: string): string {
               v-if="post.contentPreview && !isLeaderReport(post.boardId)"
               class="mt-0.5 line-clamp-1 text-sm text-[var(--color-muted)]"
             >
-              {{ post.contentPreview }}
+              {{ stripMarkdown(post.contentPreview) }}
             </p>
 
             <!-- 푸터 -->
@@ -881,8 +908,12 @@ function formatDate(value: string): string {
                 <span>·</span>
                 <span>{{ formatRelativeDate(post.createdAt) }}</span>
                 <template v-if="post.commentCount > 0">
-                  <span>·</span>
-                  <span>{{ getCommentLabel(post.boardId) }} {{ post.commentCount }}</span>
+                  <span class="flex items-center gap-1">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    {{ getCommentLabel(post.boardId) }} {{ post.commentCount }}
+                  </span>
                 </template>
               </template>
             </div>
@@ -1227,6 +1258,29 @@ function formatDate(value: string): string {
         <h2 class="mt-2 text-xl font-bold text-[var(--color-ink)]">게시글 수정</h2>
 
         <form class="mt-5 grid gap-4" @submit.prevent="submitEditPost">
+          <!-- 카테고리 선택 -->
+          <div class="grid gap-2">
+            <span class="text-sm font-semibold text-[var(--color-ink)]">
+              카테고리 <span class="text-[var(--color-danger)]">*</span>
+            </span>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="board in writableBoards"
+                :key="board.id"
+                type="button"
+                :class="[
+                  'rounded-md border px-3 py-1.5 text-xs font-semibold transition focus:outline-none',
+                  editPostBoardId === board.id
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                    : 'border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
+                ]"
+                @click="editPostBoardId = board.id"
+              >
+                {{ board.name }}
+              </button>
+            </div>
+          </div>
+
           <label class="grid gap-2">
             <span class="text-sm font-semibold text-[var(--color-ink)]">제목</span>
             <input

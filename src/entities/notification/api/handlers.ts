@@ -79,15 +79,21 @@ function markRead(notification: Notification): Notification {
 function toNotificationType(value?: string): NotificationType {
   const knownTypes: NotificationType[] = [
     'GROUP_INVITE_CREATED',
+    'MEMBER_JOINED',
     'ONBOARDING_REQUESTED',
     'ONBOARDING_SUBMITTED',
+    'ONBOARDING_COMPLETED',
     'STUDY_STARTED',
     'WEEK_STARTED',
     'TASK_DUE_REMINDER',
     'TASK_OVERDUE_CHECK',
     'INCOMPLETE_REASON_REQUESTED',
+    'RETROSPECTIVE_REMINDER',
     'RETROSPECTIVE_READY',
     'NEXT_WEEK_ADJUSTED',
+    'NOTICE_POSTED',
+    'LEADER_REPORT_POSTED',
+    'GROUP_DELETED',
   ]
 
   return knownTypes.includes(value as NotificationType) ? (value as NotificationType) : 'WEEK_STARTED'
