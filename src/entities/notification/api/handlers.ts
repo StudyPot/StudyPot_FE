@@ -84,6 +84,7 @@ function toNotificationType(value?: string): NotificationType {
     'ONBOARDING_SUBMITTED',
     'ONBOARDING_COMPLETED',
     'STUDY_STARTED',
+    'STUDY_COMPLETED',
     'WEEK_STARTED',
     'TASK_DUE_REMINDER',
     'TASK_OVERDUE_CHECK',

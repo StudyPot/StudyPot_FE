@@ -186,6 +186,7 @@ const LIVE_REFRESH_TYPES = new Set([
   'ONBOARDING_COMPLETED',
   'STUDY_STARTED',
   'WEEK_STARTED',
+  'STUDY_COMPLETED',
 ])
 
 watch(
@@ -196,8 +197,10 @@ watch(
       event.groupId ??
       (event.payload?.groupId as string | undefined) ??
       event.relatedResourceIds?.groupId
-    if (eventGroupId === currentGroupId.value && LIVE_REFRESH_TYPES.has(event.notificationType)) {
-      void loadCurrentGroup()
+    if (LIVE_REFRESH_TYPES.has(event.notificationType)) {
+      if (eventGroupId === currentGroupId.value) void loadCurrentGroup()
+      // 완료 전환 등 상태 변경은 사이드바 목록(상태 점/정렬)에도 반영되도록 목록도 새로고침
+      if (event.notificationType === 'STUDY_COMPLETED') void groupListStore.loadGroups()
     }
   },
 )
