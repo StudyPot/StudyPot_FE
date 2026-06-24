@@ -13,6 +13,7 @@ import type {
   JoinGroupRequest,
   ListGroupsParams,
   StudyGroup,
+  StudyRecommendationsResponse,
   SuggestDetailKeywordsRequest,
   UpdateGroupMemberProfileRequest,
   UpdateGroupRequest,
@@ -120,6 +121,10 @@ export function updateMyGroupMemberProfile(
     method: 'PATCH',
     body: request,
   })
+}
+
+export function getStudyRecommendations(groupId: string): Promise<StudyRecommendationsResponse> {
+  return apiClient<StudyRecommendationsResponse>(`/groups/${groupId}/recommendations`)
 }
 
 function isMissingGroupDetailEndpoint(error: unknown): boolean {

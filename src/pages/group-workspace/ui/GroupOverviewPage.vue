@@ -6,7 +6,10 @@ import {
   deleteGroup,
   getGroupCategoryColor,
   getGroupStatusLabel,
+  getStudyRecommendations,
+  type StudyAiSuggestion,
   type StudyGroup,
+  type StudyPopularTopic,
 } from '@/entities/group'
 import {
   getGroupMembersActivity,
@@ -38,6 +41,31 @@ const isActive = computed(() => group.value?.status === 'ACTIVE')
 const isCompleted = computed(
   () => group.value?.status === 'COMPLETED' || group.value?.status === 'ARCHIVED',
 )
+
+const aiSuggestions = ref<StudyAiSuggestion[]>([])
+const popularTopics = ref<StudyPopularTopic[]>([])
+const recommendationsLoaded = ref(false)
+const hasRecommendations = computed(
+  () => aiSuggestions.value.length > 0 || popularTopics.value.length > 0,
+)
+
+async function loadRecommendations(): Promise<void> {
+  if (recommendationsLoaded.value) return
+  recommendationsLoaded.value = true
+  try {
+    const res = await getStudyRecommendations(groupId.value)
+    aiSuggestions.value = res.aiSuggestions ?? []
+    popularTopics.value = res.popularTopics ?? []
+  } catch {
+    // 추천은 부가 정보라 실패해도 화면을 막지 않는다.
+    aiSuggestions.value = []
+    popularTopics.value = []
+  }
+}
+
+function startStudyWithTopic(topic: string): void {
+  void router.push({ name: 'group-create', query: { topic } })
+}
 
 const myUserId = computed(() => sessionStore.user?.id ?? null)
 const myMemberId = computed(
@@ -327,6 +355,7 @@ watch(
   (status) => {
     if (status === 'ACTIVE') void loadDashboard()
     else activityRows.value = []
+    if (status === 'COMPLETED' || status === 'ARCHIVED') void loadRecommendations()
   },
   { immediate: true },
 )
@@ -704,6 +733,55 @@ function formatRelative(date: string): string {
           >
             커리큘럼 다시 보기
           </RouterLink>
+        </div>
+      </section>
+
+      <!-- 다음 스터디 추천 -->
+      <section
+        v-if="hasRecommendations"
+        class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-soft)]"
+      >
+        <h2 class="text-lg font-extrabold text-[var(--color-ink)]">다음 스터디는 어때요?</h2>
+        <p class="mt-1 text-sm text-[var(--color-muted)]">
+          추천을 누르면 주제가 채워진 채로 새 스터디 만들기 화면으로 이동해요.
+        </p>
+
+        <div v-if="aiSuggestions.length" class="mt-5">
+          <p class="text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">AI 맞춤 추천</p>
+          <ul class="mt-2 grid gap-2">
+            <li v-for="(s, i) in aiSuggestions" :key="`ai-${i}`">
+              <button
+                type="button"
+                class="group flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 text-left transition hover:border-[var(--color-primary)] hover:bg-[var(--color-bg)]"
+                @click="startStudyWithTopic(s.title)"
+              >
+                <span class="min-w-0">
+                  <span class="block truncate text-sm font-bold text-[var(--color-ink)]">{{ s.title }}</span>
+                  <span v-if="s.reason" class="mt-0.5 block text-xs leading-5 text-[var(--color-muted)]">{{ s.reason }}</span>
+                </span>
+                <span class="shrink-0 text-xs font-bold text-[var(--color-primary)] group-hover:underline">만들기 →</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="popularTopics.length" class="mt-5">
+          <p class="text-xs font-bold uppercase tracking-wide text-[var(--color-muted)]">다른 그룹 인기 주제</p>
+          <ul class="mt-2 grid gap-2">
+            <li v-for="(t, i) in popularTopics" :key="`pop-${i}`">
+              <button
+                type="button"
+                class="group flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 text-left transition hover:border-[var(--color-primary)] hover:bg-[var(--color-bg)]"
+                @click="startStudyWithTopic(t.topic)"
+              >
+                <span class="min-w-0">
+                  <span class="block truncate text-sm font-bold text-[var(--color-ink)]">{{ t.topic }}</span>
+                  <span class="mt-0.5 block truncate text-xs text-[var(--color-muted)]">{{ t.groupName }} · 멤버 {{ t.memberCount }}명</span>
+                </span>
+                <span class="shrink-0 text-xs font-bold text-[var(--color-primary)] group-hover:underline">만들기 →</span>
+              </button>
+            </li>
+          </ul>
         </div>
       </section>
     </template>

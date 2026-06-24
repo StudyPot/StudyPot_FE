@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   createGroup,
@@ -22,6 +22,7 @@ type GroupCreateForm = {
 }
 
 const router = useRouter()
+const route = useRoute()
 const groupListStore = useGroupListStore()
 
 const form = reactive<GroupCreateForm>({
@@ -43,6 +44,17 @@ const customKeywords = ref<string[]>([])
 const showCustomInput = ref(false)
 const customKeywordInput = ref('')
 const customInputRef = ref<HTMLInputElement | null>(null)
+
+// 추천(완료 스터디 → 다음 스터디)에서 넘어온 주제를 폼에 미리 채운다.
+onMounted(() => {
+  const topic = typeof route.query.topic === 'string' ? route.query.topic.trim() : ''
+  if (topic) {
+    form.topic = topic
+    if (!form.name) {
+      form.name = topic
+    }
+  }
+})
 const fieldErrors = ref<Record<string, string>>({})
 
 const allKeywords = computed(() => [...suggestedKeywords.value, ...customKeywords.value])
