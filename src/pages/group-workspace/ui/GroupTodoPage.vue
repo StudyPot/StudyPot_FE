@@ -40,6 +40,19 @@ const allCurriculumWeeks = computed<CurriculumWeekSummary[]>(() =>
   [...(curriculum.value?.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber),
 )
 
+// 커리큘럼은 주차마다 점진 생성되지만(생성된 주차만 실제 데이터 존재), 전체 계획 주차 수(totalWeeks)는
+// 미리 알 수 있다. 아직 생성되지 않은 미래 주차는 잠금 슬롯으로 함께 보여준다.
+const totalWeeks = computed(() =>
+  Math.max(curriculum.value?.totalWeeks ?? 0, allCurriculumWeeks.value.length),
+)
+const displayWeeks = computed<{ weekNumber: number; week: CurriculumWeekSummary | null }[]>(() => {
+  const byNumber = new Map(allCurriculumWeeks.value.map((w) => [w.weekNumber, w]))
+  return Array.from({ length: totalWeeks.value }, (_, i) => ({
+    weekNumber: i + 1,
+    week: byNumber.get(i + 1) ?? null,
+  }))
+})
+
 const selectedWeekId = ref<string>('')
 const selectedWeek = ref<CurriculumWeek | null>(null)
 const isWeekLoading = ref(false)
@@ -63,6 +76,23 @@ const selectedWeekSummary = computed(() =>
   allCurriculumWeeks.value.find((w) => w.id === selectedWeekId.value),
 )
 const isSelectedWeekPending = computed(() => selectedWeekSummary.value?.status === 'PENDING')
+// 종료(COMPLETED)된 주차는 완료/되돌리기/건너뛰기를 잠근다(미완료는 서버에서 확정됨).
+const isSelectedWeekCompleted = computed(() => selectedWeekSummary.value?.status === 'COMPLETED')
+
+// 아직 생성되지 않은 미래 주차(placeholder)를 클릭한 상태. 클릭은 되지만 내부는 잠금 안내만 보여준다.
+const selectedPlaceholder = ref<number | null>(null)
+const isViewingLocked = computed(() => isSelectedWeekPending.value || selectedPlaceholder.value !== null)
+const displayedWeekNumber = computed(
+  () =>
+    selectedPlaceholder.value ??
+    selectedWeekSummary.value?.weekNumber ??
+    selectedWeek.value?.weekNumber ??
+    null,
+)
+function selectPlaceholder(weekNumber: number): void {
+  selectedPlaceholder.value = weekNumber
+  selectedWeekId.value = ''
+}
 
 function goPrev(): void {
   if (canPrev.value) selectWeek(allCurriculumWeeks.value[selectedIndex.value - 1]!.id)
@@ -166,6 +196,7 @@ async function loadWeekDetail(weekId: string): Promise<void> {
 }
 
 function selectWeek(weekId: string): void {
+  selectedPlaceholder.value = null
   if (weekId !== selectedWeekId.value) selectedWeekId.value = weekId
 }
 
@@ -175,6 +206,10 @@ function statusOf(task: WeeklyTask): TaskCompletionStatus {
 
 async function setStatus(taskId: string, status: TaskCompletionStatus): Promise<void> {
   if (updatingTaskId.value) return
+  if (isSelectedWeekCompleted.value) {
+    toastStore.pushToast('종료된 주차예요', '이미 끝난 주차의 할 일은 변경할 수 없어요.', 'info')
+    return
+  }
   updatingTaskId.value = taskId
   delete taskError[taskId]
   try {
@@ -248,42 +283,71 @@ function weekChipClass(week: CurriculumWeekSummary): string {
     <template v-else-if="pageState === 'loaded'">
       <!-- ── 주차 탭 ── -->
       <section class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5">
-        <div class="grid grid-cols-5 gap-2 sm:grid-cols-10">
-          <button
-            v-for="week in allCurriculumWeeks"
-            :key="week.id"
-            type="button"
-            class="flex h-16 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
-            :class="weekChipClass(week)"
-            @click="selectWeek(week.id)"
-          >
-            <svg
-              v-if="week.status === 'COMPLETED'"
-              class="h-3.5 w-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          <template v-for="slot in displayWeeks" :key="slot.weekNumber">
+            <!-- 생성된 주차: 선택 가능 -->
+            <button
+              v-if="slot.week"
+              type="button"
+              class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border text-sm font-bold transition"
+              :class="weekChipClass(slot.week)"
+              @click="selectWeek(slot.week.id)"
             >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-            <svg
-              v-else-if="week.status === 'PENDING'"
-              class="h-3.5 w-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              <svg
+                v-if="slot.week.status === 'COMPLETED'"
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <svg
+                v-else-if="slot.week.status === 'PENDING'"
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>{{ slot.weekNumber }}주</span>
+            </button>
+            <!-- 아직 생성되지 않은 미래 주차: 클릭 가능(내부는 잠금 안내) -->
+            <button
+              v-else
+              type="button"
+              class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[var(--radius-input)] border border-dashed text-sm font-bold transition"
+              :class="
+                selectedPlaceholder === slot.weekNumber
+                  ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
+                  : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)] hover:border-[var(--color-line-strong)]'
+              "
+              :title="`${slot.weekNumber}주차는 아직 공개되지 않았어요`"
+              @click="selectPlaceholder(slot.weekNumber)"
             >
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-            <span>{{ week.weekNumber }}주</span>
-          </button>
+              <svg
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>{{ slot.weekNumber }}주</span>
+            </button>
+          </template>
         </div>
       </section>
 
@@ -317,16 +381,16 @@ function weekChipClass(week: CurriculumWeekSummary): string {
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <h1 class="text-xl font-extrabold text-[var(--color-ink)]">
-                {{ selectedWeekSummary?.weekNumber ?? selectedWeek?.weekNumber ?? '-' }}주차
+                {{ displayedWeekNumber ?? '-' }}주차
               </h1>
-              <p v-if="weekRangeLabel" class="mt-0.5 text-sm text-[var(--color-muted)]">
+              <p v-if="weekRangeLabel && !isViewingLocked" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 {{ weekRangeLabel }}
               </p>
-              <p v-else-if="isSelectedWeekPending" class="mt-0.5 text-sm text-[var(--color-muted)]">
+              <p v-else-if="isViewingLocked" class="mt-0.5 text-sm text-[var(--color-muted)]">
                 아직 시작 전이에요
               </p>
             </div>
-            <div v-if="!isSelectedWeekPending" class="shrink-0 text-right">
+            <div v-if="!isViewingLocked" class="shrink-0 text-right">
               <p class="text-2xl font-extrabold leading-none">
                 <span class="text-[var(--color-primary-text)]">{{ doneCount }}</span>
                 <span class="text-[var(--color-faint)]">/{{ countableTotal }}</span>
@@ -336,6 +400,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
           </div>
 
           <div
+            v-if="!isViewingLocked"
             class="mt-4 h-2 w-full overflow-hidden rounded-[var(--radius-chip)] bg-[var(--color-active)]"
           >
             <div
@@ -377,9 +442,9 @@ function weekChipClass(week: CurriculumWeekSummary): string {
       />
 
       <template v-else>
-        <!-- PENDING 주차: 잠금 안내 -->
+        <!-- PENDING/미생성 주차: 잠금 안내 -->
         <div
-          v-if="isSelectedWeekPending"
+          v-if="isViewingLocked"
           class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
         >
           <div
@@ -399,7 +464,13 @@ function weekChipClass(week: CurriculumWeekSummary): string {
             </svg>
           </div>
           <p class="font-semibold text-[var(--color-ink)]">아직 시작되지 않은 주차예요</p>
-          <p class="text-sm text-[var(--color-muted)]">해당 주차가 시작되면 커리큘럼이 공개돼요.</p>
+          <p class="text-sm text-[var(--color-muted)]">
+            {{
+              selectedPlaceholder !== null
+                ? '이 주차는 이전 주차가 끝나면 순서대로 공개돼요.'
+                : '해당 주차가 시작되면 커리큘럼이 공개돼요.'
+            }}
+          </p>
         </div>
 
         <!-- 일반 주차 콘텐츠 -->
@@ -460,14 +531,16 @@ function weekChipClass(week: CurriculumWeekSummary): string {
             <!-- 체크박스 -->
             <button
               type="button"
-              :disabled="updatingTaskId === task.id"
-              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-50"
+              :disabled="updatingTaskId === task.id || isSelectedWeekCompleted"
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition disabled:cursor-not-allowed disabled:opacity-60"
               :class="
                 statusOf(task) === 'DONE'
                   ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                   : statusOf(task) === 'SKIPPED'
                     ? 'border-[var(--color-line-strong)] bg-[var(--color-active)] text-[var(--color-muted)]'
-                    : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]'
+                    : statusOf(task) === 'INCOMPLETE'
+                      ? 'border-[var(--color-danger)] bg-[rgba(255,82,71,0.12)] text-[var(--color-danger)]'
+                      : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]'
               "
               :aria-label="statusOf(task) === 'DONE' ? '완료 취소' : '완료'"
               @click="toggleCheck(task)"
@@ -495,6 +568,17 @@ function weekChipClass(week: CurriculumWeekSummary): string {
               >
                 <path d="M5 12h14" />
               </svg>
+              <svg
+                v-else-if="statusOf(task) === 'INCOMPLETE'"
+                class="h-3 w-3"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3.5"
+                stroke-linecap="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
             </button>
 
             <!-- 제목 + 메타 -->
@@ -504,7 +588,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                 :class="
                   statusOf(task) === 'DONE'
                     ? 'text-[var(--color-faint)] line-through'
-                    : statusOf(task) === 'SKIPPED'
+                    : statusOf(task) === 'SKIPPED' || statusOf(task) === 'INCOMPLETE'
                       ? 'text-[var(--color-muted)]'
                       : 'text-[var(--color-ink)]'
                 "
@@ -526,6 +610,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
               </template>
               <template v-else-if="statusOf(task) === 'SKIPPED'">
                 <button
+                  v-if="!isSelectedWeekCompleted"
                   type="button"
                   :disabled="updatingTaskId === task.id"
                   class="text-xs font-bold text-[var(--color-primary-text)] transition hover:underline disabled:opacity-50"
@@ -537,6 +622,13 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                   class="rounded-[var(--radius-chip)] bg-[var(--color-active)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-muted)]"
                 >
                   건너뜀
+                </span>
+              </template>
+              <template v-else-if="isSelectedWeekCompleted">
+                <span
+                  class="rounded-[var(--radius-chip)] bg-[rgba(255,82,71,0.12)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-danger)]"
+                >
+                  미완료
                 </span>
               </template>
               <template v-else>
