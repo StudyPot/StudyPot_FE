@@ -18,8 +18,13 @@ const workspaceContext = inject(groupWorkspaceContextKey)
 if (!workspaceContext) {
   throw new Error('GroupRetrospectivePage must be used inside GroupWorkspacePage.')
 }
-const { groupId } = workspaceContext
+const { groupId, group } = workspaceContext
 const toastStore = useInAppNotificationStore()
+
+// 완료(또는 보관)된 스터디는 회고가 읽기전용이다. 미제출 주차는 '미제출'로 표시하고 작성/제출을 막는다.
+const isCompleted = computed(
+  () => group.value?.status === 'COMPLETED' || group.value?.status === 'ARCHIVED',
+)
 
 type PageState = 'loading' | 'empty' | 'ready' | 'error'
 
@@ -83,10 +88,14 @@ const selectedWeek = computed<RetrospectiveWeekOverview | null>(
   () => displayWeeks.value.find((w) => w.weekId === selectedWeekId.value) ?? null,
 )
 
-const questionMode = computed<'interactive' | 'readonly' | 'locked'>(() => {
+const questionMode = computed<'interactive' | 'readonly' | 'locked' | 'missed'>(() => {
   const w = selectedWeek.value
-  if (!w || !w.unlocked) return 'locked'
-  return w.answered ? 'readonly' : 'interactive'
+  if (!w) return 'locked'
+  if (w.answered) return 'readonly'
+  // 완료된 스터디인데 제출 안 했으면 '미제출'(작성 불가)
+  if (isCompleted.value) return 'missed'
+  if (!w.unlocked) return 'locked'
+  return 'interactive'
 })
 
 const likertQuestionCount = computed(
@@ -225,6 +234,12 @@ async function handleSubmit(): Promise<void> {
 
 function chipClasses(week: RetrospectiveWeekOverview): string {
   const selected = week.weekId === selectedWeekId.value
+  // 완료된 스터디에서 미제출 주차는 흐리게(작성 불가) 표시
+  if (isCompleted.value && !week.answered) {
+    return selected
+      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+      : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-faint)]'
+  }
   if (!week.unlocked) {
     const dashed = week.weekId.startsWith('placeholder-') ? 'border-dashed ' : ''
     return selected
@@ -299,6 +314,18 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
               <path d="M20 6L9 17l-5-5" />
             </svg>
             <svg
+              v-else-if="isCompleted"
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+            <svg
               v-else-if="!week.unlocked"
               class="h-3.5 w-3.5"
               viewBox="0 0 24 24"
@@ -316,9 +343,35 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
         </div>
       </section>
 
+      <!-- 미제출 안내 (완료된 스터디에서 작성하지 않은 주차) -->
+      <div
+        v-if="questionMode === 'missed'"
+        class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
+      >
+        <div
+          class="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-active)] text-[var(--color-muted)]"
+        >
+          <svg
+            class="h-7 w-7"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </div>
+        <p class="font-bold text-[var(--color-ink)]">이 주차 회고를 작성하지 않았어요</p>
+        <p class="text-sm text-[var(--color-muted)]">
+          스터디가 완료되어 더 이상 회고를 작성할 수 없어요.
+        </p>
+      </div>
+
       <!-- 잠김 안내 -->
       <div
-        v-if="selectedWeek && !selectedWeek.unlocked"
+        v-if="selectedWeek && !selectedWeek.unlocked && questionMode !== 'missed'"
         class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
       >
         <div
@@ -423,7 +476,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
 
       <!-- 질문 리스트 -->
       <section
-        v-if="selectedWeek && selectedWeek.questions.length > 0"
+        v-if="selectedWeek && selectedWeek.questions.length > 0 && questionMode !== 'missed'"
         class="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
         :class="questionMode === 'locked' ? 'opacity-60' : ''"
       >
