@@ -237,7 +237,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
       : 'border-[var(--color-tint-200)] bg-[var(--color-tint-50)] text-[var(--color-primary-text)]'
   }
   return selected
-    ? 'border-[var(--color-ink)] bg-[var(--color-ink)] text-white'
+    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
     : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-primary)]'
 }
 </script>
