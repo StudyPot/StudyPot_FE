@@ -68,9 +68,9 @@ export type StudyAiSuggestion = {
 }
 
 export type StudyPopularTopic = {
-  groupName: string
   topic: string
   memberCount: number
+  groupCount: number
 }
 
 export type StudyRecommendationsResponse = {
