@@ -345,6 +345,8 @@ async function submitComment(): Promise<void> {
     )
     comments.value.push(comment)
     newCommentText.value = ''
+    const postInList = posts.value.find((p) => p.id === selectedPost.value!.id)
+    if (postInList) postInList.commentCount += 1
   } catch {
     // ignore
   } finally {
@@ -387,6 +389,8 @@ async function deleteComment(commentId: string): Promise<void> {
   try {
     await deletePostComment(groupId.value, commentId)
     comments.value = comments.value.filter((c) => c.id !== commentId)
+    const postInList = posts.value.find((p) => p.id === selectedPost.value?.id)
+    if (postInList && postInList.commentCount > 0) postInList.commentCount -= 1
   } catch {
     // ignore
   } finally {
