@@ -51,12 +51,29 @@ const customText = ref('')
 const ASSISTANT_WAIT_TIMEOUT_MS = 130000
 let assistantWaitTimer: ReturnType<typeof setTimeout> | null = null
 
+// SSE 자동 재연결(백오프). 탭 백그라운드 등으로 끊겨도 영구 중단하지 않고 다시 붙는다.
+const SSE_RECONNECT_INITIAL_DELAY_MS = 1000
+const SSE_RECONNECT_MAX_DELAY_MS = 15000
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
+let shouldReconnect = false
+let activeConversationId: string | null = null
+
 function subscribeToStream(conversationId: string): void {
   closeStream()
+  shouldReconnect = true
+  activeConversationId = conversationId
+  connectStream(conversationId)
+}
+
+function connectStream(conversationId: string): void {
   const es = subscribeToAiConversationStream(conversationId)
 
   es.addEventListener('connected', () => {
     isSseActive.value = true
+    reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
+    // 재연결 직후: 끊겨 있는 동안 도착했을 수 있는 응답을 맞춘다.
+    if (isSending.value) void syncPendingAssistant()
   })
 
   es.addEventListener('assistant-message-created', (event: MessageEvent) => {
@@ -80,14 +97,39 @@ function subscribeToStream(conversationId: string): void {
   })
 
   es.onerror = () => {
+    if (eventSource.value !== es) return
     isSseActive.value = false
-    closeStream()
+    es.close()
+    eventSource.value = null
+    // 탭 백그라운드 등으로 끊겨도 영구 중단하지 않고 백오프로 다시 붙는다.
+    scheduleReconnect()
   }
 
   eventSource.value = es
 }
 
+function scheduleReconnect(): void {
+  if (!shouldReconnect || reconnectTimer || !activeConversationId) {
+    return
+  }
+  const delayMs = reconnectDelayMs
+  reconnectDelayMs = Math.min(reconnectDelayMs * 2, SSE_RECONNECT_MAX_DELAY_MS)
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    if (!shouldReconnect || eventSource.value || !activeConversationId) {
+      return
+    }
+    connectStream(activeConversationId)
+  }, delayMs)
+}
+
 function closeStream(): void {
+  shouldReconnect = false
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
   eventSource.value?.close()
   eventSource.value = null
   isSseActive.value = false
@@ -128,15 +170,34 @@ async function reloadMessages(): Promise<void> {
   }
 }
 
+function lastMessageIsAssistant(): boolean {
+  const last = messages.value[messages.value.length - 1]
+  return last?.senderType === 'ASSISTANT'
+}
+
+// 대기 중(isSending)일 때 서버 메시지를 다시 맞추고, 응답이 이미 와 있으면 입력중 표시를 해제한다.
+async function syncPendingAssistant(): Promise<void> {
+  await reloadMessages()
+  if (isSending.value && lastMessageIsAssistant()) {
+    clearAssistantWait()
+    isSending.value = false
+  }
+}
+
 function startAssistantWait(): void {
   clearAssistantWait()
   assistantWaitTimer = setTimeout(() => {
     assistantWaitTimer = null
-    if (isSending.value) {
-      void reloadMessages().finally(() => {
-        isSending.value = false
-      })
+    if (!isSending.value) {
+      return
     }
+    void reloadMessages().finally(() => {
+      // 재조회 후에도 응답이 없으면 '로딩'이 아니라 실패임을 분명히 알린다.
+      if (!lastMessageIsAssistant()) {
+        sendError.value = 'AI 응답이 도착하지 않았어요. 잠시 후 다시 시도해 주세요.'
+      }
+      isSending.value = false
+    })
   }, ASSISTANT_WAIT_TIMEOUT_MS)
 }
 
@@ -327,13 +388,37 @@ async function scrollToBottom(): Promise<void> {
   if (container) container.scrollTop = container.scrollHeight
 }
 
-onUnmounted(() => {
-  closeStream()
-  clearAssistantWait()
-})
+function handleVisibilityChange(): void {
+  if (document.visibilityState !== 'visible') {
+    return
+  }
+  if (pageState.value !== 'chat' || !activeConversationId) {
+    return
+  }
+  // 탭 복귀: 끊겨 있던 SSE를 즉시 되살리고, 대기 중이면 그새 도착한 응답을 맞춘다.
+  if (!isSseActive.value && !eventSource.value) {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+    reconnectDelayMs = SSE_RECONNECT_INITIAL_DELAY_MS
+    shouldReconnect = true
+    connectStream(activeConversationId)
+  }
+  if (isSending.value) {
+    void syncPendingAssistant()
+  }
+}
 
 onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   void handleOpenConversation()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  closeStream()
+  clearAssistantWait()
 })
 
 const INTERNAL_FIELDS = ['observedDbEvidence', 'recommendedNextAction']
