@@ -860,7 +860,9 @@ function formatRelative(date: string): string {
                   <span class="block truncate text-sm font-bold text-[var(--color-ink)]">{{ s.title }}</span>
                   <span v-if="s.reason" class="mt-0.5 block text-xs leading-5 text-[var(--color-muted)]">{{ s.reason }}</span>
                 </span>
-                <span class="shrink-0 text-xs font-bold text-[var(--color-primary)] group-hover:underline">만들기 →</span>
+                <span class="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-chip)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition group-hover:bg-[var(--color-primary-deep)]">
+                  만들기 <span aria-hidden="true">→</span>
+                </span>
               </button>
             </li>
           </ul>
@@ -879,7 +881,9 @@ function formatRelative(date: string): string {
                   <span class="block truncate text-sm font-bold text-[var(--color-ink)]">{{ t.topic }}</span>
                   <span class="mt-0.5 block truncate text-xs text-[var(--color-muted)]">{{ t.groupCount }}개 그룹 · {{ t.memberCount }}명 학습 중</span>
                 </span>
-                <span class="shrink-0 text-xs font-bold text-[var(--color-primary)] group-hover:underline">만들기 →</span>
+                <span class="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-chip)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition group-hover:bg-[var(--color-primary-deep)]">
+                  만들기 <span aria-hidden="true">→</span>
+                </span>
               </button>
             </li>
           </ul>
