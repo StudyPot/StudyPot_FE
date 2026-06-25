@@ -330,7 +330,7 @@ function formatDate(value?: string | null): string {
           <button
             v-if="isOwner"
             type="button"
-            class="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
+            class="inline-flex h-10 sm:h-8 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-hover)]"
             @click="openPersonaModal"
           >
             <svg
@@ -378,7 +378,7 @@ function formatDate(value?: string | null): string {
         <li
           v-for="member in orderedMembers"
           :key="member.memberId"
-          class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)] transition"
+          class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 sm:p-5 shadow-[var(--shadow-soft)] transition"
           :class="
             isMe(member)
               ? 'border-2 border-[var(--color-primary)]'
@@ -448,19 +448,19 @@ function formatDate(value?: string | null): string {
             v-if="isActiveGroup && member.status === 'SUBMITTED'"
             class="mt-4 grid grid-cols-3 gap-2.5 text-center"
           >
-            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
+            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-3 sm:py-4">
               <p class="text-xl font-extrabold text-[var(--color-ink)]">
                 {{ thisWeekCount(member.memberId) }}
               </p>
               <p class="mt-0.5 text-[11px] text-[var(--color-muted)]">이번 주 완료</p>
             </div>
-            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
+            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-3 sm:py-4">
               <p class="text-xl font-extrabold text-[var(--color-primary-text)]">
                 {{ currentStreakWeeks(member.memberId) }}주
               </p>
               <p class="mt-0.5 text-[11px] text-[var(--color-muted)]">연속 참여</p>
             </div>
-            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-4">
+            <div class="rounded-[var(--radius-input)] bg-[var(--color-panel)] py-3 sm:py-4">
               <p class="text-base font-extrabold text-[var(--color-ink)]">
                 {{ formatDate(lastActivity(member.memberId)) }}
               </p>
@@ -482,7 +482,7 @@ function formatDate(value?: string | null): string {
                   <li
                     v-for="(slot, i) in member.availabilitySlots"
                     :key="i"
-                    class="rounded-[var(--radius-input)] bg-[var(--color-panel)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink)]"
+                    class="rounded-[var(--radius-input)] bg-[var(--color-panel)] px-2.5 py-1 sm:px-3 sm:py-1.5 text-sm font-medium text-[var(--color-ink)]"
                   >
                     {{ DAY_LABELS[slot.dayOfWeek] }}요일 {{ slot.startTime }} – {{ slot.endTime }}
                   </li>

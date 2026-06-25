@@ -158,7 +158,7 @@ function formatDateTime(value?: string | null): string {
     <!-- 알림 드롭다운 -->
     <div
       v-if="isOpen"
-      class="absolute right-0 top-full z-20 mt-2 w-80 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-lg sm:w-96"
+      class="absolute right-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] shadow-lg sm:w-96"
     >
       <!-- 드롭다운 헤더 -->
       <div class="flex items-center justify-between border-b border-[var(--color-line)] px-4 py-3">
@@ -180,7 +180,7 @@ function formatDateTime(value?: string | null): string {
         <button
           type="button"
           :disabled="isMarkingAll || store.unreadCount === 0"
-          class="inline-flex h-7 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
+          class="inline-flex h-9 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40 sm:h-7"
           @click="handleMarkAllRead"
         >
           {{ isMarkingAll ? '처리 중…' : '전체 읽음' }}
@@ -235,7 +235,7 @@ function formatDateTime(value?: string | null): string {
             v-if="isUnread(notification)"
             type="button"
             :disabled="markingId === notification.id"
-            class="mt-0.5 shrink-0 inline-flex h-6 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-1.5 text-[10px] font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none disabled:opacity-50"
+            class="mt-0.5 shrink-0 inline-flex h-9 items-center rounded border border-[var(--color-line)] bg-[var(--color-card)] px-2.5 text-[10px] font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none disabled:opacity-50 sm:h-6 sm:px-1.5"
             @click.stop="handleMarkRead(notification.id)"
           >
             읽음

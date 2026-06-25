@@ -31,11 +31,11 @@ type PageState = 'loading' | 'empty' | 'ready' | 'error'
 // 5점 리커트 라벨 (1 그렇지 않다 … 5 그렇다)
 const LIKERT_LABELS = ['그렇지 않다', '약간 그렇지 않다', '보통', '약간 그렇다', '그렇다']
 const LIKERT_SIZES = [
-  'h-8 w-8 sm:h-14 sm:w-14',
-  'h-7 w-7 sm:h-11 sm:w-11',
-  'h-6 w-6 sm:h-9 sm:w-9',
-  'h-7 w-7 sm:h-11 sm:w-11',
-  'h-8 w-8 sm:h-14 sm:w-14',
+  'h-11 w-11 sm:h-14 sm:w-14',
+  'h-10 w-10 sm:h-11 sm:w-11',
+  'h-9 w-9',
+  'h-10 w-10 sm:h-11 sm:w-11',
+  'h-11 w-11 sm:h-14 sm:w-14',
 ] as const
 
 // 제출 답변(읽기) 라벨 칩 색
@@ -565,28 +565,34 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
               >
                 {{ scoreOf(question.id) ? LIKERT_LABELS[scoreOf(question.id)! - 1] : '-' }}
               </span>
-              <!-- 작성/미리보기: 5점 척도 -->
-              <div v-else class="flex items-center gap-2 pl-7 sm:gap-4">
-                <span class="shrink-0 text-[11px] text-[var(--color-muted)] sm:text-sm">{{ LIKERT_LABELS[0] }}</span>
-                <div class="flex flex-1 items-center justify-between sm:flex-none sm:justify-start sm:gap-4">
-                  <button
-                    v-for="n in 5"
-                    :key="n"
-                    type="button"
-                    :disabled="questionMode !== 'interactive'"
-                    class="shrink-0 rounded-full border-2 border-[var(--color-primary)] transition disabled:cursor-default"
-                    :class="[
-                      LIKERT_SIZES[n - 1],
-                      scoreOf(question.id) === n
-                        ? 'bg-[var(--color-primary)]'
-                        : 'bg-transparent hover:bg-[var(--color-tint-50)]'
-                    ]"
-                    :title="LIKERT_LABELS[n - 1]"
-                    :aria-label="`${qi + 1}번 ${LIKERT_LABELS[n - 1]}`"
-                    @click="setScore(question.id, n)"
-                  />
+              <!-- 작성/미리보기: 5점 척도 (모바일에선 양끝 라벨을 원 아래로 내려 탭 영역 확보) -->
+              <div v-else class="pl-7">
+                <div class="flex items-center gap-2 sm:gap-4">
+                  <span class="hidden shrink-0 text-sm text-[var(--color-muted)] sm:inline">{{ LIKERT_LABELS[0] }}</span>
+                  <div class="flex flex-1 items-center justify-between sm:flex-none sm:justify-start sm:gap-4">
+                    <button
+                      v-for="n in 5"
+                      :key="n"
+                      type="button"
+                      :disabled="questionMode !== 'interactive'"
+                      class="shrink-0 rounded-full border-2 border-[var(--color-primary)] transition disabled:cursor-default"
+                      :class="[
+                        LIKERT_SIZES[n - 1],
+                        scoreOf(question.id) === n
+                          ? 'bg-[var(--color-primary)]'
+                          : 'bg-transparent hover:bg-[var(--color-tint-50)]'
+                      ]"
+                      :title="LIKERT_LABELS[n - 1]"
+                      :aria-label="`${qi + 1}번 ${LIKERT_LABELS[n - 1]}`"
+                      @click="setScore(question.id, n)"
+                    />
+                  </div>
+                  <span class="hidden shrink-0 text-sm text-[var(--color-muted)] sm:inline">{{ LIKERT_LABELS[4] }}</span>
                 </div>
-                <span class="shrink-0 text-[11px] text-[var(--color-muted)] sm:text-sm">{{ LIKERT_LABELS[4] }}</span>
+                <div class="mt-1.5 flex justify-between text-[11px] font-medium text-[var(--color-muted)] sm:hidden">
+                  <span>{{ LIKERT_LABELS[0] }}</span>
+                  <span>{{ LIKERT_LABELS[4] }}</span>
+                </div>
               </div>
             </div>
 

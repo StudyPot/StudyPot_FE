@@ -43,7 +43,7 @@ function setMinute(m: number): void {
 }
 
 function scrollToSelected(): void {
-  const ITEM_H = 32
+  const ITEM_H = 40
   if (hourListRef.value) {
     hourListRef.value.scrollTop = (parsed.value.hour12 - 1) * ITEM_H - ITEM_H
   }
@@ -69,10 +69,10 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
 </script>
 
 <template>
-  <div ref="rootRef" class="relative inline-block">
+  <div ref="rootRef" class="relative inline-block w-full">
     <button
       type="button"
-      class="flex h-9 min-w-[9rem] items-center gap-1 rounded border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.25)]"
+      class="flex h-10 w-full items-center gap-1 rounded border border-[var(--color-line-strong)] bg-[var(--color-input)] px-3 text-sm text-[var(--color-ink)] transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.25)] sm:h-9"
       @click="isOpen ? (isOpen = false) : open()"
     >
       <svg class="h-3.5 w-3.5 shrink-0 text-[var(--color-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -83,15 +83,15 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
 
     <div
       v-if="isOpen"
-      class="absolute left-0 z-50 mt-1 flex overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] shadow-[var(--shadow-strong)]"
+      class="absolute left-0 z-50 mt-1 flex max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] shadow-[var(--shadow-strong)]"
     >
       <!-- AM/PM -->
-      <div class="flex w-14 flex-col border-r border-[var(--color-line)]">
+      <div class="flex w-16 flex-col border-r border-[var(--color-line)]">
         <button
           v-for="(label, idx) in ['오전', '오후']"
           :key="idx"
           type="button"
-          class="flex h-8 items-center justify-center text-sm font-medium transition"
+          class="flex h-10 items-center justify-center text-sm font-medium transition"
           :class="
             (idx === 0 ? !parsed.isPm : parsed.isPm)
               ? 'bg-[var(--color-primary)] text-white'
@@ -104,12 +104,12 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
       </div>
 
       <!-- Hours -->
-      <div ref="hourListRef" class="flex w-14 flex-col overflow-y-auto border-r border-[var(--color-line)]" style="max-height: 9rem; scroll-behavior: smooth">
+      <div ref="hourListRef" class="flex w-16 flex-col overflow-y-auto border-r border-[var(--color-line)]" style="max-height: 12rem; scroll-behavior: smooth">
         <button
           v-for="h in HOURS"
           :key="h"
           type="button"
-          class="flex h-8 shrink-0 items-center justify-center text-sm transition"
+          class="flex h-10 shrink-0 items-center justify-center text-sm transition"
           :class="
             parsed.hour12 === h
               ? 'bg-[var(--color-primary)] font-semibold text-white'
@@ -122,12 +122,12 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
       </div>
 
       <!-- Minutes -->
-      <div ref="minuteListRef" class="flex w-14 flex-col overflow-y-auto" style="max-height: 9rem; scroll-behavior: smooth">
+      <div ref="minuteListRef" class="flex w-16 flex-col overflow-y-auto" style="max-height: 12rem; scroll-behavior: smooth">
         <button
           v-for="m in MINUTES"
           :key="m"
           type="button"
-          class="flex h-8 shrink-0 items-center justify-center text-sm transition"
+          class="flex h-10 shrink-0 items-center justify-center text-sm transition"
           :class="
             parsed.minute === m
               ? 'bg-[var(--color-primary)] font-semibold text-white'

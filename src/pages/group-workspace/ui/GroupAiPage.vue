@@ -558,9 +558,9 @@ function showDateDivider(index: number): boolean {
           </div>
 
           <!-- USER (우측 그린 버블) -->
-          <div v-if="message.senderType === 'USER'" class="flex flex-col items-end mr-3">
+          <div v-if="message.senderType === 'USER'" class="flex min-w-0 flex-col items-end">
             <p
-              class="max-w-[78%] rounded-2xl rounded-tr-md bg-[var(--color-primary)] px-4 py-2.5 text-sm leading-6 text-white"
+              class="max-w-[85%] rounded-2xl rounded-tr-md bg-[var(--color-primary)] px-4 py-2.5 text-sm leading-6 break-words whitespace-pre-wrap text-white sm:max-w-[78%]"
             >
               {{ message.content }}
             </p>
@@ -575,10 +575,10 @@ function showDateDivider(index: number): boolean {
             >
               <img src="/AIbot.png" alt="" class="h-full w-full object-cover" />
             </span>
-            <div class="flex max-w-[78%] flex-col gap-2">
+            <div class="flex min-w-0 max-w-[85%] flex-col gap-2 sm:max-w-[78%]">
               <div
                 v-if="message.content.trim()"
-                class="ai-markdown rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
+                class="ai-markdown min-w-0 rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
                 v-html="renderMarkdown(message.content)"
               />
               <span class="text-[11px] text-[var(--color-faint)]">{{ formatChatTime(message.createdAt) }}</span>
@@ -631,7 +631,7 @@ function showDateDivider(index: number): boolean {
                       type="text"
                       placeholder="원하는 방식 (예: 더 짧게)"
                       :disabled="actionBusy[message.id]"
-                      class="h-8 min-w-[120px] flex-1 rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50"
+                      class="h-10 basis-full rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 text-base text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50 sm:h-8 sm:basis-auto sm:flex-1 sm:text-sm"
                       @keydown.enter.prevent="submitCustomShare(message)"
                     />
                     <button
@@ -899,15 +899,16 @@ function showDateDivider(index: number): boolean {
         {{ sendError }}
       </p>
 
-      <!-- 입력창 -->
+      <!-- 입력창 (하단 safe-area 는 셸 컨텐츠 영역 패딩에서 처리) -->
       <div class="flex items-end gap-2 pt-2">
         <textarea
           v-model="inputText"
           rows="1"
           placeholder="AI 팀장에게 물어보기..."
           :disabled="isSending"
-          class="max-h-32 min-h-[48px] flex-1 resize-none rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 text-sm leading-6 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50"
+          class="max-h-32 min-h-[48px] flex-1 resize-none rounded-[var(--radius-input)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 py-3 text-base leading-6 text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-50 md:text-sm"
           @keydown="handleKeydown"
+          @focus="scrollToBottom"
         />
         <button
           type="button"
@@ -1012,12 +1013,23 @@ function showDateDivider(index: number): boolean {
   margin-bottom: 0.125rem;
 }
 
+.ai-markdown :deep(p),
+.ai-markdown :deep(li),
+.ai-markdown :deep(a) {
+  /* 긴 URL·코드 토큰(예: UsernamePasswordAuthenticationFilter)이 버블을 넘쳐
+     가로 스크롤을 만들지 않도록 어디서든 줄바꿈을 허용한다. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .ai-markdown :deep(code) {
   background-color: rgba(0, 0, 0, 0.06);
   border-radius: 0.25rem;
   padding: 0.1em 0.35em;
   font-size: 0.85em;
   font-family: ui-monospace, monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .ai-markdown :deep(pre) {
   background-color: rgba(0, 0, 0, 0.06);
@@ -1029,6 +1041,16 @@ function showDateDivider(index: number): boolean {
 .ai-markdown :deep(pre code) {
   background: none;
   padding: 0;
+}
+
+.ai-markdown :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+.ai-markdown :deep(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .ai-markdown :deep(blockquote) {

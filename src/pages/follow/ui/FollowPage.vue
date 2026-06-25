@@ -167,7 +167,7 @@ function isFollowing(userId: string): boolean {
               type="button"
               :aria-label="`${user.nickname} 언팔로우`"
               :disabled="togglingUserIds.has(user.userId)"
-              class="shrink-0 inline-flex h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
+              class="shrink-0 inline-flex h-9 sm:h-8 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
               @click="handleToggle(user.userId)"
             >
               {{ togglingUserIds.has(user.userId) ? '처리 중…' : '언팔로우' }}
@@ -210,7 +210,7 @@ function isFollowing(userId: string): boolean {
               type="button"
               :aria-label="`${user.nickname} 팔로우`"
               :disabled="togglingUserIds.has(user.userId)"
-              class="shrink-0 inline-flex h-8 items-center justify-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
+              class="shrink-0 inline-flex h-9 sm:h-8 items-center justify-center rounded-md bg-[var(--color-primary)] px-3 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
               @click="handleToggle(user.userId)"
             >
               {{ togglingUserIds.has(user.userId) ? '처리 중…' : '팔로우' }}

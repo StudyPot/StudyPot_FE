@@ -106,7 +106,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
 
     <div
       v-if="isOpen"
-      class="absolute left-0 z-50 mt-1 w-72 overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] shadow-[var(--shadow-strong)]"
+      class="absolute left-0 z-50 mt-1 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] shadow-[var(--shadow-strong)]"
     >
       <!-- 헤더: 년/월 + 이전/다음 -->
       <div class="flex items-center justify-between border-b border-[var(--color-line)] px-4 py-3">
@@ -134,7 +134,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
         <span
           v-for="day in DAY_LABELS"
           :key="day"
-          class="flex h-8 items-center justify-center text-xs font-semibold"
+          class="flex h-10 items-center justify-center text-xs font-semibold sm:h-8"
           :class="day === '일' ? 'text-[var(--color-danger)]' : day === '토' ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted)]'"
         >
           {{ day }}
@@ -148,7 +148,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
           <button
             v-else
             type="button"
-            class="flex h-8 w-full items-center justify-center rounded-md text-sm transition"
+            class="flex h-10 w-full items-center justify-center rounded-md text-sm transition sm:h-8"
             :class="[
               cell.dateStr === modelValue
                 ? 'bg-[var(--color-primary)] font-semibold text-white'

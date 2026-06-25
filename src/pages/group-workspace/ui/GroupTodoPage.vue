@@ -266,7 +266,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
 
     <template v-else-if="pageState === 'loaded'">
       <!-- ── 주차 탭 ── -->
-      <section class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-5">
+      <section class="rounded-[var(--radius-card)] bg-[var(--color-card)] p-4 sm:p-5">
         <div class="flex gap-2 overflow-x-auto pb-1">
           <template v-for="slot in displayWeeks" :key="slot.weekNumber">
             <!-- 생성된 주차: 선택 가능 -->
@@ -337,7 +337,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
 
       <!-- ── 주차 정보 카드 -->
         <section
-          class="min-w-0 flex-1 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+          class="min-w-0 flex-1 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-soft)] sm:p-5"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
@@ -434,7 +434,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
         <!-- 전체 완료 시 회고 유도 배너 -->
         <div
           v-if="allDone"
-          class="mt-4 flex items-center justify-between gap-4 rounded-[var(--radius-card)] border border-[var(--color-primary)] bg-[var(--color-tint-50)] px-5 py-4"
+          class="mt-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-[var(--color-primary)] bg-[var(--color-tint-50)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4"
         >
           <div class="flex items-center gap-3">
             <div
@@ -451,7 +451,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
           </div>
           <button
             type="button"
-            class="shrink-0 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            class="w-full shrink-0 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 sm:w-fit"
             @click="goToRetrospective"
           >
             회고하러 가기
@@ -551,7 +551,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                   v-if="!isSelectedWeekCompleted"
                   type="button"
                   :disabled="updatingTaskId === task.id"
-                  class="text-xs font-bold text-[var(--color-primary-text)] transition hover:underline disabled:opacity-50"
+                  class="inline-flex min-h-[36px] items-center px-1 text-xs font-bold text-[var(--color-primary-text)] transition hover:underline disabled:opacity-50"
                   @click="setStatus(task.id, 'TODO')"
                 >
                   되돌리기
@@ -573,7 +573,7 @@ function weekChipClass(week: CurriculumWeekSummary): string {
                 <button
                   type="button"
                   :disabled="updatingTaskId === task.id"
-                  class="rounded-[var(--radius-chip)] bg-[var(--color-active)] px-3 py-1 text-xs font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)] disabled:opacity-50"
+                  class="inline-flex min-h-[36px] items-center rounded-[var(--radius-chip)] bg-[var(--color-active)] px-3 py-1 text-xs font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)] disabled:opacity-50"
                   @click="setStatus(task.id, 'SKIPPED')"
                 >
                   건너뛰기
