@@ -822,11 +822,7 @@ function showDateDivider(index: number): boolean {
           leave-to-class="opacity-0"
         >
           <div
-            v-if="
-              isSending &&
-              messages.length > 0 &&
-              messages[messages.length - 1]?.senderType === 'USER'
-            "
+            v-if="isSending && !lastMessageIsAssistant()"
             class="flex items-start gap-2.5"
           >
             <span
