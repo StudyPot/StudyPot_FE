@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 
-import { ApiError } from '@/shared/api'
+import { ApiError, clearAuthTokens } from '@/shared/api'
 import { getCurrentUser } from '@/entities/user/api/currentUser'
 import type { User } from '@/entities/user/model/types'
 import { logout, logoutAll, refreshSession } from '../api/sessionApi'
@@ -78,6 +78,7 @@ export const useSessionStore = defineStore('session', {
     clearSession(): void {
       this.user = null
       this.status = 'anonymous'
+      clearAuthTokens()
     },
   },
 })
