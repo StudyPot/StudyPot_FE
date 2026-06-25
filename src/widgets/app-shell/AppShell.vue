@@ -421,7 +421,7 @@ function startGoogleLogin(): void {
         <RouterLink
           :to="{ name: 'groups' }"
           class="group relative flex h-[72px] w-[240px] shrink-0 items-center hover:bg-[var(--color-active)]"
-          :class="!currentGroupId ? 'bg-[var(--color-active)]' : ''"
+          :class="!currentGroupId ? 'bg-[rgba(25,195,125,0.18)]' : ''"
           @click="closeRailNow"
         >
           <div
@@ -465,7 +465,7 @@ function startGoogleLogin(): void {
           :key="group.id"
           :to="{ name: 'group-overview', params: { groupId: group.id } }"
           class="group relative flex h-[72px] w-[240px] shrink-0 items-center hover:bg-[var(--color-active)]"
-          :class="currentGroupId === group.id ? 'bg-[var(--color-active)]' : ''"
+          :class="currentGroupId === group.id ? 'bg-[rgba(25,195,125,0.18)]' : ''"
           @click="closeRailNow"
         >
           <div
