@@ -200,6 +200,14 @@ const LIVE_REFRESH_TYPES = new Set([
   'STUDY_COMPLETED',
 ])
 
+// 그룹 status 자체가 바뀌는 이벤트는 사이드바 목록(아이콘 색·상태 점·정렬)에도 반영해야 한다.
+// 예: STUDY_STARTED 로 READY_TO_START → ACTIVE 전환 시 사이드바 아이콘이 노란색→초록색으로 갱신.
+const STATUS_CHANGE_TYPES = new Set([
+  'ONBOARDING_COMPLETED',
+  'STUDY_STARTED',
+  'STUDY_COMPLETED',
+])
+
 watch(
   () => notificationStore.lastEvent,
   (event) => {
@@ -210,8 +218,8 @@ watch(
       event.relatedResourceIds?.groupId
     if (LIVE_REFRESH_TYPES.has(event.notificationType)) {
       if (eventGroupId === currentGroupId.value) void loadCurrentGroup()
-      // 완료 전환 등 상태 변경은 사이드바 목록(상태 점/정렬)에도 반영되도록 목록도 새로고침
-      if (event.notificationType === 'STUDY_COMPLETED') void groupListStore.loadGroups()
+      // 상태 전환(시작·완료 등)은 사이드바 목록(아이콘 색·상태 점·정렬)에도 반영되도록 목록도 새로고침
+      if (STATUS_CHANGE_TYPES.has(event.notificationType)) void groupListStore.loadGroups()
     }
   },
 )
