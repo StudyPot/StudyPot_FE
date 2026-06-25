@@ -8,6 +8,7 @@ import {
 } from '@/entities/notification'
 import type { Notification } from '@/entities/notification'
 import { apiBaseUrl } from '@/shared/config/api'
+import { getAccessToken } from '@/shared/api'
 
 export type ToastVariant = 'success' | 'info' | 'warning' | 'error'
 
@@ -108,7 +109,10 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
   function connectSse(): void {
     try {
-      const es = new EventSource(`${apiBaseUrl}/users/me/notifications/stream`, {
+      // EventSource는 Authorization 헤더를 못 실어, 쿠키가 막힌 환경을 위해 access_token을 쿼리로 전달한다(쿠키는 withCredentials로 병행).
+      const accessToken = getAccessToken()
+      const streamUrl = `${apiBaseUrl}/users/me/notifications/stream${accessToken ? `?access_token=${encodeURIComponent(accessToken)}` : ''}`
+      const es = new EventSource(streamUrl, {
         withCredentials: true,
       })
 

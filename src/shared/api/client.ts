@@ -1,4 +1,5 @@
 import { apiBaseUrl, apiOrigin } from '@/shared/config/api'
+import { getAccessToken, getRefreshToken, setAuthTokens } from './token'
 
 export type PageInfo = {
   nextCursor: string | null
@@ -53,15 +54,24 @@ let refreshingPromise: Promise<void> | null = null
 
 async function refreshAccessToken(): Promise<void> {
   const headers = new Headers()
+  const refreshToken = getRefreshToken()
+  // 저장된 refresh token이 있으면 바디로 보낸다(쿠키를 못 쓰는 환경). 없으면 쿠키 기반으로 동작.
+  if (refreshToken) {
+    headers.set('Content-Type', 'application/json')
+  }
   await appendCsrfHeader(headers, 'POST')
   const response = await fetch(resolveApiUrl('/auth/refresh'), {
     method: 'POST',
     credentials: 'include',
     headers,
+    body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,
   })
   if (!response.ok) {
     throw new ApiError(response.status, await parseResponseBody<ApiErrorPayload>(response))
   }
+  // 갱신된 토큰을 저장(쿠키도 함께 회전됨)
+  const data = await parseResponseBody<{ accessToken?: string; refreshToken?: string }>(response)
+  setAuthTokens(data?.accessToken, data?.refreshToken)
 }
 
 export async function apiClient<TResponse = unknown>(
@@ -76,6 +86,7 @@ export async function apiClient<TResponse = unknown>(
     requestHeaders.set('Content-Type', 'application/json')
   }
 
+  applyAuthorization(requestHeaders)
   await appendCsrfHeader(requestHeaders, requestOptions.method)
 
   const response = await fetch(resolveApiUrl(path), {
@@ -100,6 +111,7 @@ export async function apiClient<TResponse = unknown>(
       if (hasJsonBody && !retryHeaders.has('Content-Type')) {
         retryHeaders.set('Content-Type', 'application/json')
       }
+      applyAuthorization(retryHeaders)
       await appendCsrfHeader(retryHeaders, requestOptions.method)
 
       const retryResponse = await fetch(resolveApiUrl(path), {
@@ -249,6 +261,17 @@ async function fetchCsrfToken(): Promise<CsrfBootstrapResponse | null> {
 
 function requiresCsrfHeader(method = 'GET'): boolean {
   return !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method.toUpperCase())
+}
+
+// 저장된 access token이 있으면 Authorization 헤더를 붙인다(쿠키가 막힌 환경 대응).
+function applyAuthorization(headers: Headers): void {
+  if (headers.has('Authorization')) {
+    return
+  }
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  }
 }
 
 function hasBearerAuthorization(headers: Headers): boolean {
