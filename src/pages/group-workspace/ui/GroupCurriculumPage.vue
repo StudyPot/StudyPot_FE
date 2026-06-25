@@ -237,9 +237,9 @@ function formatDate(value: string): string {
               class="flex w-full items-center justify-between px-4 py-3 text-sm text-left"
               @click="selectWeek(week.id)"
             >
-              <div class="min-w-0">
-                <span class="font-semibold text-[var(--color-muted)]">{{ week.weekNumber }}주차</span>
-                <span class="ml-2 font-semibold text-[var(--color-ink)]">{{ week.title }}</span>
+              <div class="flex min-w-0 items-baseline">
+                <span class="shrink-0 font-semibold text-[var(--color-muted)]">{{ week.weekNumber }}주차</span>
+                <span class="ml-2 min-w-0 truncate font-semibold text-[var(--color-ink)]">{{ week.title }}</span>
               </div>
               <span
                 :class="[
@@ -282,7 +282,7 @@ function formatDate(value: string): string {
                 </p>
                 <button
                   type="button"
-                  class="text-xs font-semibold text-[var(--color-primary)] underline"
+                  class="inline-flex min-h-[36px] items-center px-1 text-xs font-semibold text-[var(--color-primary)] underline"
                   @click="loadWeekDetail(week.id)"
                 >
                   다시 시도
@@ -293,7 +293,7 @@ function formatDate(value: string): string {
                 <dl class="grid gap-2 text-sm sm:grid-cols-3">
                   <div v-if="weekDetail.sprintGoal">
                     <dt class="text-[var(--color-muted)]">스프린트 목표</dt>
-                    <dd class="mt-0.5 font-medium text-[var(--color-ink)]">{{ weekDetail.sprintGoal }}</dd>
+                    <dd class="mt-0.5 font-medium break-words text-[var(--color-ink)]">{{ weekDetail.sprintGoal }}</dd>
                   </div>
                   <div v-if="weekDetail.startsAt">
                     <dt class="text-[var(--color-muted)]">시작일</dt>
@@ -319,8 +319,8 @@ function formatDate(value: string): string {
                         {{ TASK_TYPE_LABEL[task.taskType] }}
                       </span>
                       <div class="min-w-0 flex-1">
-                        <p class="font-medium text-[var(--color-ink)]">{{ task.title }}</p>
-                        <p v-if="task.description" class="mt-0.5 text-xs text-[var(--color-muted)]">
+                        <p class="font-medium break-words text-[var(--color-ink)]">{{ task.title }}</p>
+                        <p v-if="task.description" class="mt-0.5 text-xs break-words text-[var(--color-muted)]">
                           {{ task.description }}
                         </p>
                       </div>

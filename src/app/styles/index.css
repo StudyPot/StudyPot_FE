@@ -88,7 +88,10 @@
 html,
 body,
 #app {
-  height: 100%;
+  /* 모바일 브라우저의 동적 툴바/키보드에 맞춰 셸 높이를 추적한다.
+     100vh 폴백 → dvh 지원 시 dvh 가 덮어쓴다. */
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--color-surface);
   color: var(--color-body);
@@ -127,4 +130,19 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 textarea,
 select {
   background-color: var(--color-input);
+}
+
+/*
+ * iOS Safari 는 16px 미만 입력란에 포커스하면 자동으로 확대(zoom)된다.
+ * 모바일(<768px)에서 모든 텍스트 입력란의 최소 폰트를 16px 로 올려 포커스 시
+ * 화면이 튀는 현상을 전역에서 막는다. (컴포넌트의 text-sm 등은 데스크탑에서 유지)
+ */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='submit']):not(
+      [type='button']
+    ),
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }

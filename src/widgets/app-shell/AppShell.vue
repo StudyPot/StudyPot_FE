@@ -78,6 +78,7 @@ function toggleMobileNav(): void {
 }
 function closeMobileNav(): void {
   mobileNavOpen.value = false
+  showCreateMenu.value = false
 }
 
 const loginNotice = computed(() => {
@@ -272,7 +273,12 @@ function toggleCreateMenu(event: MouseEvent): void {
   event.stopPropagation()
   if (!showCreateMenu.value) {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-    createMenuPos.value = { top: rect.top, left: rect.right + 8 }
+    // 팝오버(w-44=176px, 대략 높이 120px)가 화면 밖으로 나가지 않도록 좌표를 뷰포트 안으로 보정.
+    const MENU_W = 176
+    const MENU_H = 120
+    const left = Math.min(rect.right + 8, window.innerWidth - MENU_W - 8)
+    const top = Math.min(rect.top, window.innerHeight - MENU_H - 8)
+    createMenuPos.value = { top: Math.max(8, top), left: Math.max(8, left) }
   }
   showCreateMenu.value = !showCreateMenu.value
 }
@@ -728,7 +734,7 @@ function startGoogleLogin(): void {
         <!-- 모바일 메뉴 토글(md 미만에서만) -->
         <button
           type="button"
-          class="-ml-1 mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)] md:hidden"
+          class="mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)] md:hidden"
           aria-label="메뉴 열기"
           @click="toggleMobileNav"
         >
@@ -796,7 +802,9 @@ function startGoogleLogin(): void {
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-x-hidden overflow-y-auto p-6 xl:px-[30px] 2xl:px-[60px]">
+      <div
+        class="flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:p-6 md:pb-[calc(env(safe-area-inset-bottom)+1.5rem)] xl:px-[30px] 2xl:px-[60px]"
+      >
         <slot />
       </div>
     </div>

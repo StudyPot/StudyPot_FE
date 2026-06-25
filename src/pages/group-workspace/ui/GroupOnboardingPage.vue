@@ -275,11 +275,11 @@ function formatSubmittedAt(value: string): string {
             <li
               v-for="(slot, i) in form.availabilitySlots"
               :key="i"
-              class="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-2"
+              class="grid grid-cols-1 gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-3 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-center sm:py-2"
             >
               <select
                 v-model.number="slot.dayOfWeek"
-                class="rounded border border-[var(--color-line)] bg-[var(--color-input)] px-2 py-1 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
+                class="h-10 w-full rounded border border-[var(--color-line)] bg-[var(--color-input)] px-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] sm:h-9 sm:w-auto"
               >
                 <option v-for="(label, d) in DAY_LABELS" :key="d" :value="d">{{ label }}요일</option>
               </select>
@@ -289,7 +289,7 @@ function formatSubmittedAt(value: string): string {
 
               <button
                 type="button"
-                class="text-xs font-semibold text-[var(--color-muted)] hover:text-red-600 focus:outline-none"
+                class="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] px-3 text-sm font-semibold text-[var(--color-muted)] transition hover:border-red-300 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[rgba(255,82,71,0.2)] sm:h-9 sm:rounded sm:border-0 sm:px-1 sm:text-xs sm:hover:border-0"
                 aria-label="시간 삭제"
                 @click="removeSlot(i)"
               >

@@ -1229,6 +1229,13 @@ function formatRelative(date: string): string {
   font-weight: 700;
   margin: 0.9rem 0 0.4rem;
 }
+.report-markdown :deep(p),
+.report-markdown :deep(li),
+.report-markdown :deep(a) {
+  /* 긴 토큰/URL 이 좁은 화면에서 넘쳐 가로 스크롤을 만들지 않도록 줄바꿈 허용 */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .report-markdown :deep(p) {
   margin: 0.5rem 0;
 }
@@ -1240,6 +1247,19 @@ function formatRelative(date: string): string {
 }
 .report-markdown :deep(li) {
   margin: 0.2rem 0;
+}
+.report-markdown :deep(pre) {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.report-markdown :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+.report-markdown :deep(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 .report-markdown :deep(strong) {
   font-weight: 700;

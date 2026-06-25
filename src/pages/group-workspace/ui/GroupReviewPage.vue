@@ -208,11 +208,17 @@ function formatDate(value: string): string {
             <!-- scale 답변 표시 -->
             <template v-if="q.type === 'scale'">
               <div class="mt-3 flex flex-col gap-1.5">
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 sm:gap-4">
                   <div
-                    v-for="(size, idx) in ['h-9 w-9', 'h-7 w-7', 'h-6 w-6', 'h-7 w-7', 'h-9 w-9']"
+                    v-for="(size, idx) in [
+                      'h-10 w-10 sm:h-9 sm:w-9',
+                      'h-9 w-9 sm:h-7 sm:w-7',
+                      'h-8 w-8 sm:h-6 sm:w-6',
+                      'h-9 w-9 sm:h-7 sm:w-7',
+                      'h-10 w-10 sm:h-9 sm:w-9',
+                    ]"
                     :key="idx"
-                    class="flex w-9 justify-center"
+                    class="flex flex-1 justify-center sm:w-9 sm:flex-none"
                   >
                     <span
                       class="rounded-full border-2"
@@ -225,11 +231,11 @@ function formatDate(value: string): string {
                     />
                   </div>
                 </div>
-                <div class="flex gap-4">
+                <div class="flex gap-1.5 sm:gap-4">
                   <span
                     v-for="idx in 5"
                     :key="idx"
-                    class="flex w-9 justify-center text-[10px] text-[var(--color-muted)]"
+                    class="flex flex-1 justify-center text-[11px] text-[var(--color-muted)] sm:w-9 sm:flex-none sm:text-[10px]"
                   >{{ idx }}</span>
                 </div>
               </div>
@@ -263,11 +269,17 @@ function formatDate(value: string): string {
             <!-- scale 선택 -->
             <template v-if="q.type === 'scale'">
               <div class="mt-3 flex flex-col gap-1.5">
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 sm:gap-4">
                   <div
-                    v-for="(size, idx) in ['h-9 w-9', 'h-7 w-7', 'h-6 w-6', 'h-7 w-7', 'h-9 w-9']"
+                    v-for="(size, idx) in [
+                      'h-10 w-10 sm:h-9 sm:w-9',
+                      'h-9 w-9 sm:h-7 sm:w-7',
+                      'h-8 w-8 sm:h-6 sm:w-6',
+                      'h-9 w-9 sm:h-7 sm:w-7',
+                      'h-10 w-10 sm:h-9 sm:w-9',
+                    ]"
                     :key="idx"
-                    class="flex w-9 justify-center"
+                    class="flex flex-1 justify-center sm:w-9 sm:flex-none"
                   >
                     <button
                       type="button"
@@ -282,11 +294,11 @@ function formatDate(value: string): string {
                     />
                   </div>
                 </div>
-                <div class="flex gap-4">
+                <div class="flex gap-1.5 sm:gap-4">
                   <span
                     v-for="idx in 5"
                     :key="idx"
-                    class="flex w-9 justify-center text-[10px] text-[var(--color-muted)]"
+                    class="flex flex-1 justify-center text-[11px] text-[var(--color-muted)] sm:w-9 sm:flex-none sm:text-[10px]"
                   >{{ idx }}</span>
                 </div>
               </div>

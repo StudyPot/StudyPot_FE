@@ -275,7 +275,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
 </script>
 
 <template>
-  <main class="mx-auto min-h-screen max-w-3xl px-6 py-12">
+  <main class="mx-auto min-h-screen max-w-3xl px-0 py-6 sm:px-6 sm:py-12">
     <header class="mb-6">
       <h1 class="text-2xl font-extrabold text-[var(--color-ink)]">스터디 그룹을 만들어볼까요?</h1>
       <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
@@ -286,7 +286,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
 
     <form class="grid gap-6" @submit.prevent="submitGroup">
       <section
-        class="grid gap-5 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-6 shadow-[var(--shadow-soft)]"
+        class="grid gap-5 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)] p-4 sm:p-6 shadow-[var(--shadow-soft)]"
       >
         <label class="grid gap-2">
           <span class="text-sm font-semibold text-[var(--color-ink)]">그룹 이름</span>
@@ -359,7 +359,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
               :key="keyword"
               type="button"
               :class="[
-                'inline-flex h-8 items-center rounded-[var(--radius-chip)] border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]',
+                'inline-flex h-9 sm:h-8 items-center rounded-[var(--radius-chip)] border px-3 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]',
                 form.selectedKeywords.includes(keyword)
                   ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                   : 'border-[var(--color-line)] bg-[var(--color-card)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]',
@@ -404,7 +404,7 @@ function toCreateGroupRequest(): CreateGroupRequest {
             <button
               v-else
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-chip)] border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
+              class="inline-flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-[var(--radius-chip)] border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
               aria-label="키워드 직접 추가"
               @click="openCustomInput"
             >

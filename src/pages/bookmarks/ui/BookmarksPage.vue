@@ -113,7 +113,7 @@ function formatDateRange(startsAt: string, endsAt: string): string {
               :aria-label="`${bookmark.group.name} 찜 해제`"
               :aria-pressed="true"
               :disabled="togglingGroupIds.has(bookmark.groupId)"
-              class="flex h-8 w-8 items-center justify-center rounded text-lg text-[var(--color-primary)] transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50"
+              class="flex h-10 w-10 items-center justify-center rounded text-lg text-[var(--color-primary)] transition hover:bg-[var(--color-hover)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-50 sm:h-8 sm:w-8"
               @click="handleToggle(bookmark.groupId)"
             >
               ★
@@ -149,7 +149,7 @@ function formatDateRange(startsAt: string, endsAt: string): string {
         <div class="mt-4 flex justify-end">
           <RouterLink
             :to="{ name: 'group-overview', params: { groupId: bookmark.groupId } }"
-            class="inline-flex h-8 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+            class="inline-flex h-9 items-center rounded border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 text-xs font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)] sm:h-8"
           >
             그룹 홈
           </RouterLink>

@@ -126,7 +126,7 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 py-8">
+  <div class="mx-auto max-w-xl px-0 py-8 sm:px-4">
     <h1 class="text-2xl font-bold text-[var(--color-ink)]">내 프로필</h1>
 
     <ScreenState
@@ -237,7 +237,7 @@ async function handleSubmit(): Promise<void> {
                 name="topic-input"
                 placeholder="주제 입력 후 추가"
                 maxlength="30"
-                class="flex-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
+                class="h-10 flex-1 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-bg)] px-3 text-sm text-[var(--color-ink)] placeholder-[var(--color-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[rgba(25,195,125,0.2)]"
                 @keydown.enter.prevent="addTopic"
               />
               <button
@@ -258,7 +258,7 @@ async function handleSubmit(): Promise<void> {
                 <button
                   type="button"
                   :aria-label="`${topic} 제거`"
-                  class="ml-0.5 text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none"
+                  class="inline-flex h-6 w-6 -mr-1 items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none"
                   @click="removeTopic(i)"
                 >
                   ✕

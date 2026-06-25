@@ -526,7 +526,7 @@ function formatDate(value: string): string {
     <!-- 목록 -->
     <template v-if="viewMode === 'list'">
       <!-- 탭 바 + 글쓰기 버튼 -->
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-wrap gap-2">
           <button
             type="button"
@@ -560,7 +560,7 @@ function formatDate(value: string): string {
         </div>
         <button
           type="button"
-          class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none"
+          class="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none sm:w-auto"
           @click="openCreatePost"
         >
           <svg
@@ -776,7 +776,7 @@ function formatDate(value: string): string {
               <div v-if="isMyPost(selectedPost)" class="flex shrink-0 gap-2">
                 <button
                   type="button"
-                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-line-strong)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none"
+                  class="inline-flex h-9 md:h-8 items-center rounded-md border border-[var(--color-line-strong)] px-3 text-xs font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus:outline-none"
                   aria-label="게시글 수정"
                   @click="openEditPost"
                 >
@@ -785,7 +785,7 @@ function formatDate(value: string): string {
                 <button
                   type="button"
                   :disabled="isDeletingPost"
-                  class="inline-flex h-8 items-center rounded-md border border-[var(--color-danger)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[var(--color-danger)] hover:text-white focus:outline-none disabled:opacity-50"
+                  class="inline-flex h-9 md:h-8 items-center rounded-md border border-[var(--color-danger)] px-3 text-xs font-semibold text-[var(--color-danger)] transition hover:bg-[var(--color-danger)] hover:text-white focus:outline-none disabled:opacity-50"
                   aria-label="게시글 삭제"
                   @click="deletePost"
                 >
@@ -799,7 +799,7 @@ function formatDate(value: string): string {
 
           <!-- 본문 -->
           <div class="px-6 py-5">
-            <article class="markdown-body" v-html="renderMarkdown(selectedPost.content)" />
+            <article class="markdown-body break-words" v-html="renderMarkdown(selectedPost.content)" />
           </div>
 
           <!-- 댓글 -->
@@ -835,7 +835,7 @@ function formatDate(value: string): string {
                     <template v-if="isMyComment(comment)">
                       <button
                         type="button"
-                        class="text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
+                        class="inline-flex items-center min-h-[36px] px-1 text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] focus:outline-none"
                         :aria-label="`${comment.author.displayName} 댓글 수정`"
                         @click="startEditComment(comment)"
                       >
@@ -844,7 +844,7 @@ function formatDate(value: string): string {
                       <button
                         type="button"
                         :disabled="isDeletingCommentId === comment.id"
-                        class="text-xs text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none disabled:opacity-50"
+                        class="inline-flex items-center min-h-[36px] px-1 text-xs text-[var(--color-muted)] hover:text-[var(--color-danger)] focus:outline-none disabled:opacity-50"
                         :aria-label="`${comment.author.displayName} 댓글 삭제`"
                         @click="deleteComment(comment.id)"
                       >
@@ -865,21 +865,21 @@ function formatDate(value: string): string {
                     <button
                       type="button"
                       :disabled="isSavingComment"
-                      class="text-xs font-semibold text-[var(--color-primary)] hover:underline focus:outline-none disabled:opacity-50"
+                      class="inline-flex items-center min-h-[36px] px-1 text-xs font-semibold text-[var(--color-primary)] hover:underline focus:outline-none disabled:opacity-50"
                       @click="saveEditComment(comment.id)"
                     >
                       저장
                     </button>
                     <button
                       type="button"
-                      class="text-xs text-[var(--color-muted)] hover:underline focus:outline-none"
+                      class="inline-flex items-center min-h-[36px] px-1 text-xs text-[var(--color-muted)] hover:underline focus:outline-none"
                       @click="cancelEditComment"
                     >
                       취소
                     </button>
                   </div>
                 </template>
-                <p v-else class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+                <p v-else class="mt-2 text-sm leading-6 text-[var(--color-muted)] break-words">
                   {{ comment.content }}
                 </p>
               </li>
@@ -911,7 +911,7 @@ function formatDate(value: string): string {
     <!-- 글쓰기 -->
     <template v-else-if="viewMode === 'create'">
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 sm:p-5 shadow-[var(--shadow-soft)]"
       >
         <button
           type="button"
@@ -965,13 +965,13 @@ function formatDate(value: string): string {
                 v-model="newPostForm.content"
                 rows="18"
                 placeholder="내용을 입력하세요"
-                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
+                class="min-h-[14rem] sm:min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
                 @input="syncPreview"
                 @compositionupdate="syncPreview"
               />
             </label>
 
-            <section class="grid gap-2">
+            <section class="hidden lg:grid gap-2">
               <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold text-[var(--color-ink)]">미리보기</span>
                 <span class="text-xs font-semibold text-[var(--color-muted)]"
@@ -979,7 +979,7 @@ function formatDate(value: string): string {
                 >
               </div>
               <div
-                class="min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3"
+                class="min-h-[14rem] sm:min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3"
               >
                 <article
                   v-if="markdownPreviewHtml"
@@ -1022,7 +1022,7 @@ function formatDate(value: string): string {
     <!-- 게시글 수정 -->
     <template v-else-if="viewMode === 'edit'">
       <section
-        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        class="rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 sm:p-5 shadow-[var(--shadow-soft)]"
       >
         <button
           type="button"
@@ -1075,13 +1075,13 @@ function formatDate(value: string): string {
                 v-model="editPostForm.content"
                 rows="18"
                 placeholder="내용을 입력하세요"
-                class="min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
+                class="min-h-[14rem] sm:min-h-[28rem] resize-y rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-3 py-3 font-mono text-sm leading-6 text-[var(--color-ink)] outline-none transition placeholder:font-sans focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[rgba(25,195,125,0.12)]"
                 @input="syncEditPreview"
                 @compositionupdate="syncEditPreview"
               />
             </label>
 
-            <section class="grid gap-2">
+            <section class="hidden lg:grid gap-2">
               <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold text-[var(--color-ink)]">미리보기</span>
                 <span class="text-xs font-semibold text-[var(--color-muted)]"
@@ -1089,7 +1089,7 @@ function formatDate(value: string): string {
                 >
               </div>
               <div
-                class="min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3"
+                class="min-h-[14rem] sm:min-h-[28rem] overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-active)] px-4 py-3"
               >
                 <article
                   v-if="editMarkdownPreviewHtml"
@@ -1205,6 +1205,7 @@ function formatDate(value: string): string {
   color: var(--color-ink);
   font-size: 0.875rem;
   line-height: 1.75;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 

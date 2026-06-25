@@ -75,7 +75,7 @@ function getInitialInviteCode(): string {
 </script>
 
 <template>
-  <main class="mx-auto min-h-screen max-w-3xl px-6 py-10">
+  <main class="mx-auto min-h-screen max-w-3xl px-0 py-6 sm:px-6 sm:py-10">
     <header class="border-b border-[var(--color-line)] pb-6">
       <RouterLink
         :to="{ name: 'groups' }"
@@ -92,7 +92,7 @@ function getInitialInviteCode(): string {
 
     <form class="mt-8 grid gap-6" @submit.prevent="submitJoin">
       <section
-        class="grid gap-5 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[var(--shadow-soft)]"
+        class="grid gap-5 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] p-4 sm:p-5 shadow-[var(--shadow-soft)]"
       >
         <label class="grid gap-2">
           <span class="text-sm font-semibold text-[var(--color-ink)]">초대 코드</span>

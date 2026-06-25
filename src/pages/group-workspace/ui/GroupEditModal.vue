@@ -201,7 +201,7 @@ async function submit(): Promise<void> {
         </h2>
         <button
           type="button"
-          class="flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
+          class="flex h-10 w-10 sm:h-8 sm:w-8 items-center justify-center rounded-md text-[var(--color-muted)] hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)]"
           aria-label="닫기"
           @click="emit('close')"
         >
@@ -266,14 +266,14 @@ async function submit(): Promise<void> {
             </button>
 
             <template v-if="showCustomInput">
-              <div class="inline-flex items-center gap-1">
+              <div class="flex w-full flex-col sm:inline-flex sm:w-auto sm:flex-row sm:items-center gap-1">
                 <input
                   ref="customInputRef"
                   v-model="customKeywordInput"
                   type="text"
                   maxlength="30"
                   placeholder="키워드 입력"
-                  class="h-8 w-28 rounded-md border border-[var(--color-primary)] bg-[var(--color-card)] px-2 text-xs text-[var(--color-ink)] outline-none"
+                  class="h-9 w-full sm:h-8 sm:w-28 rounded-md border border-[var(--color-primary)] bg-[var(--color-card)] px-2 text-xs text-[var(--color-ink)] outline-none"
                   @keydown.enter.prevent="confirmCustomKeyword"
                   @keydown.escape="cancelCustomInput"
                 />
@@ -297,7 +297,7 @@ async function submit(): Promise<void> {
             <button
               v-else
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              class="inline-flex h-10 w-10 sm:h-8 sm:w-8 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-card)] text-base font-semibold text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
               aria-label="키워드 직접 추가"
               @click="openCustomInput"
             >
