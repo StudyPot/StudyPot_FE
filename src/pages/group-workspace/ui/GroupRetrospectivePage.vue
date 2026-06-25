@@ -400,7 +400,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
 
       <!-- 잠김 안내 -->
       <div
-        v-if="selectedWeek && !selectedWeek.unlocked && questionMode !== 'missed'"
+        v-if="selectedWeek && questionMode === 'locked'"
         class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
       >
         <div
