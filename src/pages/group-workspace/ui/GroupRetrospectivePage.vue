@@ -30,7 +30,13 @@ type PageState = 'loading' | 'empty' | 'ready' | 'error'
 
 // 5점 리커트 라벨 (1 그렇지 않다 … 5 그렇다)
 const LIKERT_LABELS = ['그렇지 않다', '약간 그렇지 않다', '보통', '약간 그렇다', '그렇다']
-const LIKERT_SIZES = ['h-14 w-14', 'h-11 w-11', 'h-9 w-9', 'h-11 w-11', 'h-14 w-14'] as const
+const LIKERT_SIZES = [
+  'h-8 w-8 sm:h-14 sm:w-14',
+  'h-7 w-7 sm:h-11 sm:w-11',
+  'h-6 w-6 sm:h-9 sm:w-9',
+  'h-7 w-7 sm:h-11 sm:w-11',
+  'h-8 w-8 sm:h-14 sm:w-14',
+] as const
 
 // 제출 답변(읽기) 라벨 칩 색
 function likertChipClass(score: number | null): string {
@@ -281,7 +287,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
 </script>
 
 <template>
-  <div class="grid gap-4">
+  <div class="grid grid-cols-1 gap-4">
     <ScreenState
       v-if="pageState === 'loading'"
       variant="loading"
@@ -560,9 +566,9 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
                 {{ scoreOf(question.id) ? LIKERT_LABELS[scoreOf(question.id)! - 1] : '-' }}
               </span>
               <!-- 작성/미리보기: 5점 척도 -->
-              <div v-else class="flex items-center gap-4 pl-7">
-                <span class="shrink-0 text-sm text-[var(--color-muted)]">{{ LIKERT_LABELS[0] }}</span>
-                <div class="flex items-center gap-4">
+              <div v-else class="flex items-center gap-2 pl-7 sm:gap-4">
+                <span class="shrink-0 text-[11px] text-[var(--color-muted)] sm:text-sm">{{ LIKERT_LABELS[0] }}</span>
+                <div class="flex flex-1 items-center justify-between sm:flex-none sm:justify-start sm:gap-4">
                   <button
                     v-for="n in 5"
                     :key="n"
@@ -580,7 +586,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
                     @click="setScore(question.id, n)"
                   />
                 </div>
-                <span class="shrink-0 text-sm text-[var(--color-muted)]">{{ LIKERT_LABELS[4] }}</span>
+                <span class="shrink-0 text-[11px] text-[var(--color-muted)] sm:text-sm">{{ LIKERT_LABELS[4] }}</span>
               </div>
             </div>
 
