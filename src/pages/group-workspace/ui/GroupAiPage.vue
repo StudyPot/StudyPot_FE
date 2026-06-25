@@ -81,11 +81,14 @@ function connectStream(conversationId: string): void {
       const message = JSON.parse(event.data as string) as AiConversationMessage
       addUniqueMessage(message)
       void scrollToBottom()
+      // 빈 placeholder 푸시면 계속 대기, 실제 답변일 때만 입력중 표시를 해제한다.
+      if (isAssistantAnswer(message)) {
+        clearAssistantWait()
+        isSending.value = false
+      }
     } catch {
       // JSON 파싱 실패 시 무시
     }
-    clearAssistantWait()
-    isSending.value = false
   })
 
   es.addEventListener('assistant-generation-failed', () => {
@@ -136,9 +139,23 @@ function closeStream(): void {
 }
 
 function addUniqueMessage(message: AiConversationMessage): void {
-  if (!messages.value.some((m) => m.id === message.id)) {
+  // 같은 id 면 교체(빈 placeholder → 내용 채워진 응답 업데이트), 없으면 추가.
+  const index = messages.value.findIndex((m) => m.id === message.id)
+  if (index === -1) {
     messages.value.push(message)
+  } else {
+    messages.value[index] = message
   }
+}
+
+// 빈(생성 중) 어시스턴트 placeholder 와 실제 답변을 구분한다.
+// 비동기(MQ) 모드에서 백엔드가 content 없는 ASSISTANT 행을 먼저 만들어 둘 수 있어,
+// content 가 채워졌거나 action 이 있을 때만 '답변 도착'으로 본다.
+function isAssistantAnswer(message: AiConversationMessage): boolean {
+  return (
+    message.senderType === 'ASSISTANT' &&
+    (message.content.trim().length > 0 || message.action != null)
+  )
 }
 
 function clearAssistantWait(): void {
@@ -172,7 +189,7 @@ async function reloadMessages(): Promise<void> {
 
 function lastMessageIsAssistant(): boolean {
   const last = messages.value[messages.value.length - 1]
-  return last?.senderType === 'ASSISTANT'
+  return last != null && isAssistantAnswer(last)
 }
 
 // 대기 중(isSending)일 때 서버 메시지를 다시 맞추고, 응답이 이미 와 있으면 입력중 표시를 해제한다.
@@ -530,8 +547,8 @@ function showDateDivider(index: number): boolean {
             <span class="mt-1 text-[11px] text-[var(--color-faint)]">{{ formatChatTime(message.createdAt) }}</span>
           </div>
 
-          <!-- ASSISTANT (좌측 아바타 + 흰 버블) -->
-          <div v-else-if="message.senderType === 'ASSISTANT'" class="flex items-start gap-2.5">
+          <!-- ASSISTANT (좌측 아바타 + 흰 버블) — 빈 placeholder 는 렌더하지 않는다(점 인디케이터로 대체) -->
+          <div v-else-if="isAssistantAnswer(message)" class="flex items-start gap-2.5">
             <span
               class="mt-0.5 flex h-8 w-8 shrink-0 overflow-hidden rounded-xl bg-[var(--color-primary)]"
               aria-hidden="true"
@@ -540,6 +557,7 @@ function showDateDivider(index: number): boolean {
             </span>
             <div class="flex max-w-[78%] flex-col gap-2">
               <div
+                v-if="message.content.trim()"
                 class="ai-markdown rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
                 v-html="renderMarkdown(message.content)"
               />
