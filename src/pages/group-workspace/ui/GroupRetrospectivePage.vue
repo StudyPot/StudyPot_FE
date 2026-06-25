@@ -392,9 +392,9 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
         </p>
       </div>
 
-      <!-- 잠김 안내 -->
+      <!-- 잠김 안내 (아직 시작/미완료로 잠긴 주차에만. 제출완료(readonly)·미제출(missed)·리포트 게시 후엔 안 뜸) -->
       <div
-        v-if="selectedWeek && !selectedWeek.unlocked && questionMode !== 'missed'"
+        v-if="questionMode === 'locked'"
         class="mt-8 flex flex-col items-center gap-3 py-10 text-center"
       >
         <div
@@ -414,7 +414,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
           </svg>
         </div>
         <p class="font-bold text-[var(--color-ink)]">아직 시작되지 않은 주차에요</p>
-        <p v-if="selectedWeek.status === 'PENDING'" class="text-sm text-[var(--color-muted)]">
+        <p v-if="selectedWeek?.status === 'PENDING'" class="text-sm text-[var(--color-muted)]">
           이 주차는 이전 주차가 끝나면 순서대로 공개돼요.
         </p>
         <template v-else>
