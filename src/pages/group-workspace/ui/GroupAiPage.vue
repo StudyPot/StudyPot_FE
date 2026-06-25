@@ -308,6 +308,30 @@ function renderMarkdown(content: string): string {
   const html = marked.parse(stripInternalFields(content), { async: false }) as string
   return DOMPurify.sanitize(html)
 }
+
+// ── 채팅 타임라인(날짜 구분선 + 메시지 시간) ──────────────────────
+function dateKey(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+function formatChatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatChatDate(iso: string): string {
+  const d = new Date(iso)
+  if (dateKey(iso) === dateKey(new Date().toISOString())) return '오늘'
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
+}
+
+function showDateDivider(index: number): boolean {
+  const cur = messages.value[index]
+  if (!cur) return false
+  if (index === 0) return true
+  const prev = messages.value[index - 1]
+  return !prev || dateKey(prev.createdAt) !== dateKey(cur.createdAt)
+}
 </script>
 
 <template>
@@ -346,14 +370,24 @@ function renderMarkdown(content: string): string {
           </p>
         </div>
 
-        <template v-for="message in messages" :key="message.id">
+        <template v-for="(message, mi) in messages" :key="message.id">
+          <!-- 날짜 구분선 (타임라인) -->
+          <div v-if="showDateDivider(mi)" class="my-1 flex items-center justify-center">
+            <span
+              class="rounded-full bg-[var(--color-active)] px-3 py-1 text-xs font-bold text-[var(--color-muted)]"
+            >
+              {{ formatChatDate(message.createdAt) }}
+            </span>
+          </div>
+
           <!-- USER (우측 그린 버블) -->
-          <div v-if="message.senderType === 'USER'" class="flex justify-end mr-3">
+          <div v-if="message.senderType === 'USER'" class="flex flex-col items-end mr-3">
             <p
               class="max-w-[78%] rounded-2xl rounded-tr-md bg-[var(--color-primary)] px-4 py-2.5 text-sm leading-6 text-white"
             >
               {{ message.content }}
             </p>
+            <span class="mt-1 text-[11px] text-[var(--color-faint)]">{{ formatChatTime(message.createdAt) }}</span>
           </div>
 
           <!-- ASSISTANT (좌측 아바타 + 흰 버블) -->
@@ -369,6 +403,7 @@ function renderMarkdown(content: string): string {
                 class="ai-markdown rounded-2xl rounded-tl-none bg-[var(--color-surface)] px-4 py-2.5 text-sm leading-6 text-[var(--color-ink)] shadow-[var(--shadow-soft)]"
                 v-html="renderMarkdown(message.content)"
               />
+              <span class="text-[11px] text-[var(--color-faint)]">{{ formatChatTime(message.createdAt) }}</span>
 
               <!-- 제안 액션: 질문 게시판 공유 (확인 후 실행) -->
               <div
@@ -557,6 +592,81 @@ function renderMarkdown(content: string): string {
                 class="text-xs font-medium text-[var(--color-primary)]"
               >
                 ✅ 이번 주 과제에 추가했어요.
+              </p>
+
+              <!-- 게시글 수정 (확인 후 실행) -->
+              <div
+                v-else-if="message.action?.type === 'EDIT_POST' && message.action.status === 'PENDING'"
+                class="flex flex-col gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-soft)]"
+              >
+                <p class="text-xs font-medium text-[var(--color-muted)]">이 게시글을 이렇게 수정할까요?</p>
+                <p v-if="message.action.title" class="text-sm font-semibold text-[var(--color-ink)]">
+                  {{ message.action.title }}
+                </p>
+                <p v-if="message.action.summary" class="line-clamp-4 whitespace-pre-line text-xs text-[var(--color-muted)]">
+                  {{ message.action.summary }}
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'CONFIRM')"
+                  >
+                    {{ actionBusy[message.id] ? '수정 중…' : '수정하기' }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'REJECT')"
+                  >
+                    아니요
+                  </button>
+                </div>
+              </div>
+
+              <p
+                v-else-if="message.action?.type === 'EDIT_POST' && message.action.status === 'EXECUTED'"
+                class="text-xs font-medium text-[var(--color-primary)]"
+              >
+                ✅ 게시글을 수정했어요.
+              </p>
+
+              <!-- 게시글 삭제 (확인 후 실행) -->
+              <div
+                v-else-if="message.action?.type === 'DELETE_POST' && message.action.status === 'PENDING'"
+                class="flex flex-col gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-soft)]"
+              >
+                <p class="text-xs font-medium text-[var(--color-muted)]">이 게시글을 삭제할까요?</p>
+                <p v-if="message.action.title" class="text-sm font-semibold text-[var(--color-ink)]">
+                  {{ message.action.title }}
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] bg-[var(--color-danger)] px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-[rgba(255,82,71,0.2)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'CONFIRM')"
+                  >
+                    {{ actionBusy[message.id] ? '삭제 중…' : '삭제하기' }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="actionBusy[message.id]"
+                    class="rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-[var(--color-bg)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.14)] disabled:opacity-40"
+                    @click="handleDecideAction(message, 'REJECT')"
+                  >
+                    아니요
+                  </button>
+                </div>
+              </div>
+
+              <p
+                v-else-if="message.action?.type === 'DELETE_POST' && message.action.status === 'EXECUTED'"
+                class="text-xs font-medium text-[var(--color-primary)]"
+              >
+                ✅ 게시글을 삭제했어요.
               </p>
             </div>
           </div>

@@ -39,6 +39,8 @@ export type AiMessageActionType =
   | 'SHOW_EXISTING_POST'
   | 'COMPLETE_TASK'
   | 'ADD_TASK'
+  | 'EDIT_POST'
+  | 'DELETE_POST'
 
 export type AiMessageActionStatus = 'PENDING' | 'EXECUTED' | 'REJECTED'
 
