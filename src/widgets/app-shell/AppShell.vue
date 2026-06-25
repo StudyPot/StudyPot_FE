@@ -71,6 +71,15 @@ function closeRailNow(): void {
   railHover.value = false
 }
 
+// 모바일 내비게이션 드로어: 좁은 화면(md 미만)에서 레일+채널패널을 오프캔버스로 연다.
+const mobileNavOpen = ref(false)
+function toggleMobileNav(): void {
+  mobileNavOpen.value = !mobileNavOpen.value
+}
+function closeMobileNav(): void {
+  mobileNavOpen.value = false
+}
+
 const loginNotice = computed(() => {
   if (route.query.error === 'oauth') return 'Google 로그인에 실패했습니다. 다시 시도해주세요.'
   if (route.query.signedOut === 'all') return '모든 기기에서 로그아웃되었습니다.'
@@ -174,6 +183,7 @@ watch(
   () => route.fullPath,
   () => {
     closeRailNow()
+    closeMobileNav()
   },
 )
 
@@ -398,6 +408,23 @@ function startGoogleLogin(): void {
 
   <!-- Discord layout (authenticated) -->
   <div v-else class="relative flex h-full overflow-hidden">
+    <!-- 모바일 드로어 백드롭(md 미만에서만) -->
+    <div
+      v-if="mobileNavOpen"
+      class="fixed inset-0 z-30 bg-black/40 md:hidden"
+      @click="closeMobileNav"
+    />
+
+    <!-- ── 좌측 내비게이션(레일 + 채널패널) ──
+         데스크탑: 일반 흐름 / 모바일(md 미만): 오프캔버스 드로어 -->
+    <div
+      :class="[
+        'z-40 flex shrink-0',
+        'fixed inset-y-0 left-0 transition-transform duration-200 ease-out',
+        mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+        'md:static md:translate-x-0 md:transition-none',
+      ]"
+    >
     <!-- ── Server rail: 레이아웃 spacer (72px 고정) ── -->
     <div class="w-[72px] shrink-0" aria-hidden="true" />
 
@@ -689,6 +716,8 @@ function startGoogleLogin(): void {
         </template>
       </nav>
     </div>
+    </div>
+    <!-- /좌측 내비게이션 드로어 -->
 
     <!-- ── Main content ── -->
     <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -696,6 +725,27 @@ function startGoogleLogin(): void {
       <div
         class="flex h-12 shrink-0 items-center border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4"
       >
+        <!-- 모바일 메뉴 토글(md 미만에서만) -->
+        <button
+          type="button"
+          class="-ml-1 mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-[var(--color-muted)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-ink)] md:hidden"
+          aria-label="메뉴 열기"
+          @click="toggleMobileNav"
+        >
+          <svg
+            class="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
         <template v-if="currentGroupId && activeChannelLabel">
           <svg
             class="mr-2 h-4 w-4 shrink-0 text-[var(--color-muted-deep)]"
