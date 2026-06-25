@@ -30,9 +30,6 @@ function isUnread(n: Notification): boolean {
 
 function sortNotifications(list: Notification[]): Notification[] {
   return [...list].sort((a, b) => {
-    const aUnread = isUnread(a) ? 0 : 1
-    const bUnread = isUnread(b) ? 0 : 1
-    if (aUnread !== bUnread) return aUnread - bUnread
     const aTime = new Date(a.deliveredAt ?? a.createdAt ?? '').getTime()
     const bTime = new Date(b.deliveredAt ?? b.createdAt ?? '').getTime()
     return bTime - aTime
