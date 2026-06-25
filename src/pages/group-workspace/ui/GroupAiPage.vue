@@ -50,6 +50,9 @@ const customText = ref('')
 // 멈추지 않도록, 일정 시간(OpenAI 최대 응답시간 고려) 후 메시지를 재조회하고 입력중 표시를 해제한다.
 const ASSISTANT_WAIT_TIMEOUT_MS = 130000
 let assistantWaitTimer: ReturnType<typeof setTimeout> | null = null
+// 새로고침/탭 이동(리마운트) 시, 마지막 사용자 메시지가 이만큼 이내로 최근이면
+// 비동기 응답 생성 대기 중으로 보고 로딩 상태를 복원한다(오래된 미응답은 제외).
+const PENDING_ASSISTANT_MAX_AGE_MS = 180000
 
 // SSE 자동 재연결(백오프). 탭 백그라운드 등으로 끊겨도 영구 중단하지 않고 다시 붙는다.
 const SSE_RECONNECT_INITIAL_DELAY_MS = 1000
@@ -218,6 +221,21 @@ function startAssistantWait(): void {
   }, ASSISTANT_WAIT_TIMEOUT_MS)
 }
 
+// 새로고침/탭 이동으로 리마운트됐을 때, 마지막 메시지가 아직 assistant 답변이 아니고(=사용자 메시지나 빈 placeholder)
+// 충분히 최근이면 비동기 응답 생성 대기 중으로 보고 로딩 상태를 복원한다.
+// (복원하지 않으면 답이 SSE 로 도착하기 전까지 로딩이 안 보여 오류처럼 보인다.)
+function restorePendingAssistantState(): void {
+  const last = messages.value[messages.value.length - 1]
+  if (!last || isAssistantAnswer(last)) {
+    return
+  }
+  const ageMs = Date.now() - new Date(last.createdAt).getTime()
+  if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < PENDING_ASSISTANT_MAX_AGE_MS) {
+    isSending.value = true
+    startAssistantWait()
+  }
+}
+
 async function handleOpenConversation(): Promise<void> {
   pageState.value = 'opening'
   openError.value = ''
@@ -246,6 +264,8 @@ async function handleOpenConversation(): Promise<void> {
     } catch {
       // 히스토리 로드 실패 시 빈 상태로 시작
     }
+    // 답변 생성 대기 중에 리마운트된 경우 로딩 상태를 복원한다(이후 SSE 로 응답이 도착하면 해제).
+    restorePendingAssistantState()
     subscribeToStream(conversation.value.id)
     pageState.value = 'chat'
     await scrollToBottom()

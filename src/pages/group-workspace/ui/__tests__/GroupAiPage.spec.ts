@@ -384,4 +384,61 @@ describe('GroupAiPage', () => {
 
     expect(wrapper.text()).toContain('필수 과제를 하나 줄였어.')
   })
+
+  it('restores the loading indicator on remount while an async assistant reply is still pending', async () => {
+    // 답변 생성 대기 중에 새로고침/탭 이동(리마운트)된 상황: 히스토리의 마지막이 최근 사용자 메시지.
+    const pendingUserMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-0000000000c1',
+      conversationId: conversation.id,
+      senderType: 'USER',
+      content: '아직 답 안 온 질문',
+      createdAt: new Date().toISOString(),
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [pendingUserMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    // 로딩 상태가 복원되어 입력창이 비활성(isSending)이어야 한다.
+    expect((wrapper.find('textarea').element as HTMLTextAreaElement).disabled).toBe(true)
+
+    // 이후 SSE 로 assistant 응답이 도착하면 로딩이 해제되고 답이 렌더된다.
+    const es = FakeEventSource.instances[0]!
+    es.emit('assistant-message-created', {
+      data: JSON.stringify({
+        id: '018f7a4e-4000-7000-9000-0000000000c2',
+        conversationId: conversation.id,
+        senderType: 'ASSISTANT',
+        content: '늦었지만 답이야.',
+        createdAt: new Date().toISOString(),
+      }),
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('늦었지만 답이야.')
+    expect((wrapper.find('textarea').element as HTMLTextAreaElement).disabled).toBe(false)
+  })
+
+  it('does not show loading on mount for an old unanswered user message', async () => {
+    const oldUserMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-0000000000d1',
+      conversationId: conversation.id,
+      senderType: 'USER',
+      content: '오래 전 질문',
+      createdAt: '2026-06-04T01:00:00Z',
+    }
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [oldUserMessage],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    // 오래된 미응답은 생성 대기로 보지 않으므로 로딩(입력창 비활성)이 없어야 한다.
+    expect((wrapper.find('textarea').element as HTMLTextAreaElement).disabled).toBe(false)
+  })
 })
