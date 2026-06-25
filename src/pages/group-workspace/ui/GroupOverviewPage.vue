@@ -463,7 +463,7 @@ function formatRelative(date: string): string {
 </script>
 
 <template>
-  <div class="grid gap-4">
+  <div class="grid grid-cols-1 gap-4">
     <ScreenState
       v-if="isGroupLoading"
       variant="loading"
