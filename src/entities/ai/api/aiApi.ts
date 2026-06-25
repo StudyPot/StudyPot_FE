@@ -1,4 +1,4 @@
-import { apiClient, type CursorPageResponse } from '@/shared/api'
+import { apiClient, getAccessToken, type CursorPageResponse } from '@/shared/api'
 import { apiBaseUrl } from '@/shared/config/api'
 import type {
   AiConversation,
@@ -78,7 +78,11 @@ export function decideAiConversationMessageAction(
 
 export function subscribeToAiConversationStream(conversationId: string): EventSource {
   const base = apiBaseUrl.replace(/\/$/, '')
-  return new EventSource(`${base}/ai-conversations/${conversationId}/stream`, {
+  // EventSource는 Authorization 헤더를 못 실어, 쿠키가 막힌 환경(크로스사이트)을 위해
+  // access_token을 쿼리로 전달한다(쿠키는 withCredentials로 병행).
+  const accessToken = getAccessToken()
+  const streamUrl = `${base}/ai-conversations/${conversationId}/stream${accessToken ? `?access_token=${encodeURIComponent(accessToken)}` : ''}`
+  return new EventSource(streamUrl, {
     withCredentials: true,
   })
 }
