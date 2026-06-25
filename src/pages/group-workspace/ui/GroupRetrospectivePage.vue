@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, reactive, ref } from 'vue'
+import { computed, inject, onMounted, reactive, ref, watch } from 'vue'
 
 import { getCurriculum, listWeeklyTasks } from '@/entities/curriculum'
 import {
@@ -103,6 +103,29 @@ const likertQuestionCount = computed(
 )
 
 onMounted(() => void loadOverview())
+
+// 주차 리포트가 게시되면(주차 종료 전 전원 회고 완료 포함) LEADER_REPORT_POSTED 알림이 온다.
+// 그때 overview 의 reportPosted 가 갱신되도록 주차 목록만 다시 불러와 '보러 가기'가 즉시 뜨게 한다.
+watch(
+  () => toastStore.lastEvent,
+  (event) => {
+    if (!event || event.notificationType !== 'LEADER_REPORT_POSTED') return
+    const eventGroupId =
+      event.groupId ??
+      (event.payload?.groupId as string | undefined) ??
+      event.relatedResourceIds?.groupId
+    if (eventGroupId === groupId.value) void refreshWeeks()
+  },
+)
+
+async function refreshWeeks(): Promise<void> {
+  try {
+    const overview = await getRetrospectiveOverview(groupId.value)
+    weeks.value = [...overview].sort((a, b) => a.weekNumber - b.weekNumber)
+  } catch {
+    // 갱신 실패는 무시(다음 진입 시 재조회)
+  }
+}
 
 async function loadOverview(): Promise<void> {
   pageState.value = 'loading'
@@ -433,7 +456,7 @@ function chipClasses(week: RetrospectiveWeekOverview): string {
         <span>
           <span class="block font-bold text-[var(--color-ink)]">회고 제출 완료</span>
           <span class="block text-sm text-[var(--color-muted)]">
-            주차가 끝나면 팀 회고를 모아 AI 주간 리포트가 생성돼요. 조금만 기다려 주세요.
+            팀원 모두 회고를 마치거나 주차가 끝나면 AI 주간 리포트가 생성돼요. 조금만 기다려 주세요.
           </span>
         </span>
       </div>
