@@ -46,6 +46,10 @@ const sharedPostId = ref<string | null>(null)
 const showShareDoneModal = ref(false)
 const customMessageId = ref<string | null>(null)
 const customText = ref('')
+// 비동기(MQ) 모드 안전장치: assistant 응답은 SSE 로 도착한다. SSE 가 끊겼거나 이벤트가 유실돼도
+// 멈추지 않도록, 일정 시간(OpenAI 최대 응답시간 고려) 후 메시지를 재조회하고 입력중 표시를 해제한다.
+const ASSISTANT_WAIT_TIMEOUT_MS = 130000
+let assistantWaitTimer: ReturnType<typeof setTimeout> | null = null
 
 function subscribeToStream(conversationId: string): void {
   closeStream()
@@ -63,6 +67,7 @@ function subscribeToStream(conversationId: string): void {
     } catch {
       // JSON 파싱 실패 시 무시
     }
+    clearAssistantWait()
     isSending.value = false
   })
 
@@ -71,6 +76,7 @@ function subscribeToStream(conversationId: string): void {
       sendError.value = 'AI 응답 생성에 실패했습니다.'
       isSending.value = false
     }
+    clearAssistantWait()
   })
 
   es.onerror = () => {
@@ -91,6 +97,47 @@ function addUniqueMessage(message: AiConversationMessage): void {
   if (!messages.value.some((m) => m.id === message.id)) {
     messages.value.push(message)
   }
+}
+
+function clearAssistantWait(): void {
+  if (assistantWaitTimer) {
+    clearTimeout(assistantWaitTimer)
+    assistantWaitTimer = null
+  }
+}
+
+// SSE 로 assistant 응답이 끝내 도착하지 않을 때를 대비한 폴백: 메시지를 서버에서 다시 불러와 동기화한다.
+async function reloadMessages(): Promise<void> {
+  if (!conversation.value) {
+    return
+  }
+  try {
+    const allMessages: AiConversationMessage[] = []
+    let cursor: string | undefined = undefined
+    let hasNext = true
+    while (hasNext) {
+      const page = await listAiConversationMessages(conversation.value.id, { cursor })
+      allMessages.push(...page.items)
+      hasNext = page.pageInfo.hasNext
+      cursor = page.pageInfo.nextCursor ?? undefined
+    }
+    messages.value = allMessages
+    void scrollToBottom()
+  } catch {
+    // 재조회 실패 시 조용히 무시
+  }
+}
+
+function startAssistantWait(): void {
+  clearAssistantWait()
+  assistantWaitTimer = setTimeout(() => {
+    assistantWaitTimer = null
+    if (isSending.value) {
+      void reloadMessages().finally(() => {
+        isSending.value = false
+      })
+    }
+  }, ASSISTANT_WAIT_TIMEOUT_MS)
 }
 
 async function handleOpenConversation(): Promise<void> {
@@ -157,8 +204,16 @@ async function handleSendMessage(): Promise<void> {
   await scrollToBottom()
 
   try {
-    const assistantMessage = await sendAiConversationMessage(conversation.value.id, { content })
-    addUniqueMessage(assistantMessage)
+    const returned = await sendAiConversationMessage(conversation.value.id, { content })
+    if (returned.senderType === 'ASSISTANT') {
+      // 동기 모드: 응답(assistant)이 바로 도착한다.
+      addUniqueMessage(returned)
+      isSending.value = false
+    } else {
+      // 비동기(MQ) 모드: 반환값은 저장된 사용자 메시지이고, assistant 는 SSE(assistant-message-created)로 도착한다.
+      // optimistic 사용자 말풍선을 유지하고 입력중 표시를 유지한 채 SSE 를 기다린다(끊김 대비 폴백 타이머 가동).
+      startAssistantWait()
+    }
     await scrollToBottom()
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
@@ -166,7 +221,6 @@ async function handleSendMessage(): Promise<void> {
     } else {
       sendError.value = error instanceof ApiError ? error.message : '메시지를 전송하지 못했어요.'
     }
-  } finally {
     isSending.value = false
   }
 }
@@ -275,6 +329,7 @@ async function scrollToBottom(): Promise<void> {
 
 onUnmounted(() => {
   closeStream()
+  clearAssistantWait()
 })
 
 onMounted(() => {

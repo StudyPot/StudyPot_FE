@@ -6,6 +6,7 @@ import {
   decideAiConversationMessageAction,
   listAiConversationMessages,
   openAiConversation,
+  sendAiConversationMessage,
   type AiConversation,
   type AiConversationMessage,
 } from '@/entities/ai'
@@ -69,6 +70,14 @@ class FakeEventSource {
     this.withCredentials = init?.withCredentials === true
     FakeEventSource.instances.push(this)
   }
+
+  emit(type: string, payload: unknown): void {
+    for (const call of this.addEventListener.mock.calls) {
+      if (call[0] === type) {
+        ;(call[1] as (event: unknown) => void)(payload)
+      }
+    }
+  }
 }
 
 function mountPage() {
@@ -91,6 +100,12 @@ function mountPage() {
 describe('GroupAiPage', () => {
   beforeEach(() => {
     vi.stubGlobal('EventSource', FakeEventSource)
+    // scrollToBottom 이 requestAnimationFrame 을 await 하므로, 테스트에서 즉시 실행되게 해
+    // 메시지 전송 흐름(await scrollToBottom 이후 send 호출)이 flushPromises 안에서 결정적으로 진행되게 한다.
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback): number => {
+      cb(0)
+      return 0
+    })
     FakeEventSource.instances = []
     vi.mocked(openAiConversation).mockResolvedValue(conversation)
     vi.mocked(listAiConversationMessages).mockResolvedValue({
@@ -296,5 +311,77 @@ describe('GroupAiPage', () => {
       'CONFIRM',
       '예시 코드 포함해서 더 짧게',
     )
+  })
+
+  it('renders the assistant reply directly when the API returns it (sync mode)', async () => {
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+    const assistantMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-0000000000b2',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '동기 모드 응답입니다.',
+      createdAt: '2026-06-04T01:11:00Z',
+    }
+    vi.mocked(sendAiConversationMessage).mockResolvedValue(assistantMessage)
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    await wrapper.find('textarea').setValue('동기 질문이에요')
+    await wrapper.find('button[aria-label="전송"]').trigger('click')
+    await flushPromises()
+
+    expect(sendAiConversationMessage).toHaveBeenCalledWith(conversation.id, {
+      content: '동기 질문이에요',
+    })
+    expect(wrapper.text()).toContain('동기 모드 응답입니다.')
+  })
+
+  it('waits for the SSE assistant reply when the API returns the saved user message (async MQ mode)', async () => {
+    vi.mocked(listAiConversationMessages).mockResolvedValue({
+      items: [],
+      pageInfo: { nextCursor: null, hasNext: false },
+    })
+    const savedUserMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-0000000000a1',
+      conversationId: conversation.id,
+      senderType: 'USER',
+      content: '이번 주 과제 줄여줘',
+      createdAt: '2026-06-04T01:10:00Z',
+    }
+    vi.mocked(sendAiConversationMessage).mockResolvedValue(savedUserMessage)
+
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const es = FakeEventSource.instances[0]!
+
+    await wrapper.find('textarea').setValue('이번 주 과제 줄여줘')
+    await wrapper.find('button[aria-label="전송"]').trigger('click')
+    await flushPromises()
+
+    expect(sendAiConversationMessage).toHaveBeenCalledWith(conversation.id, {
+      content: '이번 주 과제 줄여줘',
+    })
+    // 비동기 모드: 반환된 사용자 메시지를 또 추가하지 않으므로 사용자 말풍선은 1개(중복 없음)다.
+    expect(wrapper.text().split('이번 주 과제 줄여줘').length - 1).toBe(1)
+    // assistant 는 아직 도착 전: 동기 모드처럼 즉시 렌더되지 않는다.
+    expect(wrapper.text()).not.toContain('필수 과제를 하나 줄였어.')
+
+    // SSE 로 assistant 응답이 도착하면 렌더된다.
+    const assistantMessage: AiConversationMessage = {
+      id: '018f7a4e-4000-7000-9000-0000000000a2',
+      conversationId: conversation.id,
+      senderType: 'ASSISTANT',
+      content: '필수 과제를 하나 줄였어.',
+      createdAt: '2026-06-04T01:10:05Z',
+    }
+    es.emit('assistant-message-created', { data: JSON.stringify(assistantMessage) })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('필수 과제를 하나 줄였어.')
   })
 })
