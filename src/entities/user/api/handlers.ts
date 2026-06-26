@@ -2,10 +2,11 @@ import { HttpResponse, http } from 'msw'
 
 import { mockUser } from '@/shared/api/msw/fixtures'
 import { apiBaseUrl } from '@/shared/config/api'
-import type { StudyQuota, UpdateUserRequest, User } from '../model/types'
+import type { AiQuota, StudyQuota, UpdateUserRequest, User } from '../model/types'
 
 const currentUserUrl = `${apiBaseUrl}/users/me`
 const studyQuotaUrl = `${apiBaseUrl}/users/me/study-quota`
+const aiQuotaUrl = `${apiBaseUrl}/users/me/ai-quota`
 
 export const userHandlers = [
   http.get(currentUserUrl, () => HttpResponse.json(mockUser)),
@@ -16,6 +17,16 @@ export const userHandlers = [
       hostedActiveCount: 1,
       limit: 3,
       canCreate: true,
+    }),
+  ),
+
+  http.get(aiQuotaUrl, () =>
+    HttpResponse.json<AiQuota>({
+      plan: 'FREE',
+      dailyLimit: 15,
+      used: 13,
+      remaining: 2,
+      resetSeconds: 43200,
     }),
   ),
 

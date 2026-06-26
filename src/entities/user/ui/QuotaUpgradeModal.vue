@@ -6,6 +6,9 @@ const props = defineProps<{
   plan: string
   limit: number
   current: number
+  // 컨텍스트별 문구 커스터마이즈(미지정 시 스터디 개수 한도 기본 문구).
+  title?: string
+  description?: string
 }>()
 
 const emit = defineEmits<{
@@ -14,6 +17,8 @@ const emit = defineEmits<{
 
 const isPremium = computed(() => props.plan.toUpperCase() === 'PREMIUM')
 const planLabel = computed(() => (isPremium.value ? '프리미엄' : '무료'))
+const titleText = computed(() => props.title ?? '스터디 개수 한도에 도달했어요')
+const hasCustomBody = computed(() => typeof props.description === 'string' && props.description.length > 0)
 </script>
 
 <template>
@@ -36,9 +41,12 @@ const planLabel = computed(() => (isPremium.value ? '프리미엄' : '무료'))
           🚀
         </div>
         <h2 id="quota-modal-title" class="mt-4 text-xl font-bold text-[var(--color-ink)]">
-          스터디 개수 한도에 도달했어요
+          {{ titleText }}
         </h2>
-        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+        <p v-if="hasCustomBody" class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+          {{ description }}
+        </p>
+        <p v-else class="mt-2 text-sm leading-6 text-[var(--color-muted)]">
           현재 <strong class="font-semibold text-[var(--color-ink)]">{{ planLabel }}</strong> 플랜은
           동시에 운영 중인 스터디를 최대
           <strong class="font-semibold text-[var(--color-ink)]">{{ limit }}개</strong>까지 만들 수
@@ -48,16 +56,28 @@ const planLabel = computed(() => (isPremium.value ? '프리미엄' : '무료'))
         <div
           class="mt-4 rounded-[var(--radius-input)] border border-[var(--color-line)] bg-[var(--color-active)] px-4 py-3 text-xs leading-5 text-[var(--color-muted)]"
         >
-          <p>완료했거나 보관한 스터디는 개수에 포함되지 않아요.</p>
-          <p class="mt-1">
-            <template v-if="isPremium"
-              >기존 스터디를 마무리하면 새 스터디를 만들 수 있어요.</template
-            >
-            <template v-else
-              >기존 스터디를 마무리하거나 프리미엄으로 전환하면 더 많은 스터디를 운영할 수 있어요.
-              프리미엄 전환은 운영자에게 문의해 주세요.</template
-            >
-          </p>
+          <template v-if="hasCustomBody">
+            <p>한도는 매일 초기화돼요.</p>
+            <p class="mt-1">
+              <template v-if="isPremium">잠시 후 다시 이용해 주세요.</template>
+              <template v-else
+                >더 많이 이용하려면 프리미엄으로 전환해 주세요. 프리미엄 전환은 운영자에게 문의해
+                주세요.</template
+              >
+            </p>
+          </template>
+          <template v-else>
+            <p>완료했거나 보관한 스터디는 개수에 포함되지 않아요.</p>
+            <p class="mt-1">
+              <template v-if="isPremium"
+                >기존 스터디를 마무리하면 새 스터디를 만들 수 있어요.</template
+              >
+              <template v-else
+                >기존 스터디를 마무리하거나 프리미엄으로 전환하면 더 많은 스터디를 운영할 수 있어요.
+                프리미엄 전환은 운영자에게 문의해 주세요.</template
+              >
+            </p>
+          </template>
         </div>
 
         <button
