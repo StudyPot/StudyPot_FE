@@ -13,6 +13,9 @@ import {
   type StudyGroupStatus,
 } from '@/entities/group'
 import { listBookmarks, toggleBookmark } from '@/entities/bookmark'
+import { getStudyQuota } from '@/entities/user/api/currentUser'
+import type { StudyQuota } from '@/entities/user/model/types'
+import QuotaUpgradeModal from '@/entities/user/ui/QuotaUpgradeModal.vue'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 
@@ -49,6 +52,19 @@ const hasGroups = computed(() => groups.value.length > 0)
 const activeCount = computed(() => groups.value.filter((g) => g.status === 'ACTIVE').length)
 const summary = ref<GroupSummary | null>(null)
 
+// 호스트 스터디 개수 제한(무료/유료) — 배지·생성 버튼 게이팅
+const quota = ref<StudyQuota | null>(null)
+const showQuotaModal = ref(false)
+const canCreateStudy = computed(() => (quota.value ? quota.value.canCreate : true))
+
+async function loadQuota(): Promise<void> {
+  try {
+    quota.value = await getStudyQuota()
+  } catch {
+    // 쿼터 조회 실패는 목록 표시에 영향 없음(생성 시 서버가 최종 검증)
+  }
+}
+
 function buildParams(): ListGroupsParams {
   const params: ListGroupsParams = { sort: 'startsAt', order: 'desc' }
   if (searchQuery.value.trim()) params.q = searchQuery.value.trim()
@@ -60,6 +76,7 @@ onMounted(() => {
   void loadGroups()
   void loadBookmarkIds()
   void loadSummary()
+  void loadQuota()
 })
 
 async function loadSummary(): Promise<void> {
@@ -186,22 +203,55 @@ const STATUS_DOT: Record<StudyGroupStatus, string> = {
           <template v-else>{{ groups.length }}개 그룹 · 진행 중 {{ activeCount }}개</template>
         </p>
       </div>
-      <RouterLink
-        :to="{ name: 'group-create' }"
-        class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-primary-deep)]"
-      >
-        <svg
-          class="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
+      <div class="flex shrink-0 items-center gap-2.5">
+        <span
+          v-if="quota"
+          class="hidden items-center rounded-[var(--radius-chip)] px-3 py-1.5 text-xs font-semibold sm:inline-flex"
+          :class="
+            canCreateStudy
+              ? 'bg-[var(--color-active)] text-[var(--color-muted)]'
+              : 'bg-[rgba(237,66,69,0.1)] text-[var(--color-danger)]'
+          "
+          :title="`내가 운영 중인 스터디 ${quota.hostedActiveCount}/${quota.limit}`"
         >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        새 그룹
-      </RouterLink>
+          내 스터디 {{ quota.hostedActiveCount }}/{{ quota.limit }}
+        </span>
+        <RouterLink
+          v-if="canCreateStudy"
+          :to="{ name: 'group-create' }"
+          class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] px-4 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-primary-deep)]"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          새 그룹
+        </RouterLink>
+        <button
+          v-else
+          type="button"
+          class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] px-4 text-sm font-bold text-[var(--color-muted)] transition hover:text-[var(--color-ink)]"
+          @click="showQuotaModal = true"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          새 그룹
+        </button>
+      </div>
     </div>
 
     <!-- 검색 + 상태 필터 -->
@@ -390,5 +440,15 @@ const STATUS_DOT: Record<StudyGroupStatus, string> = {
         </div>
       </RouterLink>
     </div>
+
+    <!-- 호스트 스터디 개수 한도 안내 모달 -->
+    <QuotaUpgradeModal
+      v-if="quota"
+      :open="showQuotaModal"
+      :plan="quota.plan"
+      :limit="quota.limit"
+      :current="quota.hostedActiveCount"
+      @close="showQuotaModal = false"
+    />
   </div>
 </template>

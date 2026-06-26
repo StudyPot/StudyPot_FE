@@ -8,6 +8,9 @@ import {
   type CreateGroupRequest,
   useGroupListStore,
 } from '@/entities/group'
+import { getStudyQuota } from '@/entities/user/api/currentUser'
+import type { StudyQuota } from '@/entities/user/model/types'
+import QuotaUpgradeModal from '@/entities/user/ui/QuotaUpgradeModal.vue'
 import { ApiError } from '@/shared/api'
 import { DateInput } from '@/shared/ui'
 
@@ -54,6 +57,7 @@ onMounted(() => {
       form.name = topic
     }
   }
+  void loadQuota()
 })
 const fieldErrors = ref<Record<string, string>>({})
 
@@ -64,6 +68,28 @@ const showSuccessModal = ref(false)
 const progressValue = ref(0)
 const createdGroupId = ref('')
 let progressTimer: ReturnType<typeof setInterval> | null = null
+
+// 호스트 스터디 개수 제한(무료/유료 플랜) 안내·차단
+const quota = ref<StudyQuota | null>(null)
+const showQuotaModal = ref(false)
+const quotaModal = reactive({ plan: 'FREE', limit: 3, current: 0 })
+const atLimit = computed(() => (quota.value ? !quota.value.canCreate : false))
+
+async function loadQuota(): Promise<void> {
+  try {
+    quota.value = await getStudyQuota()
+  } catch {
+    // 쿼터 조회 실패는 생성을 막지 않는다(서버가 최종 검증).
+  }
+}
+
+function openQuotaModalFromQuota(): void {
+  if (!quota.value) return
+  quotaModal.plan = quota.value.plan
+  quotaModal.limit = quota.value.limit
+  quotaModal.current = quota.value.hostedActiveCount
+  showQuotaModal.value = true
+}
 
 watch(
   () => form.startsAt,
@@ -106,11 +132,26 @@ async function submitGroup(): Promise<void> {
   } catch (error) {
     clearProgress()
     showProgressModal.value = false
-    errorMessage.value =
-      error instanceof ApiError ? error.message : '그룹을 생성하지 못했어요. 다시 시도해 주세요.'
+    if (error instanceof ApiError && isQuotaError(error)) {
+      const payload = error.payload as { plan?: string; limit?: number; current?: number } | null
+      quotaModal.plan = payload?.plan ?? quota.value?.plan ?? 'FREE'
+      quotaModal.limit = payload?.limit ?? quota.value?.limit ?? 3
+      quotaModal.current = payload?.current ?? quota.value?.hostedActiveCount ?? quotaModal.limit
+      showQuotaModal.value = true
+      void loadQuota()
+    } else {
+      errorMessage.value =
+        error instanceof ApiError ? error.message : '그룹을 생성하지 못했어요. 다시 시도해 주세요.'
+    }
   } finally {
     isSubmitting.value = false
   }
+}
+
+function isQuotaError(error: ApiError): boolean {
+  if (error.status !== 409) return false
+  const payload = error.payload as { code?: string } | null
+  return payload?.code === 'STUDY_GROUP_QUOTA_EXCEEDED'
 }
 
 function startProgress(): void {
@@ -283,6 +324,29 @@ function toCreateGroupRequest(): CreateGroupRequest {
         커리큘럼을 만들어줍니다.
       </p>
     </header>
+
+    <div
+      v-if="atLimit && quota"
+      class="mb-6 flex items-start gap-3 rounded-[var(--radius-card)] border border-[rgba(25,195,125,0.3)] bg-[rgba(25,195,125,0.08)] px-4 py-3.5"
+    >
+      <span class="text-lg leading-6" aria-hidden="true">🚀</span>
+      <div class="flex-1 text-sm">
+        <p class="font-semibold text-[var(--color-ink)]">
+          운영 중인 스터디가 한도에 도달했어요 ({{ quota.hostedActiveCount }}/{{ quota.limit }})
+        </p>
+        <p class="mt-1 leading-6 text-[var(--color-muted)]">
+          {{ quota.plan === 'PREMIUM' ? '프리미엄' : '무료' }} 플랜은 최대 {{ quota.limit }}개까지
+          운영할 수 있어요. 기존 스터디를 마무리하거나 프리미엄으로 전환하면 새로 만들 수 있어요.
+        </p>
+        <button
+          type="button"
+          class="mt-2 text-sm font-semibold text-[var(--color-primary)] underline-offset-2 hover:underline"
+          @click="openQuotaModalFromQuota"
+        >
+          자세히 보기
+        </button>
+      </div>
+    </div>
 
     <form class="grid gap-6" @submit.prevent="submitGroup">
       <section
@@ -491,9 +555,9 @@ function toCreateGroupRequest(): CreateGroupRequest {
         <button
           type="submit"
           class="inline-flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)] text-sm font-bold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--color-primary-deep)] focus:outline-none focus:ring-4 focus:ring-[rgba(25,195,125,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="isSubmitting"
+          :disabled="isSubmitting || atLimit"
         >
-          그룹 생성
+          {{ atLimit ? '스터디 개수 한도 도달' : '그룹 생성' }}
         </button>
       </div>
     </form>
@@ -570,4 +634,13 @@ function toCreateGroupRequest(): CreateGroupRequest {
       </div>
     </div>
   </Teleport>
+
+  <!-- 호스트 스터디 개수 한도 안내 모달 -->
+  <QuotaUpgradeModal
+    :open="showQuotaModal"
+    :plan="quotaModal.plan"
+    :limit="quotaModal.limit"
+    :current="quotaModal.current"
+    @close="showQuotaModal = false"
+  />
 </template>
