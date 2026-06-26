@@ -21,3 +21,13 @@ export type StudyQuota = {
   limit: number
   canCreate: boolean
 }
+
+// GET /users/me/ai-quota 응답. AI 팀장 채팅 일일 한도 현황.
+// dailyLimit/remaining 이 -1 이면 한도 미적용(무제한).
+export type AiQuota = {
+  plan: UserPlan
+  dailyLimit: number
+  used: number
+  remaining: number
+  resetSeconds: number
+}

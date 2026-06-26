@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
-import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, inject, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -14,6 +14,9 @@ import {
   type AiConversationMessage,
   type AiMessageActionDecision,
 } from '@/entities/ai'
+import { getAiQuota } from '@/entities/user/api/currentUser'
+import type { AiQuota } from '@/entities/user/model/types'
+import QuotaUpgradeModal from '@/entities/user/ui/QuotaUpgradeModal.vue'
 import { ApiError } from '@/shared/api'
 import { ScreenState } from '@/shared/ui'
 import { groupWorkspaceContextKey } from '../model/workspaceContext'
@@ -46,6 +49,25 @@ const sharedPostId = ref<string | null>(null)
 const showShareDoneModal = ref(false)
 const customMessageId = ref<string | null>(null)
 const customText = ref('')
+// AI 팀장 채팅 일일 한도(잔여 횟수 표시 + 소진 시 업그레이드 안내).
+const aiQuota = ref<AiQuota | null>(null)
+const showAiQuotaModal = ref(false)
+const aiQuotaModalDescription = computed(() => {
+  const quota = aiQuota.value
+  if (!quota) {
+    return '오늘 사용할 수 있는 AI 팀장 대화 횟수를 모두 사용했어요.'
+  }
+  const planLabel = quota.plan === 'PREMIUM' ? '프리미엄' : '무료'
+  return `현재 ${planLabel} 플랜은 하루 ${quota.dailyLimit}회까지 AI 팀장과 대화할 수 있어요. 내일 다시 이용해 주세요.`
+})
+
+async function refreshAiQuota(): Promise<void> {
+  try {
+    aiQuota.value = await getAiQuota()
+  } catch {
+    // 잔여 횟수는 보조 정보 — 조회 실패해도 채팅 흐름은 막지 않는다.
+  }
+}
 // 비동기(MQ) 모드 안전장치: assistant 응답은 SSE 로 도착한다. SSE 가 끊겼거나 이벤트가 유실돼도
 // 멈추지 않도록, 일정 시간(OpenAI 최대 응답시간 고려) 후 메시지를 재조회하고 입력중 표시를 해제한다.
 const ASSISTANT_WAIT_TIMEOUT_MS = 130000
@@ -312,9 +334,18 @@ async function handleSendMessage(): Promise<void> {
       // optimistic 사용자 말풍선을 유지하고 입력중 표시를 유지한 채 SSE 를 기다린다(끊김 대비 폴백 타이머 가동).
       startAssistantWait()
     }
+    // 전송 성공 — 잔여 횟수 갱신(보조 정보).
+    void refreshAiQuota()
     await scrollToBottom()
   } catch (error) {
-    if (error instanceof ApiError && error.status === 403) {
+    if (error instanceof ApiError && error.status === 429) {
+      // 일일 한도 소진 — 저장되지 않았으므로 optimistic 말풍선을 되돌리고 입력을 복원한 뒤 업그레이드 안내.
+      messages.value = messages.value.filter((message) => message.id !== userMessage.id)
+      inputText.value = content
+      sendError.value = error.message || '오늘 사용할 수 있는 AI 팀장 대화 횟수를 모두 사용했어요.'
+      showAiQuotaModal.value = true
+      void refreshAiQuota()
+    } else if (error instanceof ApiError && error.status === 403) {
       sendError.value = '메시지를 전송할 권한이 없어요.'
     } else {
       sendError.value = error instanceof ApiError ? error.message : '메시지를 전송하지 못했어요.'
@@ -450,6 +481,7 @@ function handleVisibilityChange(): void {
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   void handleOpenConversation()
+  void refreshAiQuota()
 })
 
 onUnmounted(() => {
@@ -899,6 +931,15 @@ function showDateDivider(index: number): boolean {
         {{ sendError }}
       </p>
 
+      <!-- 무료 플랜 일일 잔여 대화 횟수 안내 -->
+      <p
+        v-if="aiQuota && aiQuota.dailyLimit >= 0 && aiQuota.plan !== 'PREMIUM'"
+        class="px-1 pb-1 text-xs text-[var(--color-muted)]"
+        :class="{ 'font-semibold text-[var(--color-danger)]': aiQuota.remaining <= 0 }"
+      >
+        오늘 남은 AI 대화 {{ Math.max(0, aiQuota.remaining) }}/{{ aiQuota.dailyLimit }}회
+      </p>
+
       <!-- 입력창 (하단 safe-area 는 셸 컨텐츠 영역 패딩에서 처리) -->
       <div class="flex items-end gap-2 pt-2">
         <textarea
@@ -931,6 +972,17 @@ function showDateDivider(index: number): boolean {
         </button>
       </div>
     </template>
+
+    <!-- AI 팀장 일일 대화 한도 소진 안내(업그레이드 유도) -->
+    <QuotaUpgradeModal
+      :open="showAiQuotaModal"
+      :plan="aiQuota?.plan ?? 'FREE'"
+      :limit="aiQuota?.dailyLimit ?? 0"
+      :current="aiQuota?.used ?? 0"
+      title="오늘 AI 팀장 대화 한도를 다 썼어요"
+      :description="aiQuotaModalDescription"
+      @close="showAiQuotaModal = false"
+    />
 
     <!-- 질문 게시판 공유 완료 모달 -->
     <div
